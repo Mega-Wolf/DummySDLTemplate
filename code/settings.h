@@ -9,7 +9,7 @@
 #define WINDOW_HEIGHT 512
 
 // NOTE: x-offset; change when using a second monitor
-//#define MONITOR_OFFSET 1922
+//#define MONITOR_OFFSET 1920
 
 #ifndef MONITOR_OFFSET
     #define MONITOR_OFFSET 0

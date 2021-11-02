@@ -34,8 +34,8 @@ int main(int argc, char* argv[]) {
         SDL_Init(SDL_INIT_AUDIO);
     #endif
 
-    SDL_Window * window = SDL_CreateWindow("", MONITOR_OFFSET, 20, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Surface * window_surface = SDL_GetWindowSurface(window);
+    SDL_Window* window = SDL_CreateWindow("", MONITOR_OFFSET, 20, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI);
+    SDL_Surface* window_surface = SDL_GetWindowSurface(window);
 
     #ifndef PLATFORM_NO_AUDIO
         SDL_AudioSpec desiredAudioSpec = {};

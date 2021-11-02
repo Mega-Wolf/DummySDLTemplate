@@ -32,11 +32,6 @@ const color32 LIGHT_GREY  = COL32_RGB(160, 160, 160);
 const color32 WHITE       = COL32_RGB(255, 255, 255);
 const color32 C_TRANSPARENT = { 0 };
 
-struct win32_window_dimension {
-    int Width;
-    int Height;
-};
-
 struct button {
     bool Down;
     bool Toggled;
