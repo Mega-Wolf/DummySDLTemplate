@@ -8,6 +8,7 @@ enum terrain {
     T_GRASS,
     T_PATH,
     T_TOWER,
+    T_GOAL,
 };
 
 struct monster {
@@ -47,3 +48,5 @@ monster Monsters[10];
 
 int DiamondCount;
 diamond DiamondList[32 * 32];
+
+int DistanceToGoal[32][32];

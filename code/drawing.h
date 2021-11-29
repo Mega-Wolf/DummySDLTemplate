@@ -3,7 +3,7 @@
 #include "macros.h"
 #include "maths.h"
 
-void DrawRectangle(int x, int y, int width, int height, color32 col) {
+void DrawScreenRectangle(int x, int y, int width, int height, color32 col) {
     inc (y_i,   AtLeast(y, 0),    AtMost(y + height, ArrayHeight)) {
         inc (x_i,   AtLeast(x, 0),    AtMost(x + width, ArrayWidth)) {
             Array[Index2D(x_i, y_i, ArrayWidth)] = col;
@@ -11,7 +11,7 @@ void DrawRectangle(int x, int y, int width, int height, color32 col) {
     }
 }
 
-void DrawDisc(int x, int y, int radius, color32 col) {
+void DrawScreenDisc(int x, int y, int radius, color32 col) {
     inc (y_i,   AtLeast(y - radius, 0),    AtMost(y + radius + 1, ArrayHeight)) {
         inc (x_i,   AtLeast(x - radius, 0),    AtMost(x + radius + 1, ArrayWidth)) {
             float diffX = (float) (x_i - x);
@@ -33,7 +33,7 @@ void TrySetPixel(int x, int y, color32 col) {
 #define SQRT2 1.41421356237
 //#define SQRT2_DIV_2 0.70710678118
 
-void DrawCircle(int x, int y, int radius, color32 col) {
+void DrawScreenCircle(int x, int y, int radius, color32 col) {
     // TODO(Tobi): The inputs are integers; this means that our circle will look a bit weird
 
     TrySetPixel(x, y - radius, col);

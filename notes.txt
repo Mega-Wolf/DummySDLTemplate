@@ -1,15 +1,19 @@
 Assert/Throw (but no printf?)
-TrySetPixel
+
+
 
 
 Notes from next lecture:
 
 
-- Pause button
-- Auto-fill towers with diamonds
-- One hit monsters
-- Show diamond range
-- Diamond cooldown bar
-- Health bars; monsters with more health
+- TrySetPixel DONE
+- Pause button DONE
+- Draw Circle DONE
+- Auto-fill towers with diamonds DONE
+- Show diamond range DONE
+- One hit monsters DONE
+- Diamond cooldown bar DONE
+- Pathing grid for targeting the closest monster and for pathing DONE
+- Extra: Separate World-space and Screenspace movement DONE
 
-- Pathing grid for targeting the closest monster and for pathing
+// - Health bars; monsters with more health (I oneshoot them right)
