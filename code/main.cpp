@@ -1,44 +1,18 @@
+
 #include "settings.h"
-#include "macros.h"
-#include "maths.h"
+#include "../helpers/sdl_layer.h"
+
+#include "main.h"
+
+//#include "macros.h"
+//#include "maths.h"
+#include "drawing.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../helpers/sdl_layer.h"
 
-// Global Variables
-color32* Array;
-int ArrayWidth;
-int ArrayHeight;
 
-int FrameCount;
-
-enum terrain {
-    T_GRASS,
-    T_PATH,
-    T_TOWER,
-};
-
-terrain Ground[32][32];
-
-bool IsLevelEditorActive;
-
-int StartPathX = -1;
-int StartPathY = -1;
-
-struct monster {
-    vec2i GoalPosition;
-    vec2i OldPosition;
-    int Radius;
-    float Speed;
-
-    float MovementT;
-    vec2f ActualPosition;
-};
-
-int SpawnedMonsterAmount;
-monster Monsters[10];
 
 void Init() {
     FILE* file = fopen("assets/levels/dummy.lvl", "rb");
@@ -59,7 +33,7 @@ void Init() {
         }
     }
 
-    inc0 (y_i,   1,    32 - 1) {
+    inc (y_i,   1,    32 - 1) {
         if (Ground[y_i][0] == T_PATH) {
             StartPathX = 0;
             StartPathY = y_i;
@@ -70,24 +44,15 @@ void Init() {
             StartPathY = y_i;
         }
     }
-}
 
-void DrawRectangle(int x, int y, int width, int height, color32 col) {
-    inc (y_i,   AtLeast(y, 0),    y_i < AtMost(y + height, ArrayHeight)) {
-        inc (x_i,   AtLeast(x, 0),    x_i < AtMost(x + width, ArrayWidth)) {
-            Array[Index2D(x_i, y_i, ArrayWidth)] = col;
-        }
-    }
-}
-
-void DrawCircle(int x, int y, int radius, color32 col) {
-    inc (y_i,   AtLeast(y - radius, 0),    y_i <= AtMost(y + radius, ArrayHeight)) {
-        inc (x_i,   AtLeast(x - radius, 0),    x_i <= AtMost(x + radius, ArrayWidth)) {
-            float diffX = (float) (x_i - x);
-            float diffY = (float) (y_i - y);
-
-            if (diffX * diffX + diffY * diffY <= radius * radius) {
-                Array[Index2D(x_i, y_i, ArrayWidth)] = col;
+    inc0 (y_i,   32) {
+        inc0 (x_i,   32) {
+            if (Ground[y_i][x_i] == T_TOWER) {
+                diamond* newDiamond = &DiamondList[DiamondCount++];
+                *newDiamond = {};
+                newDiamond->TilePosition = vec2i { x_i, y_i };
+                newDiamond->RangeRadius = 4.0f;
+                newDiamond->MaxCooldown = 180;
             }
         }
     }
@@ -145,7 +110,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
     // Logic Update
     //if (IS_KEY_PRESSED(Space)) {
-    {
+    if (!IsLevelEditorActive) {
         ++FrameCount;
 
         // Update Monsters
@@ -213,9 +178,37 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 monster_->ActualPosition.X = (float) monster_->OldPosition.X;
                 monster_->ActualPosition.Y = (float) monster_->OldPosition.Y;
 
-                monster_->Radius = rand() % 6 + 5;
+                monster_->Radius = (rand() % 6 + 5) / 32.0f;
                 monster_->Speed = 1 / (float) (rand() % 11 + 10);
                 ++SpawnedMonsterAmount;
+            }
+        }
+
+        // Update Diamonds
+        inc0 (diamond_i,   DiamondCount) {
+            diamond* diamond_ = &DiamondList[diamond_i];
+
+            if (diamond_->CooldownFrames > 0) {
+                --diamond_->CooldownFrames;
+                continue;
+            }
+
+            inc0 (monster_i,   SpawnedMonsterAmount) {
+                monster* monster_ = &Monsters[monster_i];
+
+                float deltaX = monster_->ActualPosition.X - (float) diamond_->TilePosition.X;
+                float deltaY = monster_->ActualPosition.Y - (float) diamond_->TilePosition.Y;
+
+                float distanceSq = deltaX * deltaX + deltaY * deltaY;
+
+                float effectiveShootingRange = diamond_->RangeRadius + monster_->Radius;
+                float effectiveShootingRangeSq = effectiveShootingRange * effectiveShootingRange;
+                if (distanceSq <= effectiveShootingRangeSq) {
+                    // One-hit the monster
+                    Monsters[monster_i] = Monsters[--SpawnedMonsterAmount];
+                    diamond_->CooldownFrames = diamond_->MaxCooldown;
+                    break;
+                }
             }
         }
     }
@@ -253,7 +246,21 @@ void Update(color32* array, int width, int height, inputs* ins) {
         // Render Monsters
         inc0 (monster_i,   SpawnedMonsterAmount) {
             monster* monster_ = &Monsters[monster_i];
-            DrawCircle((int) (GRID_SIZE * monster_->ActualPosition.X) + GRID_SIZE / 2, (int) (GRID_SIZE * monster_->ActualPosition.Y) + GRID_SIZE / 2, monster_->Radius, BLUE);
+            DrawDisc((int) (GRID_SIZE * monster_->ActualPosition.X) + GRID_SIZE / 2, (int) (GRID_SIZE * monster_->ActualPosition.Y) + GRID_SIZE / 2, (int) (GRID_SIZE * monster_->Radius), BLUE);
+        }
+
+        // Render Diamonds
+        inc0 (diamond_i,   DiamondCount) {
+            diamond* diamond_ = &DiamondList[diamond_i];
+            DrawDisc(GRID_SIZE * diamond_->TilePosition.X + GRID_SIZE / 2, GRID_SIZE * diamond_->TilePosition.Y + GRID_SIZE / 2, 10, COL32_RGB(40, 20, 170));
+
+            // Render Diamond Range
+            DrawCircle(GRID_SIZE * diamond_->TilePosition.X + GRID_SIZE / 2, GRID_SIZE * diamond_->TilePosition.Y + GRID_SIZE / 2, (int) (GRID_SIZE * diamond_->RangeRadius), YELLOW);
+
+            // Render Diamond Cooldown
+            if (diamond_->CooldownFrames) {
+                DrawRectangle(GRID_SIZE * diamond_->TilePosition.X, GRID_SIZE * diamond_->TilePosition.Y + GRID_SIZE, (int) (GRID_SIZE * diamond_->CooldownFrames / (float)diamond_->MaxCooldown), 5, RED);
+            }
         }
     }
 }
