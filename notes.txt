@@ -1,19 +1,16 @@
 Assert/Throw (but no printf?)
 
+Notes for lesson 4
 
+4a
+- projectiles target monsters and fly towards them
+- different memory model for monsters is needed then
+- monster hit points
+- projectile buildup
 
+4b
 
-Notes from next lecture:
-
-
-- TrySetPixel DONE
-- Pause button DONE
-- Draw Circle DONE
-- Auto-fill towers with diamonds DONE
-- Show diamond range DONE
-- One hit monsters DONE
-- Diamond cooldown bar DONE
-- Pathing grid for targeting the closest monster and for pathing DONE
-- Extra: Separate World-space and Screenspace movement DONE
-
-// - Health bars; monsters with more health (I oneshoot them right)
+leveling diamonds
+merge diamnds
+replacement diamond?
+diamond menu? (if time)
