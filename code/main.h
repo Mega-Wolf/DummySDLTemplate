@@ -12,21 +12,36 @@ enum terrain {
 };
 
 struct monster {
+    unsigned int Generation;
+
     vec2i GoalPosition;
     vec2i OldPosition;
     float Radius;
     float Speed;
+    float Health;
+    float MaxHealth;
 
     float MovementT;
     vec2f ActualPosition;
 };
 
 struct diamond {
-    vec2i TilePosition;
+    vec2f TilePosition;
 
     float RangeRadius;
     int CooldownFrames;
     int MaxCooldown;
+};
+
+struct projectile {
+    vec2f Position;
+    monster* Target;
+    unsigned int TargetGeneration;
+    float Speed;
+    float Damage;
+
+    vec2f BuildupDelta;
+    int BuildupFrames;
 };
 
 // Global Variables
@@ -43,10 +58,14 @@ bool IsLevelEditorActive;
 int StartPathX = -1;
 int StartPathY = -1;
 
-int SpawnedMonsterAmount;
-monster Monsters[10];
+#define MONSTER_COUNT_MAX 100
+int MonsterListEnd; // TODO(Tobi): Decrease MonsterListEnd if we have deleted the last monster
+monster Monsters[MONSTER_COUNT_MAX];
 
 int DiamondCount;
 diamond DiamondList[32 * 32];
 
 int DistanceToGoal[32][32];
+
+int ProjectileCount;
+projectile Projectiles[32 * 32];

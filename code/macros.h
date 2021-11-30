@@ -7,3 +7,6 @@
 #define incIn(varname, start, max) for (int varname = start; varname <= max; ++varname)
 
 #define IS_KEY_PRESSED(key) ins->Keyboard.key.Down && ins->Keyboard.key.Toggled
+
+
+#define PI 3.141592f

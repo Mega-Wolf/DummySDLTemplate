@@ -3,10 +3,10 @@ Assert/Throw (but no printf?)
 Notes for lesson 4
 
 4a
-- projectiles target monsters and fly towards them
-- different memory model for monsters is needed then
-- monster hit points
-- projectile buildup
+- projectiles target monsters and fly towards them DONE
+- different memory model for monsters is needed then DONE
+- monster hit points + healthbar DONE
+- projectile buildup DONE
 
 4b
 
