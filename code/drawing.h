@@ -11,6 +11,41 @@ void DrawScreenRectangle(int x, int y, int width, int height, color32 col) {
     }
 }
 
+void DrawScreenBitmap(int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
+    int startX = AtLeast(-x, 0);
+    int startY = AtLeast(-y, 0);
+
+    int endX = AtMost(bitmap.Width, ArrayWidth);
+    int endY = AtMost(bitmap.Height, ArrayHeight);
+
+    inc (y_i,   startY,    endY) {
+        inc (x_i,   startX,    endX) {
+            color32 bitmapColor = bitmap.Data[Index2D(x_i, y_i, bitmap.Width)];
+            if (bitmapColor.Alpha > 0) {
+
+                float bitmapRed   = bitmapColor.Red   / 255.0f;
+                float bitmapGreen = bitmapColor.Green / 255.0f;
+                float bitmapBlue  = bitmapColor.Blue  / 255.0f;
+
+                float wantedRed   = wantedColor.Red   / 255.0f;
+                float wantedGreen = wantedColor.Green / 255.0f;
+                float wantedBlue  = wantedColor.Blue  / 255.0f;
+
+                float resultRed   = bitmapRed   * wantedRed;
+                float resultGreen = bitmapGreen * wantedGreen;
+                float resultBlue  = bitmapBlue  * wantedBlue;
+
+                color32 finalColor = {};
+                finalColor.Red   = (unsigned char) (resultRed   * 255);
+                finalColor.Green = (unsigned char) (resultGreen * 255);
+                finalColor.Blue  = (unsigned char) (resultBlue  * 255);
+
+                Array[Index2D(x + x_i, y + y_i, ArrayWidth)] = finalColor;
+            }
+        }
+    }
+}
+
 void DrawScreenDisc(int x, int y, int radius, color32 col) {
     inc (y_i,   AtLeast(y - radius, 0),    AtMost(y + radius + 1, ArrayHeight)) {
         inc (x_i,   AtLeast(x - radius, 0),    AtMost(x + radius + 1, ArrayWidth)) {

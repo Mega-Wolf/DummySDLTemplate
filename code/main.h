@@ -3,6 +3,7 @@
 #include "../helpers/backend.h"
 
 #include "maths.h"
+#include "bitmap.h"
 
 enum terrain {
     T_GRASS,
@@ -31,6 +32,7 @@ struct diamond {
     float RangeRadius;
     int CooldownFrames;
     int MaxCooldown;
+    color32 Color;
 };
 
 struct projectile {
@@ -69,3 +71,15 @@ int DistanceToGoal[32][32];
 
 int ProjectileCount;
 projectile Projectiles[32 * 32];
+
+loaded_bitmap Cogwheels[3];
+loaded_bitmap MonsterSprites[8];
+
+color32 DiamondColors[6] = {
+    RED,
+    GREEN,
+    AQUA,
+    PURPLE,
+    ORANGE,
+    YELLOW
+};

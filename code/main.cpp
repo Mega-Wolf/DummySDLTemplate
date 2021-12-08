@@ -21,6 +21,7 @@ void InitDistanceArrayAndFillTowers() {
                 newDiamond->TilePosition = vec2f { (float)x_i, (float)y_i };
                 newDiamond->RangeRadius = 4.0f;
                 newDiamond->MaxCooldown = 60;
+                newDiamond->Color = DiamondColors[rand() % 6];
             }
 
             if (Ground[y_i][x_i] == T_GOAL) {
@@ -65,6 +66,19 @@ void InitDistanceArrayAndFillTowers() {
 }
 
 void Init() {
+    Cogwheels[0] = BitmapLoad("assets\\sprites\\CogwheelSmall0.bmp");
+    Cogwheels[1] = BitmapLoad("assets\\sprites\\CogwheelSmall1.bmp");
+    Cogwheels[2] = BitmapLoad("assets\\sprites\\CogwheelSmall2.bmp");
+
+    MonsterSprites[0] = BitmapLoad("assets\\sprites\\MonsterUp.bmp");
+    MonsterSprites[1] = BitmapLoad("assets\\sprites\\MonsterUpRight.bmp");
+    MonsterSprites[2] = BitmapLoad("assets\\sprites\\MonsterRight.bmp");
+    MonsterSprites[3] = BitmapLoad("assets\\sprites\\MonsterDownRight.bmp");
+    MonsterSprites[4] = BitmapLoad("assets\\sprites\\MonsterDown.bmp");
+    MonsterSprites[5] = BitmapLoad("assets\\sprites\\MonsterDownLeft.bmp");
+    MonsterSprites[6] = BitmapLoad("assets\\sprites\\MonsterLeft.bmp");
+    MonsterSprites[7] = BitmapLoad("assets\\sprites\\MonsterUpLeft.bmp");
+
     FILE* file = fopen("assets/levels/dummy.lvl", "rb");
     if (file != nullptr) {
         fread(Ground, sizeof(Ground), 1, file);
@@ -100,6 +114,10 @@ void Init() {
 
 void DrawWorldRectangle(float x, float y, float width, float height, color32 col) {
     DrawScreenRectangle((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
+}
+
+void DrawWorldBitmap(float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
+    DrawScreenBitmap((int) (GRID_SIZE * x), (int) (GRID_SIZE * y), bitmap, wantedColor);
 }
 
 void DrawWorldDisc(float x, float y, float radius, color32 col) {
@@ -459,7 +477,25 @@ void Update(color32* array, int width, int height, inputs* ins) {
             monster* monster_ = &Monsters[monster_i];
             if (!monster_->Health) { continue; }
 
-            DrawWorldDisc(monster_->ActualPosition.X, monster_->ActualPosition.Y, monster_->Radius, BLUE);
+            //DrawWorldDisc(monster_->ActualPosition.X, monster_->ActualPosition.Y, monster_->Radius, BLUE);
+
+            int directionInt = 0;
+            {
+                //vec2i deltaPosition = monster_->GoalPosition - monster_->OldPosition;
+                int deltaX = monster_->GoalPosition.X - monster_->OldPosition.X;
+                int deltaY = monster_->GoalPosition.Y - monster_->OldPosition.Y;
+                if (deltaY == -1) {
+                    directionInt = 0;
+                } else if (deltaX == +1) {
+                    directionInt = 2;
+                } else if (deltaY == +1) {
+                    directionInt = 4;
+                } else if (deltaX == -1) {
+                    directionInt = 6;
+                }
+            }
+
+            DrawWorldBitmap(monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], RED);
 
             // Render Monster Healthbar
             if (monster_->Health < monster_->MaxHealth) {
@@ -470,7 +506,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
         // Render Diamonds
         inc0 (diamond_i,   DiamondCount) {
             diamond* diamond_ = &DiamondList[diamond_i];
-            DrawWorldDisc(diamond_->TilePosition.X, diamond_->TilePosition.Y, 10 / 32.0f, COL32_RGB(40, 20, 170));
+            DrawWorldBitmap(diamond_->TilePosition.X, diamond_->TilePosition.Y, Cogwheels[FrameCount % 30 / 10], diamond_->Color);
+            //  COL32_RGB(40, 20, 170)
 
             // Render Diamond Range
             DrawWorldCircle(diamond_->TilePosition.X, diamond_->TilePosition.Y, diamond_->RangeRadius, YELLOW);
