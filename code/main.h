@@ -53,7 +53,7 @@ int ArrayHeight;
 
 int FrameCount;
 
-terrain Ground[32][32];
+terrain Ground[TILES_Y][TILES_X];
 
 bool IsLevelEditorActive;
 
@@ -65,12 +65,12 @@ int MonsterListEnd; // TODO(Tobi): Decrease MonsterListEnd if we have deleted th
 monster Monsters[MONSTER_COUNT_MAX];
 
 int DiamondCount;
-diamond DiamondList[32 * 32];
+diamond DiamondList[TILES_Y * TILES_X];
 
-int DistanceToGoal[32][32];
+int DistanceToGoal[TILES_Y][TILES_X];
 
 int ProjectileCount;
-projectile Projectiles[32 * 32];
+projectile Projectiles[TILES_Y * TILES_X];
 
 loaded_bitmap Cogwheels[3];
 loaded_bitmap MonsterSprites[8];
@@ -83,3 +83,21 @@ color32 DiamondColors[6] = {
     ORANGE,
     YELLOW
 };
+
+#define MENU_DIAMONDS_Y 3
+#define MENU_DIAMONDS_X 3
+#define MENU_OFFSET_TILES_Y 3
+#define MENU_OFFSET_Y (GRID_SIZE * MENU_OFFSET_TILES_Y)
+#define MENU_OFFSET_X (GRID_SIZE * TILES_X)
+
+#define DRAG_DROP_POSITION vec2f { 99999.0f, 99999.0f }
+
+struct menu_data {
+    diamond* StoredDiamonds[MENU_DIAMONDS_Y][MENU_DIAMONDS_X];
+    struct {
+        diamond* Diamond;
+        vec2i Origin;
+    } DragDrop;
+};
+
+menu_data Menu;

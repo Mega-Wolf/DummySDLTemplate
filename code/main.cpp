@@ -13,8 +13,8 @@
 
 void InitDistanceArrayAndFillTowers() {
     DiamondCount = 0;
-    inc0 (y_i,   32) {
-        inc0 (x_i,   32) {
+    inc0 (y_i,   TILES_Y) {
+        inc0 (x_i,   TILES_X) {
             if (Ground[y_i][x_i] == T_TOWER) {
                 diamond* newDiamond = &DiamondList[DiamondCount++];
                 *newDiamond = {};
@@ -37,15 +37,15 @@ void InitDistanceArrayAndFillTowers() {
     while (changedSomething) {
         changedSomething = false;
         ++currentDistance;
-        inc0 (y_i,   32) {
-            inc0 (x_i,   32) {
+        inc0 (y_i,   TILES_Y) {
+            inc0 (x_i,   TILES_X) {
                 if (DistanceToGoal[y_i][x_i] == currentDistance) {
                     if (y_i > 0 && !DistanceToGoal[y_i - 1][x_i] && Ground[y_i - 1][x_i] == T_PATH) {
                         DistanceToGoal[y_i - 1][x_i] = currentDistance + 1;
                         changedSomething = true;
                     }
 
-                    if (y_i < 32 - 1 - 1 && !DistanceToGoal[y_i + 1][x_i] && Ground[y_i + 1][x_i] == T_PATH) {
+                    if (y_i < TILES_Y - 1 - 1 && !DistanceToGoal[y_i + 1][x_i] && Ground[y_i + 1][x_i] == T_PATH) {
                         DistanceToGoal[y_i + 1][x_i] = currentDistance + 1;
                         changedSomething = true;
                     }
@@ -55,7 +55,7 @@ void InitDistanceArrayAndFillTowers() {
                         changedSomething = true;
                     }
 
-                    if (x_i < 32 - 1 - 1 && !DistanceToGoal[y_i][x_i + 1] && Ground[y_i][x_i + 1] == T_PATH) {
+                    if (x_i < TILES_X - 1 - 1 && !DistanceToGoal[y_i][x_i + 1] && Ground[y_i][x_i + 1] == T_PATH) {
                         DistanceToGoal[y_i][x_i + 1] = currentDistance + 1;
                         changedSomething = true;
                     }
@@ -85,26 +85,26 @@ void Init() {
         fclose(file);
     }
 
-    inc0 (x_i,   32) {
+    inc0 (x_i,   TILES_X) {
         if (Ground[0][x_i] == T_PATH) {
             StartPathX = x_i;
             StartPathY = 0;
         }
 
-        if (Ground[32 - 1][x_i] == T_PATH) {
+        if (Ground[TILES_Y - 1][x_i] == T_PATH) {
             StartPathX = x_i;
-            StartPathY = 32 - 1;
+            StartPathY = TILES_Y - 1;
         }
     }
 
-    inc (y_i,   1,    32 - 1) {
+    inc (y_i,   1,    TILES_Y - 1) {
         if (Ground[y_i][0] == T_PATH) {
             StartPathX = 0;
             StartPathY = y_i;
         }
 
-        if (Ground[y_i][32 - 1] == T_PATH) {
-            StartPathX = 32 - 1;
+        if (Ground[y_i][TILES_X - 1] == T_PATH) {
+            StartPathX = TILES_X - 1;
             StartPathY = y_i;
         }
     }
@@ -117,7 +117,7 @@ void DrawWorldRectangle(float x, float y, float width, float height, color32 col
 }
 
 void DrawWorldBitmap(float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
-    DrawScreenBitmap((int) (GRID_SIZE * x), (int) (GRID_SIZE * y), bitmap, wantedColor);
+    DrawScreenBitmap((int) (GRID_SIZE * x) + (GRID_SIZE - bitmap.Width) / 2, (int) (GRID_SIZE * y) + (GRID_SIZE - bitmap.Height) / 2, bitmap, wantedColor);
 }
 
 void DrawWorldDisc(float x, float y, float radius, color32 col) {
@@ -130,7 +130,7 @@ void DrawWorldCircle(float x, float y, float radius, color32 col) {
 
 void DrawBlock(int x, int y, color32 col) {
     // NOTE(Tobi): I don't know whether I like this function anymore; should I just call DrawWorldRectangle?
-    DrawScreenRectangle((int) (GRID_SIZE * x) + 1, (int) (GRID_SIZE * y) + 1, 32 - 2, 32 - 2, col);
+    DrawScreenRectangle((int) (GRID_SIZE * x) + 1, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
 }
 
 void Update(color32* array, int width, int height, inputs* ins) {
@@ -158,7 +158,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 int xCell = ins->Mouse.PosX / GRID_SIZE;
                 int yCell = ins->Mouse.PosY / GRID_SIZE;
 
-                if (xCell >= 0 && xCell < 32 && yCell >= 0 && yCell < 32) {
+                if (xCell >= 0 && xCell <TILES_X && yCell >= 0 && yCell < TILES_Y) {
                     Ground[yCell][xCell] = T_PATH;
                 }
             }
@@ -167,7 +167,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 int xCell = ins->Mouse.PosX / GRID_SIZE;
                 int yCell = ins->Mouse.PosY / GRID_SIZE;
 
-                if (xCell >= 0 && xCell < 32 && yCell >= 0 && yCell < 32) {
+                if (xCell >= 0 && xCell < TILES_X && yCell >= 0 && yCell < TILES_Y) {
                     Ground[yCell][xCell] = T_GRASS;
                 }
             }
@@ -176,7 +176,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 int xCell = ins->Mouse.PosX / GRID_SIZE;
                 int yCell = ins->Mouse.PosY / GRID_SIZE;
 
-                if (xCell >= 0 && xCell < 32 && yCell >= 0 && yCell < 32) {
+                if (xCell >= 0 && xCell < TILES_X && yCell >= 0 && yCell < TILES_Y) {
                     if (Ground[yCell][xCell] == T_TOWER) {
                         Ground[yCell][xCell] = T_GOAL;
                     } else {
@@ -245,7 +245,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                     }
                     
-                    if (monster_->GoalPosition.Y < 32 - 2 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
+                    if (monster_->GoalPosition.Y < TILES_Y - 2 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
                         int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X];
                         if (proposedDistance < closestDistance) {
                             closestDistance = proposedDistance;
@@ -259,7 +259,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         }
                     }
                     
-                    if (monster_->GoalPosition.X < 32 - 2 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1]) {
+                    if (monster_->GoalPosition.X < TILES_X - 2 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1]) {
                         int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1];
                         if (proposedDistance < closestDistance) {
                             closestDistance = proposedDistance;
@@ -310,22 +310,22 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         monster_->OldPosition.X = -1;
                     }
 
-                    if (monster_->OldPosition.X == 32 - 1) {
-                        monster_->OldPosition.X = 32;
+                    if (monster_->OldPosition.X == TILES_X - 1) {
+                        monster_->OldPosition.X = TILES_X;
                     }
 
                     if (monster_->OldPosition.Y == 0) {
                         monster_->OldPosition.Y = -1;
                     }
 
-                    if (monster_->OldPosition.Y == 32 - 1) {
-                        monster_->OldPosition.Y = 32;
+                    if (monster_->OldPosition.Y == TILES_Y - 1) {
+                        monster_->OldPosition.Y = TILES_Y;
                     }
 
                     monster_->ActualPosition.X = (float) monster_->OldPosition.X;
                     monster_->ActualPosition.Y = (float) monster_->OldPosition.Y;
 
-                    monster_->Radius = (rand() % 6 + 5) / 32.0f;
+                    monster_->Radius = (rand() % 6 + 5) / (float)GRID_SIZE;
                     monster_->Speed = 1 / (float) (rand() % 11 + 10);
                 }
             }
@@ -339,6 +339,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 --diamond_->CooldownFrames;
                 continue;
             }
+
+            // Right menu or being dragged
+            if (diamond_->TilePosition.X >= TILES_X) { continue; }
 
             int targetIndex = -1;
             int closestDistanceToGoal = 999999999;
@@ -437,9 +440,103 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }   
         }
+
+        // Menu logic
+        {
+            bool shallDrop = false;
+
+            if (ins->Mouse.Left.Down) {
+                if (ins->Mouse.Left.Toggled) {
+                    // Clicked
+                    vec2i mouseTilePos = { ins->Mouse.PosX / GRID_SIZE, ins->Mouse.PosY / GRID_SIZE };
+
+                    inc0 (diamond_i,   DiamondCount) {
+                        diamond* diamond_ = &DiamondList[diamond_i];
+                        //if (diamond_->TilePosition == mouseTilePos) {
+                        if ((int)diamond_->TilePosition.X == mouseTilePos.X && (int)diamond_->TilePosition.Y == mouseTilePos.Y) {
+                            diamond_->TilePosition = DRAG_DROP_POSITION;
+                            Menu.DragDrop.Diamond = diamond_;
+                            Menu.DragDrop.Origin = mouseTilePos;
+
+                            if (mouseTilePos.X >= TILES_X) {
+                                // this diamond is in the Menu
+                                vec2i menuTilePos;
+                                menuTilePos.X = mouseTilePos.X - TILES_X;
+                                menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
+
+                                //Menu.StoredDiamonds[][];
+                            }
+
+                            break;
+                        }
+                    }
+                } else {
+                    // Already holding
+                    if (ins->Mouse.PosX < 0 || ins->Mouse.PosX >= ArrayWidth || ins->Mouse.PosY < 0 || ins->Mouse.PosY >= ArrayHeight) {
+                        // TODO(Tobi): This never gets called
+                        // TODO(Tobi): Do I actually want to trigger the drop logic though?; I think I would rather not draw it when outside (given that I actually get the correct mouse position)
+                        shallDrop = true;
+                    }
+                }
+            } else {
+                // true if Released
+                shallDrop = ins->Mouse.Left.Toggled;
+            }
+
+            if (shallDrop) {
+                if (Menu.DragDrop.Diamond) {
+
+                    vec2i mouseTilePos = { ins->Mouse.PosX / GRID_SIZE, ins->Mouse.PosY / GRID_SIZE };
+
+                    // Game and Menu are almost identical
+                    bool canDropHere = false;
+                    if (mouseTilePos.X < TILES_X) {
+                        // Game
+                        if (Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER) {
+                            canDropHere = true;
+                        }
+                    } else {
+                        // Menu
+                        vec2i menuTilePos;
+                        menuTilePos.X = mouseTilePos.X - TILES_X;
+                        menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
+
+                        if (menuTilePos.X < MENU_DIAMONDS_X && menuTilePos.Y >= 0 && menuTilePos.Y < MENU_DIAMONDS_Y) {
+                            canDropHere = true;
+                        }
+                    }
+
+                    if (canDropHere) {
+                        diamond* exchangeDiamond = nullptr;
+                        inc0(diamond_i,   DiamondCount) {
+                            diamond* diamond_ = &DiamondList[diamond_i];
+
+                            if ((int) diamond_->TilePosition.X == mouseTilePos.X && (int) diamond_->TilePosition.Y == mouseTilePos.Y) {
+                                exchangeDiamond = diamond_;
+                                break;
+                            }
+                        }
+
+                        if (exchangeDiamond) {
+                            exchangeDiamond->TilePosition = vec2f { (float) Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
+                        }
+
+                        Menu.DragDrop.Diamond->TilePosition = vec2f { (float) mouseTilePos.X, (float) mouseTilePos.Y };
+                    }
+
+                    if (!canDropHere) {
+                        // Move back to where it was
+                        Menu.DragDrop.Diamond->TilePosition = vec2f { (float)Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
+                        Menu.DragDrop.Diamond = nullptr;
+                    }
+
+                    Menu.DragDrop.Diamond = nullptr;
+                }
+            }
+        }
     }
 
-    // Render
+    // Rendering
     {
         if (IsLevelEditorActive) {
             DrawScreenRectangle(0, 0, width, height, COL32_RGB(0, 0, 192));
@@ -448,8 +545,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         // Render terrain
-        inc0 (y_i,   32) {
-            inc0 (x_i,   32) {
+        inc0 (y_i,   TILES_Y) {
+            inc0 (x_i,   TILES_X) {
                 color32 col;
                 switch (Ground[y_i][x_i]) {
                     case T_GRASS: {
@@ -469,6 +566,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     } break;
                 }
                 DrawBlock(x_i, y_i, col);
+            }
+        }
+
+        // Render right menu
+        inc0 (y_i,   MENU_DIAMONDS_Y) {
+            inc0 (x_i,   MENU_DIAMONDS_X) {
+                DrawBlock(x_i + TILES_X, y_i + MENU_OFFSET_TILES_Y, DARK_GREY);
             }
         }
 
@@ -509,19 +613,30 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawWorldBitmap(diamond_->TilePosition.X, diamond_->TilePosition.Y, Cogwheels[FrameCount % 30 / 10], diamond_->Color);
             //  COL32_RGB(40, 20, 170)
 
-            // Render Diamond Range
-            DrawWorldCircle(diamond_->TilePosition.X, diamond_->TilePosition.Y, diamond_->RangeRadius, YELLOW);
+            if (diamond_->TilePosition.X < TILES_X) {
+                // Only in field; not in menu
 
-            // Render Diamond Cooldown
-            if (diamond_->CooldownFrames) {
-                DrawWorldRectangle(diamond_->TilePosition.X - 0.5f, diamond_->TilePosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
+                // Render Diamond Range
+                DrawWorldCircle(diamond_->TilePosition.X, diamond_->TilePosition.Y, diamond_->RangeRadius, YELLOW);
+
+                // Render Diamond Cooldown
+                if (diamond_->CooldownFrames) {
+                    DrawWorldRectangle(diamond_->TilePosition.X - 0.5f, diamond_->TilePosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
+                }
+
             }
         }
 
         // Render Projetiles
         inc0 (projectile_i,   ProjectileCount) {
             projectile* projectile_ = &Projectiles[projectile_i];
-            DrawWorldDisc(projectile_->Position.X, projectile_->Position.Y, 4 / 32.0f, RED);
+            DrawWorldDisc(projectile_->Position.X, projectile_->Position.Y, 4 / (float)GRID_SIZE, RED);
+        }
+
+        // Render drag-drop diamond
+        if (Menu.DragDrop.Diamond) {
+            loaded_bitmap bitmap = Cogwheels[0];
+            DrawScreenBitmap(ins->Mouse.PosX - bitmap.Width / 2, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->Color);
         }
 
     }

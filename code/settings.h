@@ -5,10 +5,15 @@
 #define FPS 60
 #define DELTA_TIME (    1 / (float) FPS)
 
-#define GRID_SIZE 32
+#define GRID_SIZE 54
 
-#define WINDOW_WIDTH (32 * GRID_SIZE)
-#define WINDOW_HEIGHT (32 * GRID_SIZE)
+#define TILES_X 20
+#define TILES_Y 10
+
+#define RIGHT_MENU_WIDTH (GRID_SIZE * 3)
+
+#define WINDOW_WIDTH (TILES_X * GRID_SIZE + RIGHT_MENU_WIDTH)
+#define WINDOW_HEIGHT (TILES_Y * GRID_SIZE)
 
 // NOTE: x-offset; change when using a second monitor
 //#define MONITOR_OFFSET 1920

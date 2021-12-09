@@ -15,8 +15,8 @@ void DrawScreenBitmap(int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
     int startX = AtLeast(-x, 0);
     int startY = AtLeast(-y, 0);
 
-    int endX = AtMost(bitmap.Width, ArrayWidth);
-    int endY = AtMost(bitmap.Height, ArrayHeight);
+    int endX = AtMost(bitmap.Width, ArrayWidth - x);
+    int endY = AtMost(bitmap.Height, ArrayHeight - y);
 
     inc (y_i,   startY,    endY) {
         inc (x_i,   startX,    endX) {
