@@ -27,12 +27,18 @@ struct monster {
 };
 
 struct diamond {
+    bool Inactive;
+
     vec2f TilePosition;
 
     float RangeRadius;
     int CooldownFrames;
-    int MaxCooldown;
-    color32 Color;
+    int MaxCooldown; // Make these float?
+    float Damage;
+
+    int ColorsCount[6];
+
+    color32 MixedColor; // NOTE(Tobi): This is only used so I don't have to calculalte it every frame; it is completely redundant though
 };
 
 struct projectile {
@@ -41,6 +47,9 @@ struct projectile {
     unsigned int TargetGeneration;
     float Speed;
     float Damage;
+    color32 Color;
+
+    vec2f Direction;
 
     vec2f BuildupDelta;
     int BuildupFrames;
@@ -75,6 +84,10 @@ projectile Projectiles[TILES_Y * TILES_X];
 loaded_bitmap Cogwheels[3];
 loaded_bitmap MonsterSprites[8];
 
+loaded_bitmap IconBuy;
+loaded_bitmap IconLevelUp;
+loaded_bitmap IconMerge;
+
 color32 DiamondColors[6] = {
     RED,
     GREEN,
@@ -92,8 +105,20 @@ color32 DiamondColors[6] = {
 
 #define DRAG_DROP_POSITION vec2f { 99999.0f, 99999.0f }
 
+// TODO(Tobi): This doesn't fit with the animation since the bar will now be bigger instead of going slower
+// TODO(Tobi): I don't set the socketing cooldown to the exchanged diamond
+#define SOCKETING_COOLDOWN 200;
+#define DIAMOND_LEVEL_1_RANGE 4.0f
+#define DIAMOND_LEVEL_1_COOLDOWN 60
+#define DIAMOND_LEVEL_1_DAMAGE 10.0f
+
+#define PROJECTILE_SPEED 0.4f
+
 struct menu_data {
-    diamond* StoredDiamonds[MENU_DIAMONDS_Y][MENU_DIAMONDS_X];
+    bool ShallMerge;
+    bool ShallLevelUp;
+    bool ShallBuy;
+
     struct {
         diamond* Diamond;
         vec2i Origin;
@@ -101,3 +126,7 @@ struct menu_data {
 };
 
 menu_data Menu;
+
+#define KEY_MERGE F4
+#define KEY_LEVEL_UP F3
+#define KEY_BUY F2

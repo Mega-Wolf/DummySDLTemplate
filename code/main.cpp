@@ -11,19 +11,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void InitDistanceArrayAndFillTowers() {
-    DiamondCount = 0;
+void InitDistanceArray() {
+
+    /// Reset DistanceToGoal
     inc0 (y_i,   TILES_Y) {
         inc0 (x_i,   TILES_X) {
-            if (Ground[y_i][x_i] == T_TOWER) {
-                diamond* newDiamond = &DiamondList[DiamondCount++];
-                *newDiamond = {};
-                newDiamond->TilePosition = vec2f { (float)x_i, (float)y_i };
-                newDiamond->RangeRadius = 4.0f;
-                newDiamond->MaxCooldown = 60;
-                newDiamond->Color = DiamondColors[rand() % 6];
-            }
-
             if (Ground[y_i][x_i] == T_GOAL) {
                 DistanceToGoal[y_i][x_i] = 1;
             } else {
@@ -32,6 +24,7 @@ void InitDistanceArrayAndFillTowers() {
         }
     }
 
+    /// Fill DistanceToGoal
     int currentDistance = 0;
     bool changedSomething = true;
     while (changedSomething) {
@@ -79,6 +72,10 @@ void Init() {
     MonsterSprites[6] = BitmapLoad("assets\\sprites\\MonsterLeft.bmp");
     MonsterSprites[7] = BitmapLoad("assets\\sprites\\MonsterUpLeft.bmp");
 
+    IconBuy     = BitmapLoad("assets\\sprites\\Buy.bmp");
+    IconLevelUp = BitmapLoad("assets\\sprites\\LevelUp.bmp");
+    IconMerge   = BitmapLoad("assets\\sprites\\Merge.bmp");
+
     FILE* file = fopen("assets/levels/dummy.lvl", "rb");
     if (file != nullptr) {
         fread(Ground, sizeof(Ground), 1, file);
@@ -109,28 +106,14 @@ void Init() {
         }
     }
 
-    InitDistanceArrayAndFillTowers();
+    InitDistanceArray();
 }
 
-void DrawWorldRectangle(float x, float y, float width, float height, color32 col) {
-    DrawScreenRectangle((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
-}
-
-void DrawWorldBitmap(float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
-    DrawScreenBitmap((int) (GRID_SIZE * x) + (GRID_SIZE - bitmap.Width) / 2, (int) (GRID_SIZE * y) + (GRID_SIZE - bitmap.Height) / 2, bitmap, wantedColor);
-}
-
-void DrawWorldDisc(float x, float y, float radius, color32 col) {
-    DrawScreenDisc((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
-}
-
-void DrawWorldCircle(float x, float y, float radius, color32 col) {
-    DrawScreenCircle((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
-}
-
-void DrawBlock(int x, int y, color32 col) {
-    // NOTE(Tobi): I don't know whether I like this function anymore; should I just call DrawWorldRectangle?
-    DrawScreenRectangle((int) (GRID_SIZE * x) + 1, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
+void DiamondSetValues(diamond* dim, int count) {
+    dim->Damage = count * DIAMOND_LEVEL_1_DAMAGE;
+    dim->RangeRadius = sqrtf(1.0f + (count - 1) /100.0f)  * DIAMOND_LEVEL_1_RANGE;
+    dim->MaxCooldown = (int) (powf(0.975f, (float) (count - 1)) * DIAMOND_LEVEL_1_COOLDOWN);
+    dim->CooldownFrames = SOCKETING_COOLDOWN;
 }
 
 void Update(color32* array, int width, int height, inputs* ins) {
@@ -142,17 +125,17 @@ void Update(color32* array, int width, int height, inputs* ins) {
     ArrayWidth = width;
     ArrayHeight = height;
 
-    // Handle Input
+    /// Handle Input
     {
         if (IS_KEY_PRESSED(F1)) {
             IsLevelEditorActive = !IsLevelEditorActive;
 
             if (!IsLevelEditorActive) {
-                InitDistanceArrayAndFillTowers();
+                InitDistanceArray();
             }
         }
 
-        // "Level Editor"
+        /// "Level Editor"
         if (IsLevelEditorActive) {
             if (ins->Mouse.Left.Down) {
                 int xCell = ins->Mouse.PosX / GRID_SIZE;
@@ -185,16 +168,39 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }
         }
+
+        /// Buy / Level up / Merge etc.
+        if (IS_KEY_PRESSED(KEY_BUY)) {
+            Menu.ShallBuy = !Menu.ShallBuy;
+            if (Menu.ShallBuy) {
+                Menu.ShallLevelUp = false;
+                Menu.ShallMerge = false;
+            }
+        }
+        if (IS_KEY_PRESSED(KEY_LEVEL_UP)) {
+            Menu.ShallLevelUp = !Menu.ShallLevelUp;
+            if (Menu.ShallLevelUp) {
+                Menu.ShallBuy = false;
+                Menu.ShallMerge = false;
+            }
+        }
+        if (IS_KEY_PRESSED(KEY_MERGE)) {
+            Menu.ShallMerge = !Menu.ShallMerge;
+            if (Menu.ShallMerge) {
+                Menu.ShallBuy = false;
+                Menu.ShallLevelUp = false;
+            }
+        }
     }
 
-    // Logic Update
+    /// Logic Update
     //if (IS_KEY_PRESSED(Space)) {
     if (!IsLevelEditorActive) {
         ++FrameCount;
 
-        // Update Monsters
+        /// Update Monsters
         {
-            // Movement and pathfinding
+            /// Movement and pathfinding
             int firstDeadMonster = -1;
             inc0 (monster_i,   MonsterListEnd) {
                 monster* monster_ = &Monsters[monster_i];
@@ -211,7 +217,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     int distanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
                     if (distanceToGoal == 1) {
                         // TODO(Tobi): Reached goal; what do I do now
-                        // Fow now, I just delete myself
+                        // For now, I just delete myself
 
                         monster_->Health = 0;
                         continue;
@@ -242,7 +248,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             }
                             sameAmount = 2;
                         }
-
                     }
                     
                     if (monster_->GoalPosition.Y < TILES_Y - 2 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
@@ -285,7 +290,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 monster_->ActualPosition.Y = (1 - monster_->MovementT) * monster_->OldPosition.Y + monster_->MovementT * monster_->GoalPosition.Y;
             }
 
-            // Spawn monsters
+            /// Spawn monsters
             if (FrameCount % 30 == 0) {
                 if (firstDeadMonster == -1) {
                     if (MonsterListEnd < MONSTER_COUNT_MAX) {
@@ -331,9 +336,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        // Update Diamonds
+        /// Update Diamonds
         inc0 (diamond_i,   DiamondCount) {
             diamond* diamond_ = &DiamondList[diamond_i];
+            if (diamond_->Inactive) { continue; }
 
             if (diamond_->CooldownFrames > 0) {
                 --diamond_->CooldownFrames;
@@ -343,9 +349,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
             // Right menu or being dragged
             if (diamond_->TilePosition.X >= TILES_X) { continue; }
 
+            /// Find target monster
+            // TODO(Tobi): This will target monsters outside the level since there is no DistanceToGoal set there
             int targetIndex = -1;
             int closestDistanceToGoal = 999999999;
-
             inc0 (monster_i,   MonsterListEnd) {
                 monster* monster_ = &Monsters[monster_i];
                 if (!monster_->Health) { continue; }
@@ -370,14 +377,16 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }
 
+            /// Create projectile if target monster
             if (targetIndex != -1) {
                 diamond_->CooldownFrames = diamond_->MaxCooldown;
 
                 projectile* newProjectile = &Projectiles[ProjectileCount++];
                 *newProjectile = {};
+                newProjectile->Color = diamond_->MixedColor;
                 newProjectile->Position = diamond_->TilePosition;
-                newProjectile->Damage = 10;
-                newProjectile->Speed = 0.4f;
+                newProjectile->Damage = diamond_->Damage;
+                newProjectile->Speed = PROJECTILE_SPEED;
                 newProjectile->Target = &Monsters[targetIndex];
                 newProjectile->TargetGeneration = newProjectile->Target->Generation;
 
@@ -392,7 +401,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        // Update Projectiles
+        /// Update Projectiles
         inc0 (projectile_i,   ProjectileCount) {
             projectile* projectile_ = &Projectiles[projectile_i];
 
@@ -408,6 +417,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                 projectile_->Position.X += projectile_->BuildupDelta.X;
                 projectile_->Position.Y += projectile_->BuildupDelta.Y;
+
+                projectile_->Direction = projectile_->BuildupDelta;
             } else {
                 vec2f delta;
                 delta.X = target->ActualPosition.X - projectile_->Position.X;
@@ -437,41 +448,80 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                     projectile_->Position.X += delta.X;
                     projectile_->Position.Y += delta.Y;
+
+                    projectile_->Direction = delta;
                 }
-            }   
+            }
         }
 
-        // Menu logic
+        /// Menu logic
         {
             bool shallDrop = false;
 
             if (ins->Mouse.Left.Down) {
                 if (ins->Mouse.Left.Toggled) {
-                    // Clicked
+                    /// Clicked
                     vec2i mouseTilePos = { ins->Mouse.PosX / GRID_SIZE, ins->Mouse.PosY / GRID_SIZE };
 
+                    bool didSomething = false;
                     inc0 (diamond_i,   DiamondCount) {
                         diamond* diamond_ = &DiamondList[diamond_i];
+                        if (diamond_->Inactive) { continue; }
+
                         //if (diamond_->TilePosition == mouseTilePos) {
                         if ((int)diamond_->TilePosition.X == mouseTilePos.X && (int)diamond_->TilePosition.Y == mouseTilePos.Y) {
-                            diamond_->TilePosition = DRAG_DROP_POSITION;
-                            Menu.DragDrop.Diamond = diamond_;
-                            Menu.DragDrop.Origin = mouseTilePos;
+                            if (Menu.ShallLevelUp) {
+                                Menu.ShallLevelUp = false;
+                                // Double all the color counts
+                                int count = 0;
+                                inc0 (color_i,   6) {
+                                    diamond_->ColorsCount[color_i] *= 2;
+                                    count += diamond_->ColorsCount[color_i];
+                                }
+                                DiamondSetValues(diamond_, count);
+                            } else {
+                                diamond_->TilePosition = DRAG_DROP_POSITION;
+                                Menu.DragDrop.Diamond = diamond_;
+                                Menu.DragDrop.Origin = mouseTilePos;
 
-                            if (mouseTilePos.X >= TILES_X) {
-                                // this diamond is in the Menu
-                                vec2i menuTilePos;
-                                menuTilePos.X = mouseTilePos.X - TILES_X;
-                                menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
-
-                                //Menu.StoredDiamonds[][];
+                                if (mouseTilePos.X >= TILES_X) {
+                                    // this diamond is in the Menu
+                                    vec2i menuTilePos;
+                                    menuTilePos.X = mouseTilePos.X - TILES_X;
+                                    menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
+                                }
                             }
 
+                            didSomething = true;
                             break;
                         }
                     }
+
+                    if (!didSomething && Menu.ShallBuy) {
+                        vec2i menuTilePos;
+                        menuTilePos.X = mouseTilePos.X - TILES_X;
+                        menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
+
+                        bool isInGame = mouseTilePos.X < TILES_X && mouseTilePos.Y < TILES_Y;
+                        bool isInMenu = menuTilePos.X >= 0 && menuTilePos.X < MENU_DIAMONDS_X && menuTilePos.Y >= 0 && menuTilePos.Y < MENU_DIAMONDS_Y;
+
+                        if (isInMenu || (isInGame && Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER)) {
+                            diamond* newDiamond = &DiamondList[DiamondCount++];
+                            *newDiamond = {};
+                            newDiamond->TilePosition = vec2f { (float)mouseTilePos.X, (float)mouseTilePos.Y };
+                            newDiamond->Damage = DIAMOND_LEVEL_1_DAMAGE;
+                            newDiamond->RangeRadius = DIAMOND_LEVEL_1_RANGE;
+                            newDiamond->MaxCooldown = DIAMOND_LEVEL_1_COOLDOWN;
+
+                            int randomColor = rand() % 6;
+                            newDiamond->ColorsCount[randomColor] = 1;
+                            newDiamond->MixedColor = DiamondColors[randomColor];
+                        }
+                    }
+
+                    Menu.ShallBuy = false;
                 } else {
-                    // Already holding
+                    /// Already holding
                     if (ins->Mouse.PosX < 0 || ins->Mouse.PosX >= ArrayWidth || ins->Mouse.PosY < 0 || ins->Mouse.PosY >= ArrayHeight) {
                         // TODO(Tobi): This never gets called
                         // TODO(Tobi): Do I actually want to trigger the drop logic though?; I think I would rather not draw it when outside (given that I actually get the correct mouse position)
@@ -490,13 +540,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                     // Game and Menu are almost identical
                     bool canDropHere = false;
-                    if (mouseTilePos.X < TILES_X) {
-                        // Game
+                    if (mouseTilePos.X < TILES_X && mouseTilePos.Y < TILES_Y) {
+                        /// Game
                         if (Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER) {
                             canDropHere = true;
                         }
                     } else {
-                        // Menu
+                        /// Menu
                         vec2i menuTilePos;
                         menuTilePos.X = mouseTilePos.X - TILES_X;
                         menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
@@ -506,10 +556,16 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         }
                     }
 
+                    bool sameTileAsGrabbed = Menu.DragDrop.Origin.X == mouseTilePos.X && (int) Menu.DragDrop.Origin.Y == mouseTilePos.Y;
+                    if (sameTileAsGrabbed) {
+                        canDropHere = false;
+                    }
+
                     if (canDropHere) {
                         diamond* exchangeDiamond = nullptr;
                         inc0(diamond_i,   DiamondCount) {
                             diamond* diamond_ = &DiamondList[diamond_i];
+                            if (diamond_->Inactive) { continue; }
 
                             if ((int) diamond_->TilePosition.X == mouseTilePos.X && (int) diamond_->TilePosition.Y == mouseTilePos.Y) {
                                 exchangeDiamond = diamond_;
@@ -518,25 +574,55 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         }
 
                         if (exchangeDiamond) {
-                            exchangeDiamond->TilePosition = vec2f { (float) Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
+                            if (Menu.ShallMerge) {
+                                /// Merge diamonds
+
+                                /// Merge colors
+                                int red = 0;
+                                int green = 0;
+                                int blue = 0;
+                                int count = 0;
+                                inc0 (color_i,   6) {
+                                    exchangeDiamond->ColorsCount[color_i] += Menu.DragDrop.Diamond->ColorsCount[color_i];
+                                    red += exchangeDiamond->ColorsCount[color_i] * DiamondColors[color_i].Red;
+                                    green += exchangeDiamond->ColorsCount[color_i] * DiamondColors[color_i].Green;
+                                    blue += exchangeDiamond->ColorsCount[color_i] * DiamondColors[color_i].Blue;
+                                    count += exchangeDiamond->ColorsCount[color_i];
+                                }
+                                exchangeDiamond->MixedColor = COL32_RGB(red / count, green / count, blue / count);
+
+                                DiamondSetValues(exchangeDiamond, count);
+
+                                Menu.DragDrop.Diamond->Inactive = true;
+                            } else {
+                                /// Actually exchange
+                                exchangeDiamond->TilePosition = vec2f { (float) Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
+                            }
                         }
 
+                        // TODO(Tobi): Ask if merge button was pressed
+
                         Menu.DragDrop.Diamond->TilePosition = vec2f { (float) mouseTilePos.X, (float) mouseTilePos.Y };
+                        Menu.DragDrop.Diamond->CooldownFrames = SOCKETING_COOLDOWN;
                     }
 
                     if (!canDropHere) {
-                        // Move back to where it was
+                        /// Move back to where it was
                         Menu.DragDrop.Diamond->TilePosition = vec2f { (float)Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
                         Menu.DragDrop.Diamond = nullptr;
                     }
 
                     Menu.DragDrop.Diamond = nullptr;
+
+                    Menu.ShallBuy = false;
+                    Menu.ShallMerge = false;
+                    Menu.ShallLevelUp = false;
                 }
             }
         }
     }
 
-    // Rendering
+    /// Rendering
     {
         if (IsLevelEditorActive) {
             DrawScreenRectangle(0, 0, width, height, COL32_RGB(0, 0, 192));
@@ -544,7 +630,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawScreenRectangle(0, 0, width, height, BLACK);
         }
 
-        // Render terrain
+        /// Render terrain
         inc0 (y_i,   TILES_Y) {
             inc0 (x_i,   TILES_X) {
                 color32 col;
@@ -569,14 +655,14 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        // Render right menu
+        /// Render right menu
         inc0 (y_i,   MENU_DIAMONDS_Y) {
             inc0 (x_i,   MENU_DIAMONDS_X) {
                 DrawBlock(x_i + TILES_X, y_i + MENU_OFFSET_TILES_Y, DARK_GREY);
             }
         }
 
-        // Render Monsters
+        /// Render Monsters
         inc0 (monster_i,   MonsterListEnd) {
             monster* monster_ = &Monsters[monster_i];
             if (!monster_->Health) { continue; }
@@ -601,25 +687,34 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             DrawWorldBitmap(monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], RED);
 
-            // Render Monster Healthbar
+            /// Render Monster Healthbar
             if (monster_->Health < monster_->MaxHealth) {
-                DrawWorldRectangle(monster_->ActualPosition.X - 0.5f, monster_->ActualPosition.Y + 0.5f, AtMost(monster_->Health / monster_->MaxHealth, 1.0f), 1 / 6.0f, RED);
+                DrawWorldRectangle(monster_->ActualPosition.X - 0.5f, monster_->ActualPosition.Y + 0.5f, monster_->Health / monster_->MaxHealth, 1 / 6.0f, RED);
+                DrawWorldRectangle(monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK);
             }
         }
 
-        // Render Diamonds
+        /// Render Diamonds
         inc0 (diamond_i,   DiamondCount) {
             diamond* diamond_ = &DiamondList[diamond_i];
-            DrawWorldBitmap(diamond_->TilePosition.X, diamond_->TilePosition.Y, Cogwheels[FrameCount % 30 / 10], diamond_->Color);
+            if (diamond_->Inactive) { continue; }
+
+            int frame;
+            if (diamond_->TilePosition.X < TILES_X) {
+                frame = FrameCount % 30 / 10;
+            } else {
+                frame = 0;
+            }
+            DrawWorldBitmap(diamond_->TilePosition.X, diamond_->TilePosition.Y, Cogwheels[frame], diamond_->MixedColor);
             //  COL32_RGB(40, 20, 170)
 
             if (diamond_->TilePosition.X < TILES_X) {
-                // Only in field; not in menu
+                /// Only in field; not in menu
 
-                // Render Diamond Range
+                /// Render Diamond Range
                 DrawWorldCircle(diamond_->TilePosition.X, diamond_->TilePosition.Y, diamond_->RangeRadius, YELLOW);
 
-                // Render Diamond Cooldown
+                /// Render Diamond Cooldown
                 if (diamond_->CooldownFrames) {
                     DrawWorldRectangle(diamond_->TilePosition.X - 0.5f, diamond_->TilePosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
                 }
@@ -627,16 +722,46 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        // Render Projetiles
+        /// Render Projectiles
         inc0 (projectile_i,   ProjectileCount) {
             projectile* projectile_ = &Projectiles[projectile_i];
-            DrawWorldDisc(projectile_->Position.X, projectile_->Position.Y, 4 / (float)GRID_SIZE, RED);
+
+            // Drawing the projectile a bit oval; super not worth it; don't do in the series
+            vec2f direction = projectile_->Direction;
+            float length = sqrtf(direction.X * direction.X + direction.Y * direction.Y);
+            direction.X /= length;
+            direction.Y /= length;
+            direction.X /= 32.0f;
+            direction.Y /= 32.0f;
+            DrawWorldDisc(projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
+            DrawWorldDisc(projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
+            DrawWorldDisc(projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 2 / (float)GRID_SIZE, WHITE);
+            DrawWorldDisc(projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 2 / (float)GRID_SIZE, WHITE);
         }
 
-        // Render drag-drop diamond
+        /// Render Menu
+        {
+            DrawWorldBitmap(TILES_X + 0, 2, IconBuy, WHITE);
+            DrawWorldBitmap(TILES_X + 1, 2, IconLevelUp, WHITE);
+            DrawWorldBitmap(TILES_X + 2, 2, IconMerge, WHITE);
+
+            if (Menu.ShallBuy) {
+                DrawWorldBorder(TILES_X + 0 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -1 / 32.0f, -1 / 32.0f, YELLOW);
+            }
+
+            if (Menu.ShallLevelUp) {
+                DrawWorldBorder(TILES_X + 1 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -1 / 32.0f, -1 / 32.0f, YELLOW);
+            }
+
+            if (Menu.ShallMerge) {
+                DrawWorldBorder(TILES_X + 2 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -1 / 32.0f, -1 / 32.0f, YELLOW);
+            }
+        }
+
+        /// Render drag-drop diamond
         if (Menu.DragDrop.Diamond) {
             loaded_bitmap bitmap = Cogwheels[0];
-            DrawScreenBitmap(ins->Mouse.PosX - bitmap.Width / 2, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->Color);
+            DrawScreenBitmap(ins->Mouse.PosX - bitmap.Width / 2, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
         }
 
     }

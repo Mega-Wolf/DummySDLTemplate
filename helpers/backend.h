@@ -14,8 +14,8 @@ union color32 {
     };
 };
 
-#define COL32_RGB(red, green, blue)         { (unsigned int) ((((unsigned char)  255) << 24) | (((unsigned char) red) << 16) | (((unsigned char) green) << 8) | (((unsigned char) blue)) ) }
-#define COL32_RGBA(red, green, blue, alpha) { (unsigned int) ((((unsigned char)alpha) << 24) | (((unsigned char) red) << 16) | (((unsigned char) green) << 8) | (((unsigned char) blue)) ) }
+#define COL32_RGB(red, green, blue)         { (unsigned int) ((((unsigned char)     255) << 24) | (((unsigned char) (red)) << 16) | (((unsigned char) (green)) << 8) | (((unsigned char) (blue))) ) }
+#define COL32_RGBA(red, green, blue, alpha) { (unsigned int) ((((unsigned char) (alpha)) << 24) | (((unsigned char) (red)) << 16) | (((unsigned char) (green)) << 8) | (((unsigned char) (blue))) ) }
 
 const color32 RED         = COL32_RGB(255,   0,   0);
 const color32 DARK_GREEN  = COL32_RGB(  0, 128,   0);

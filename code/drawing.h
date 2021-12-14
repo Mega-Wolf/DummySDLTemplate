@@ -11,6 +11,30 @@ void DrawScreenRectangle(int x, int y, int width, int height, color32 col) {
     }
 }
 
+// Negative border width/height means border goes inside
+void DrawScreenBorder(int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col) {
+
+    if (borderWidth > 0) {
+        x -= borderWidth;
+        width += borderWidth * 2;
+    } else {
+        borderWidth = -borderWidth;
+    }
+
+    if (borderHeight > 0) {
+        y -= borderHeight;
+        height += borderHeight * 2;
+    } else {
+        borderHeight = -borderHeight;
+    }
+
+    DrawScreenRectangle(x, y, width, borderHeight, col);
+    DrawScreenRectangle(x, y + height - borderHeight, width, borderHeight, col);
+
+    DrawScreenRectangle(x, y, borderWidth, height, col);
+    DrawScreenRectangle(x + width - borderWidth, y, borderWidth, height, col);
+}
+
 void DrawScreenBitmap(int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
     int startX = AtLeast(-x, 0);
     int startY = AtLeast(-y, 0);
@@ -21,7 +45,7 @@ void DrawScreenBitmap(int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
     inc (y_i,   startY,    endY) {
         inc (x_i,   startX,    endX) {
             color32 bitmapColor = bitmap.Data[Index2D(x_i, y_i, bitmap.Width)];
-            if (bitmapColor.Alpha > 0) {
+            if (bitmapColor.Alpha > 127) {
 
                 float bitmapRed   = bitmapColor.Red   / 255.0f;
                 float bitmapGreen = bitmapColor.Green / 255.0f;
@@ -91,4 +115,29 @@ void DrawScreenCircle(int x, int y, int radius, color32 col) {
         TrySetPixel(x + offset, y + i, col);
         TrySetPixel(x + offset, y - i, col);
     }
+}
+
+void DrawWorldRectangle(float x, float y, float width, float height, color32 col) {
+    DrawScreenRectangle((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
+}
+
+void DrawWorldBorder(float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
+    DrawScreenBorder((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), (int) (GRID_SIZE * borderWidth), (int) (GRID_SIZE * borderHeight), col);
+}
+
+void DrawWorldBitmap(float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
+    DrawScreenBitmap((int) (GRID_SIZE * x) + (GRID_SIZE - bitmap.Width) / 2, (int) (GRID_SIZE * y) + (GRID_SIZE - bitmap.Height) / 2, bitmap, wantedColor);
+}
+
+void DrawWorldDisc(float x, float y, float radius, color32 col) {
+    DrawScreenDisc((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
+}
+
+void DrawWorldCircle(float x, float y, float radius, color32 col) {
+    DrawScreenCircle((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
+}
+
+void DrawBlock(int x, int y, color32 col) {
+    // NOTE(Tobi): I don't know whether I like this function anymore; should I just call DrawWorldRectangle?
+    DrawScreenRectangle((int) (GRID_SIZE * x) + 1, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
 }

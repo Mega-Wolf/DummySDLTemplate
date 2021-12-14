@@ -1,0 +1,22 @@
+Since I will separate the lectures, 4b is now Sprites
+
+5a is fonts stuff then
+
+5b is maybe some diamonds stuff; like drag-drop, buying, merging, leveling them etc.
+this would also make the add kills necessary
+- drag drop; also consider exchanging when moved on top of something else; the trick is to just keep the diamond position and consider it either left or right depending on their position DONE
+- different coloring scheme; I could have a counter for each variable; the problem is that I can't really show the grade of the diamond yet; but this would be trivial with just writing a number
+  However; in which colour do I actually show the diamonds? I could easily mix those colours, but am not sure if I want that DONE
+- merge; this is basically an extra if in the drag-drop check DONE
+- buy DONE
+- level up; this should be trivial DONE
+
+- Have things light up for the different actions DONE
+
+- Make the buttons clickable (I think this is not important for now; volunteers can do that)
+
+6a might be same as above; maybe also add effects; monster waves
+
+6b music/sound
+
+7 "polish"; disable level editor stuff in final build; show something before start and after end maybe
