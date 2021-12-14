@@ -13,6 +13,36 @@
 
 void InitDistanceArray() {
 
+    /// Find start positions
+    StartPositionsCount = 0;
+    inc0 (x_i,   TILES_X) {
+        if (Ground[0][x_i] == T_PATH) {
+            StartPositions[StartPositionsCount].X = x_i;
+            StartPositions[StartPositionsCount].Y = 0;
+            ++StartPositionsCount;
+        }
+
+        if (Ground[TILES_Y - 1][x_i] == T_PATH) {
+            StartPositions[StartPositionsCount].X = x_i;
+            StartPositions[StartPositionsCount].Y = TILES_Y - 1;
+            ++StartPositionsCount;
+        }
+    }
+
+    inc (y_i,   1,    TILES_Y - 1) {
+        if (Ground[y_i][0] == T_PATH) {
+            StartPositions[StartPositionsCount].X = 0;
+            StartPositions[StartPositionsCount].Y = y_i;
+            ++StartPositionsCount;
+        }
+
+        if (Ground[y_i][TILES_X - 1] == T_PATH) {
+            StartPositions[StartPositionsCount].X = TILES_X - 1;
+            StartPositions[StartPositionsCount].Y = y_i;
+            ++StartPositionsCount;
+        }
+    }
+
     /// Reset DistanceToGoal
     inc0 (y_i,   TILES_Y) {
         inc0 (x_i,   TILES_X) {
@@ -38,7 +68,7 @@ void InitDistanceArray() {
                         changedSomething = true;
                     }
 
-                    if (y_i < TILES_Y - 1 - 1 && !DistanceToGoal[y_i + 1][x_i] && Ground[y_i + 1][x_i] == T_PATH) {
+                    if (y_i < TILES_Y - 1 && !DistanceToGoal[y_i + 1][x_i] && Ground[y_i + 1][x_i] == T_PATH) {
                         DistanceToGoal[y_i + 1][x_i] = currentDistance + 1;
                         changedSomething = true;
                     }
@@ -48,7 +78,7 @@ void InitDistanceArray() {
                         changedSomething = true;
                     }
 
-                    if (x_i < TILES_X - 1 - 1 && !DistanceToGoal[y_i][x_i + 1] && Ground[y_i][x_i + 1] == T_PATH) {
+                    if (x_i < TILES_X - 1 && !DistanceToGoal[y_i][x_i + 1] && Ground[y_i][x_i + 1] == T_PATH) {
                         DistanceToGoal[y_i][x_i + 1] = currentDistance + 1;
                         changedSomething = true;
                     }
@@ -80,30 +110,6 @@ void Init() {
     if (file != nullptr) {
         fread(Ground, sizeof(Ground), 1, file);
         fclose(file);
-    }
-
-    inc0 (x_i,   TILES_X) {
-        if (Ground[0][x_i] == T_PATH) {
-            StartPathX = x_i;
-            StartPathY = 0;
-        }
-
-        if (Ground[TILES_Y - 1][x_i] == T_PATH) {
-            StartPathX = x_i;
-            StartPathY = TILES_Y - 1;
-        }
-    }
-
-    inc (y_i,   1,    TILES_Y - 1) {
-        if (Ground[y_i][0] == T_PATH) {
-            StartPathX = 0;
-            StartPathY = y_i;
-        }
-
-        if (Ground[y_i][TILES_X - 1] == T_PATH) {
-            StartPathX = TILES_X - 1;
-            StartPathY = y_i;
-        }
     }
 
     InitDistanceArray();
@@ -250,7 +256,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         }
                     }
                     
-                    if (monster_->GoalPosition.Y < TILES_Y - 2 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
+                    if (monster_->GoalPosition.Y < TILES_Y - 1 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
                         int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X];
                         if (proposedDistance < closestDistance) {
                             closestDistance = proposedDistance;
@@ -264,7 +270,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         }
                     }
                     
-                    if (monster_->GoalPosition.X < TILES_X - 2 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1]) {
+                    if (monster_->GoalPosition.X < TILES_X - 1 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1]) {
                         int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1];
                         if (proposedDistance < closestDistance) {
                             closestDistance = proposedDistance;
@@ -306,10 +312,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     monster_->MaxHealth = 50;
                     monster_->Health = monster_->MaxHealth;
 
-                    monster_->GoalPosition.X = StartPathX;
-                    monster_->GoalPosition.Y = StartPathY;
-                    monster_->OldPosition.X = StartPathX;
-                    monster_->OldPosition.Y = StartPathY;
+                    int startPositionIndex = rand() % StartPositionsCount;
+                    monster_->GoalPosition = StartPositions[startPositionIndex];
+                    monster_->OldPosition = monster_->GoalPosition;
 
                     if (monster_->OldPosition.X == 0) {
                         monster_->OldPosition.X = -1;
@@ -352,7 +357,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             /// Find target monster
             // TODO(Tobi): This will target monsters outside the level since there is no DistanceToGoal set there
             int targetIndex = -1;
-            int closestDistanceToGoal = 999999999;
+            float closestDistanceToGoal = 999999999.0f;
             inc0 (monster_i,   MonsterListEnd) {
                 monster* monster_ = &Monsters[monster_i];
                 if (!monster_->Health) { continue; }
@@ -365,10 +370,16 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 float effectiveShootingRange = diamond_->RangeRadius + monster_->Radius;
                 float effectiveShootingRangeSq = effectiveShootingRange * effectiveShootingRange;
                 if (distanceSq <= effectiveShootingRangeSq) {
-                    // TODO(Tobi): This might break when I will use diagonal movement
-                    int tileX = (int) (monster_->ActualPosition.X + 0.5f);
-                    int tileY = (int) (monster_->ActualPosition.Y + 0.5f);
-                    int distanceToGoal = DistanceToGoal[tileY][tileX];
+                    int newDistanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
+                    int oldDistanceToGoal;
+                    if (monster_->OldPosition.X == -1 || monster_->OldPosition.X == TILES_X || monster_->OldPosition.Y == -1 || monster_->OldPosition.Y == TILES_Y) {
+                        oldDistanceToGoal = newDistanceToGoal + 1;
+                    } else {
+                        oldDistanceToGoal = DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X];
+                    }
+
+                    float t = monster_->MovementT;
+                    float distanceToGoal = t * newDistanceToGoal + (1 - t) *  oldDistanceToGoal;
 
                     if (distanceToGoal < closestDistanceToGoal) {
                         closestDistanceToGoal = distanceToGoal;

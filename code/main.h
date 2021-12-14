@@ -66,8 +66,8 @@ terrain Ground[TILES_Y][TILES_X];
 
 bool IsLevelEditorActive;
 
-int StartPathX = -1;
-int StartPathY = -1;
+int StartPositionsCount;
+vec2i StartPositions[TILES_Y * 2 + (TILES_X - 2) * 2];
 
 #define MONSTER_COUNT_MAX 100
 int MonsterListEnd; // TODO(Tobi): Decrease MonsterListEnd if we have deleted the last monster
