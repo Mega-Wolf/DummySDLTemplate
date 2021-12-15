@@ -118,6 +118,29 @@ void DrawScreenCircle(int x, int y, int radius, color32 col) {
     }
 }
 
+// NOTE(Tobi): This supports rendering only part of the BMP; also it supoports setting a colour
+// void DrawScreenBMPText(int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
+
+void DrawScreenBMPText(int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
+    // TODO(Tobi): Optimise
+    // TODO(Tobi): Assert correct bitmap
+    inc0 (y_i,   bmpHeight) {
+        inc0 (x_i,   bmpWidth) {
+
+            color32 pxColor = bitmap->Data[Index2D(bmpX + x_i, bmpY + y_i, bitmap->Width)];
+            if (pxColor.Alpha <= 127) { continue; } // TODO(Tobi): Actually use alpha
+            float alpha = pxColor.Alpha / 255.0f;
+            color32 resultingColor = {};
+            // TODO(Tobi): Asserts
+            resultingColor.Red   = (unsigned char) (alpha * color.Red   + ((1 - alpha) * pxColor.Red) + 0.5f);
+            resultingColor.Green = (unsigned char) (alpha * color.Green + ((1 - alpha) * pxColor.Green) + 0.5f);
+            resultingColor.Blue  = (unsigned char) (alpha * color.Blue  + ((1 - alpha) * pxColor.Blue) + 0.5f);
+
+            TrySetPixel(x + x_i, y + y_i, resultingColor);
+        }
+    }
+}
+
 void DrawWorldRectangle(float x, float y, float width, float height, color32 col) {
     DrawScreenRectangle((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
 }
@@ -142,3 +165,7 @@ void DrawBlock(int x, int y, color32 col) {
     // NOTE(Tobi): I don't know whether I like this function anymore; should I just call DrawWorldRectangle?
     DrawScreenRectangle((int) (GRID_SIZE * x) + 1 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
 }
+
+// void DrawWorldBMPText(float x, float y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
+//     DrawScreenBMPText((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, bmpX, bmpY, bmpWidth, bmpHeight, color, backgroundColor, bitmap);
+// }

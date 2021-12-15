@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -24,8 +25,8 @@ struct bitmap_header {
     unsigned int Size;
     int Width;
     int Height;
-    unsigned int Planes;
-    unsigned int BitsPerPixel;
+    unsigned short Planes;
+    unsigned short BitsPerPixel;
 
     unsigned int Compression;
     unsigned int SizeOfBitmap;

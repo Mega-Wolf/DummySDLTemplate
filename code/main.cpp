@@ -1,4 +1,7 @@
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "settings.h"
 #include "../helpers/sdl_layer.h"
 
@@ -7,9 +10,9 @@
 //#include "macros.h"
 //#include "maths.h"
 #include "drawing.h"
+#include "text.h"
 
-#include <stdlib.h>
-#include <stdio.h>
+font_info DummyFontInfo;
 
 void InitDistanceArray() {
 
@@ -89,6 +92,8 @@ void InitDistanceArray() {
 }
 
 void Init() {
+    DummyFontInfo = AcquireDebugFont();
+
     Cogwheels[0] = BitmapLoad("assets\\sprites\\CogwheelSmall0.bmp");
     Cogwheels[1] = BitmapLoad("assets\\sprites\\CogwheelSmall1.bmp");
     Cogwheels[2] = BitmapLoad("assets\\sprites\\CogwheelSmall2.bmp");
@@ -764,6 +769,14 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
             DrawWorldBitmap(diamond_->TilePosition.X, diamond_->TilePosition.Y, Cogwheels[frame], diamond_->MixedColor);
             //  COL32_RGB(40, 20, 170)
+            
+            int count = 0;
+            inc0 (color_i,   6) {
+                count += diamond_->ColorsCount[color_i];
+            }
+            char dummy[5];
+            snprintf(dummy, 5, "%d", count);
+            TextRenderWorld(&DummyFontInfo, diamond_->TilePosition.X + 0.2f, diamond_->TilePosition.Y + 0.2f, dummy, BLACK, WHITE);
 
             if (diamond_->TilePosition.X < TILES_X) {
                 /// Only in field; not in menu
@@ -804,8 +817,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawScreenRectangle(2, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, MONSTER_STONE_BAR_WIDTH - 4, MONSTER_STONE_BAR_HEIGHT - 4, MonsterWaves[wave_i].Prototype.Color);
 
             color32 borderColor = wave_i <= MonsterWaveSpeedEnd ? RED : LIGHT_GREY;
-
             DrawScreenBorder(0, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH, MONSTER_STONE_BAR_WIDTH, MONSTER_STONE_BAR_HEIGHT, -2, -2, borderColor);
+
+            char* numbers[] = {
+                "1", "2", "3", "4", "5", "6", "7", "8", "9"
+            };
+            TextRenderScreen(&DummyFontInfo, 8, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, numbers[wave_i], BLACK, WHITE);
         }
 
         /// Render Menu
@@ -831,6 +848,15 @@ void Update(color32* array, int width, int height, inputs* ins) {
         if (Menu.DragDrop.Diamond) {
             loaded_bitmap bitmap = Cogwheels[0];
             DrawScreenBitmap(ins->Mouse.PosX - bitmap.Width / 2 + MONSTER_STONE_BAR_WIDTH, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
+
+            int count = 0;
+            inc0 (color_i,   6) {
+                count += Menu.DragDrop.Diamond->ColorsCount[color_i];
+            }
+
+            char dummy[5];
+            snprintf(dummy, 5, "%d", count);
+            TextRenderScreen(&DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + MONSTER_STONE_BAR_WIDTH + 27, ins->Mouse.PosY - bitmap.Height / 2 + 27, dummy, BLACK, WHITE);
         }
 
     }
