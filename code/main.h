@@ -21,6 +21,7 @@ struct monster {
     float Speed;
     float Health;
     float MaxHealth;
+    color32 Color;
 
     float MovementT;
     vec2f ActualPosition;
@@ -64,7 +65,7 @@ int FrameCount;
 
 terrain Ground[TILES_Y][TILES_X];
 
-bool IsLevelEditorActive;
+bool IsLevelEditorActive = true; // TODO(Tobi): This is done so the game is paused at the beginning
 
 int StartPositionsCount;
 vec2i StartPositions[TILES_Y * 2 + (TILES_X - 2) * 2];
@@ -127,6 +128,86 @@ struct menu_data {
 
 menu_data Menu;
 
+struct monster_wave {
+    int FullCount;
+    int AlreadyReleased;
+    int DelayFrames;
+    int ActualStartFrame;
+
+    struct {
+        float Radius; // TODO(Tobi): This is not used anymore
+        float Speed;
+        float MaxHealth;
+        color32 Color;
+
+        //newMonster->Radius = (rand() % 6 + 5) / (float)GRID_SIZE;
+        //newMonster->Speed = 1 / (float) (rand() % 11 + 10);
+    } Prototype;
+
+};
+
+#define WAVE_COUNT 4
+
+#define WAVE_FRAME_LENGTH (FPS * 20)
+
+monster_wave MonsterWaves[WAVE_COUNT] = {
+    {
+        10,
+        0,
+        40,
+        0,
+        {
+            7 / (float)GRID_SIZE,
+            1 / 16.0f,
+            50.0f,
+            RED,
+        },
+    },
+    {
+        20,
+        0,
+        25,
+        0,
+        {
+            4 / (float)GRID_SIZE,
+            1 / 10.0f,
+            10.0f,
+            GREEN,
+        },
+    },
+    {
+        20,
+        0,
+        35,
+        0,
+        {
+            7 / (float)GRID_SIZE,
+            1 / 16.0f,
+            50.0f,
+            BLUE,
+        },
+    },
+    {
+        30,
+        0,
+        20,
+        0,
+        {
+            4 / (float)GRID_SIZE,
+            1 / 10.0f,
+            10.0f,
+            YELLOW,
+        },
+    }
+};
+
+int MonsterWaveFrames;
+int MonsterWaveSpeedEnd;
+
+#define MONSTER_WAVE_FAST_SPEED 7
+
 #define KEY_MERGE F4
 #define KEY_LEVEL_UP F3
 #define KEY_BUY F2
+
+#define KEY_SPEED_WAVE F5

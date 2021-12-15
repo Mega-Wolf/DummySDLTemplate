@@ -122,10 +122,35 @@ void DiamondSetValues(diamond* dim, int count) {
     dim->CooldownFrames = SOCKETING_COOLDOWN;
 }
 
+void MonsterSetToStartingPosition(monster* mon) {
+    int startPositionIndex = rand() % StartPositionsCount;
+    mon->GoalPosition = StartPositions[startPositionIndex];
+    mon->OldPosition = mon->GoalPosition;
+
+    if (mon->OldPosition.X == 0) {
+        mon->OldPosition.X = -1;
+    }
+
+    if (mon->OldPosition.X == TILES_X - 1) {
+        mon->OldPosition.X = TILES_X;
+    }
+
+    if (mon->OldPosition.Y == 0) {
+        mon->OldPosition.Y = -1;
+    }
+
+    if (mon->OldPosition.Y == TILES_Y - 1) {
+        mon->OldPosition.Y = TILES_Y;
+    }
+
+    mon->ActualPosition.X = (float) mon->OldPosition.X;
+    mon->ActualPosition.Y = (float) mon->OldPosition.Y;
+}
+
 void Update(color32* array, int width, int height, inputs* ins) {
-    // TODO(Tobi): remove when using them; just here to prevent warnings
-    UNUSED_PARAM(height);
-    UNUSED_PARAM(ins);
+
+    // NOTE(Tobi): We moved the whole world to the side, so we have to adjust the mouse position
+    ins->Mouse.PosX -= MONSTER_STONE_BAR_WIDTH;
 
     Array = array;
     ArrayWidth = width;
@@ -197,6 +222,11 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 Menu.ShallLevelUp = false;
             }
         }
+
+        /// Wave Stone Speed
+        if (IS_KEY_PRESSED(KEY_SPEED_WAVE)) {
+            ++MonsterWaveSpeedEnd;
+        }
     }
 
     /// Logic Update
@@ -206,27 +236,24 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Update Monsters
         {
-            /// Movement and pathfinding
-            int firstDeadMonster = -1;
+            /// Pathfinding and Movement
             inc0 (monster_i,   MonsterListEnd) {
                 monster* monster_ = &Monsters[monster_i];
-                if (!monster_->Health) {
-                    if (firstDeadMonster == -1) {
-                        firstDeadMonster = monster_i;
-                    }
-                    continue;
-                }
+                if (!monster_->Health) { continue; }
 
                 if (monster_->MovementT >= 1.0f) {
                     monster_->MovementT -= 1.0f;
 
                     int distanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
                     if (distanceToGoal == 1) {
-                        // TODO(Tobi): Reached goal; what do I do now
-                        // For now, I just delete myself
+                        // TODO(Tobi): Cause damage to the orb
 
-                        monster_->Health = 0;
-                        continue;
+                        // NOTE(Tobi): I do that, so that projectiles etc. will not move towards it
+                        ++monster_->Generation;
+                        MonsterSetToStartingPosition(monster_);
+
+                        // NOTE(Tobi): This is just what has been in the else-path
+                        monster_->MovementT += monster_->Speed;
                     }
 
                     // NOTE(Tobi): This assumes monsters can only walk vertical/horizontal
@@ -296,47 +323,66 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 monster_->ActualPosition.Y = (1 - monster_->MovementT) * monster_->OldPosition.Y + monster_->MovementT * monster_->GoalPosition.Y;
             }
 
-            /// Spawn monsters
-            if (FrameCount % 30 == 0) {
-                if (firstDeadMonster == -1) {
-                    if (MonsterListEnd < MONSTER_COUNT_MAX) {
-                        firstDeadMonster = MonsterListEnd++;
-                    }
+            /// Update Monster Waves
+            {
+                int nextWave = MonsterWaveFrames / WAVE_FRAME_LENGTH + 1;
+
+                if (MonsterWaveSpeedEnd >= nextWave) {
+                    MonsterWaveFrames += MONSTER_WAVE_FAST_SPEED;
+                } else {
+                    ++MonsterWaveFrames;
                 }
 
-                if (firstDeadMonster != -1) {
-                    monster* monster_ = &Monsters[firstDeadMonster];
-                    unsigned int lastGeneration = monster_->Generation;
-                    *monster_ = {};
-                    monster_->Generation = lastGeneration + 1;
-                    monster_->MaxHealth = 50;
-                    monster_->Health = monster_->MaxHealth;
+                inc0 (wave_i,   WAVE_COUNT) {
+                    monster_wave* monster_wave_ = &MonsterWaves[wave_i];
 
-                    int startPositionIndex = rand() % StartPositionsCount;
-                    monster_->GoalPosition = StartPositions[startPositionIndex];
-                    monster_->OldPosition = monster_->GoalPosition;
+                    int startWaveFrame = WAVE_FRAME_LENGTH * wave_i;
+                    if (startWaveFrame > MonsterWaveFrames) { continue; }
 
-                    if (monster_->OldPosition.X == 0) {
-                        monster_->OldPosition.X = -1;
+                    if (!monster_wave_->ActualStartFrame) {
+                        // This is now the last started wave
+                        monster_wave_->ActualStartFrame = FrameCount;
+
+                        // NOTE(Tobi): By this, I keep the MonsterWaveSpeedEnd always at a known value, so I can later just increase it
+                        if (MonsterWaveSpeedEnd < wave_i) {
+                            MonsterWaveSpeedEnd = wave_i;
+                        }
                     }
 
-                    if (monster_->OldPosition.X == TILES_X - 1) {
-                        monster_->OldPosition.X = TILES_X;
+                    if (monster_wave_->AlreadyReleased == monster_wave_->FullCount) { continue; }
+
+                    // TODO(Tobi): When the timeline runs faster, monsters spawn with the same speed; is that what I want?
+                    int timeOffsetFromStart = FrameCount - monster_wave_->ActualStartFrame;
+                    if (timeOffsetFromStart % monster_wave_->DelayFrames != 0) {continue; }
+                    
+                    monster* newMonster = nullptr;
+                    inc0 (monster_i,   MonsterListEnd) {
+                        monster* monster_ = &Monsters[monster_i];
+                        if (!monster_->Health) {
+                            newMonster = monster_;
+                            break;
+                        }
                     }
 
-                    if (monster_->OldPosition.Y == 0) {
-                        monster_->OldPosition.Y = -1;
+                    if (!newMonster) {
+                        if (MonsterListEnd < MONSTER_COUNT_MAX) {
+                            newMonster = &Monsters[MonsterListEnd++];
+                        }
                     }
 
-                    if (monster_->OldPosition.Y == TILES_Y - 1) {
-                        monster_->OldPosition.Y = TILES_Y;
+                    if (newMonster) {
+                        ++monster_wave_->AlreadyReleased;
+                        unsigned int lastGeneration = newMonster->Generation;
+                        *newMonster = {};
+                        newMonster->Generation = lastGeneration + 1;
+                        newMonster->Radius = monster_wave_->Prototype.Radius;
+                        newMonster->Speed = monster_wave_->Prototype.Speed;
+                        newMonster->Color = monster_wave_->Prototype.Color;
+                        newMonster->MaxHealth = monster_wave_->Prototype.MaxHealth;
+                        newMonster->Health = newMonster->MaxHealth;
+
+                        MonsterSetToStartingPosition(newMonster);
                     }
-
-                    monster_->ActualPosition.X = (float) monster_->OldPosition.X;
-                    monster_->ActualPosition.Y = (float) monster_->OldPosition.Y;
-
-                    monster_->Radius = (rand() % 6 + 5) / (float)GRID_SIZE;
-                    monster_->Speed = 1 / (float) (rand() % 11 + 10);
                 }
             }
         }
@@ -696,7 +742,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }
 
-            DrawWorldBitmap(monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], RED);
+            DrawWorldBitmap(monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], monster_->Color);
 
             /// Render Monster Healthbar
             if (monster_->Health < monster_->MaxHealth) {
@@ -742,12 +788,24 @@ void Update(color32* array, int width, int height, inputs* ins) {
             float length = sqrtf(direction.X * direction.X + direction.Y * direction.Y);
             direction.X /= length;
             direction.Y /= length;
-            direction.X /= 32.0f;
-            direction.Y /= 32.0f;
+            direction.X /= (float) GRID_SIZE;
+            direction.Y /= (float) GRID_SIZE;
             DrawWorldDisc(projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
             DrawWorldDisc(projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
             DrawWorldDisc(projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 2 / (float)GRID_SIZE, WHITE);
             DrawWorldDisc(projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 2 / (float)GRID_SIZE, WHITE);
+        }
+
+        /// Render Monster Stones
+        inc0 (wave_i,   WAVE_COUNT) {
+            int startWaveFrame = WAVE_FRAME_LENGTH * wave_i;
+            if (startWaveFrame < MonsterWaveFrames) { continue; }
+
+            DrawScreenRectangle(2, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, MONSTER_STONE_BAR_WIDTH - 4, MONSTER_STONE_BAR_HEIGHT - 4, MonsterWaves[wave_i].Prototype.Color);
+
+            color32 borderColor = wave_i <= MonsterWaveSpeedEnd ? RED : LIGHT_GREY;
+
+            DrawScreenBorder(0, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH, MONSTER_STONE_BAR_WIDTH, MONSTER_STONE_BAR_HEIGHT, -2, -2, borderColor);
         }
 
         /// Render Menu
@@ -757,22 +815,22 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawWorldBitmap(TILES_X + 2, 2, IconMerge, WHITE);
 
             if (Menu.ShallBuy) {
-                DrawWorldBorder(TILES_X + 0 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -1 / 32.0f, -1 / 32.0f, YELLOW);
+                DrawWorldBorder(TILES_X + 0 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
             }
 
             if (Menu.ShallLevelUp) {
-                DrawWorldBorder(TILES_X + 1 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -1 / 32.0f, -1 / 32.0f, YELLOW);
+                DrawWorldBorder(TILES_X + 1 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
             }
 
             if (Menu.ShallMerge) {
-                DrawWorldBorder(TILES_X + 2 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -1 / 32.0f, -1 / 32.0f, YELLOW);
+                DrawWorldBorder(TILES_X + 2 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
             }
         }
 
         /// Render drag-drop diamond
         if (Menu.DragDrop.Diamond) {
             loaded_bitmap bitmap = Cogwheels[0];
-            DrawScreenBitmap(ins->Mouse.PosX - bitmap.Width / 2, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
+            DrawScreenBitmap(ins->Mouse.PosX - bitmap.Width / 2 + MONSTER_STONE_BAR_WIDTH, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
         }
 
     }

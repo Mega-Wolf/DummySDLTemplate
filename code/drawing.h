@@ -1,5 +1,6 @@
 #pragma once
 
+#include "settings.h"
 #include "macros.h"
 #include "maths.h"
 
@@ -118,26 +119,26 @@ void DrawScreenCircle(int x, int y, int radius, color32 col) {
 }
 
 void DrawWorldRectangle(float x, float y, float width, float height, color32 col) {
-    DrawScreenRectangle((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
+    DrawScreenRectangle((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
 }
 
 void DrawWorldBorder(float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
-    DrawScreenBorder((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), (int) (GRID_SIZE * borderWidth), (int) (GRID_SIZE * borderHeight), col);
+    DrawScreenBorder((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), (int) (GRID_SIZE * borderWidth), (int) (GRID_SIZE * borderHeight), col);
 }
 
 void DrawWorldBitmap(float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
-    DrawScreenBitmap((int) (GRID_SIZE * x) + (GRID_SIZE - bitmap.Width) / 2, (int) (GRID_SIZE * y) + (GRID_SIZE - bitmap.Height) / 2, bitmap, wantedColor);
+    DrawScreenBitmap((int) (GRID_SIZE * x) + (GRID_SIZE - bitmap.Width) / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + (GRID_SIZE - bitmap.Height) / 2, bitmap, wantedColor);
 }
 
 void DrawWorldDisc(float x, float y, float radius, color32 col) {
-    DrawScreenDisc((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
+    DrawScreenDisc((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
 }
 
 void DrawWorldCircle(float x, float y, float radius, color32 col) {
-    DrawScreenCircle((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
+    DrawScreenCircle((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
 }
 
 void DrawBlock(int x, int y, color32 col) {
     // NOTE(Tobi): I don't know whether I like this function anymore; should I just call DrawWorldRectangle?
-    DrawScreenRectangle((int) (GRID_SIZE * x) + 1, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
+    DrawScreenRectangle((int) (GRID_SIZE * x) + 1 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
 }
