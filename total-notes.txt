@@ -37,3 +37,46 @@ this would also make the add kills necessary
 
 Series 2:
 
+A lot of focus in sprite stuff/rendering etc.
+The problem is, that all this zooming and rotating stuff is not really used in the game and not at all used when using OpenGL etc.
+However, one should understand what e.g. MipMaps are
+I see both scaling and rotating being used for a few things, so it's not too bad
+
+Additionally, I want to do some other stuff, that will use these things
+- e.g. having a context menu when adding the text rendering
+- I want to switch to hexagonal tiles
+- Particle effects
+- Correct alpha
+- Scaling something a bit smaller and 
+- Rumble effect, that seems easily achievable with draw_rect
+
+Episode 1:
+- DrawRect, rumble
+- Maybe also put the correct alpha stuff here
+- Exercise: Maybe rumble is the exercise?
+
+This is by far not enough for a lesson
+
+Episode 2:
+-
+- Exercise: 
+
+Episode 3:
+-
+- Exercise:
+
+Episode 4:
+-
+- Exercise:
+
+Episode 5:
+-
+- Exercise:
+
+Episode 6:
+-
+- Exercise:
+
+Episode 7:
+-
+- Exercise:
