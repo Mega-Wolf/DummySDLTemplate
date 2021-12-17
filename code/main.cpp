@@ -160,14 +160,52 @@ void MonsterSetToStartingPosition(monster* mon) {
     mon->ActualPosition.Y = (float) mon->OldPosition.Y;
 }
 
+vec2i TranslateMousePosition(draw_rect* drawRect, inputs* ins) {
+    vec2i ret;
+    ret.X = ins->Mouse.PosX - drawRect->StartX;
+    ret.Y = ins->Mouse.PosY - drawRect->StartY;
+    return ret;
+}
+
 void Update(color32* array, int width, int height, inputs* ins) {
 
-    // NOTE(Tobi): We moved the whole world to the side, so we have to adjust the mouse position
-    ins->Mouse.PosX -= MONSTER_STONE_BAR_WIDTH;
+    draw_rect drawRectAll = {};
+    drawRectAll.ArrayData = array;
+    drawRectAll.ArrayWidth = width;
+    drawRectAll.Width = width;
+    drawRectAll.Height = height;
+    drawRectAll.StartX = 0;
+    drawRectAll.StartY = 0;
 
-    Array = array;
-    ArrayWidth = width;
-    ArrayHeight = height;
+    draw_rect drawRectWaveStones = {};
+    drawRectWaveStones.ArrayData = array;
+    drawRectWaveStones.ArrayWidth = width;
+    drawRectWaveStones.Width = MONSTER_STONE_BAR_WIDTH;
+    drawRectWaveStones.Height = height;
+    drawRectWaveStones.StartX = 0;
+    drawRectWaveStones.StartY = 0;
+
+    draw_rect drawRectMain = {};
+    drawRectMain.ArrayData = array;
+    drawRectMain.ArrayWidth = width;
+    drawRectMain.Width = TILES_X * GRID_SIZE;
+    drawRectMain.Height = height;
+    drawRectMain.StartX = drawRectWaveStones.Width;
+    drawRectMain.StartY = 0;
+    vec2i mainMousePosition = TranslateMousePosition(&drawRectMain, ins);
+
+    draw_rect drawRectRightMenu = {};
+    drawRectRightMenu.ArrayData = array;
+    drawRectRightMenu.ArrayWidth = width;
+    drawRectRightMenu.Width = MENU_DIAMONDS_X * GRID_SIZE;
+    drawRectRightMenu.Height = height;
+    drawRectRightMenu.StartX = drawRectMain.StartX + drawRectMain.Width;
+    drawRectRightMenu.StartY = 0;
+    vec2i rightMenuMousePosition = TranslateMousePosition(&drawRectRightMenu, ins);
+
+    draw_rect drawRectMenuDiamonds = drawRectRightMenu;
+    drawRectMenuDiamonds.StartY = MENU_OFFSET_Y;
+    drawRectMenuDiamonds.Height = MENU_DIAMONDS_Y * GRID_SIZE;
 
     /// Handle Input
     {
@@ -243,7 +281,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
     }
 
     /// Logic Update
-    //if (IS_KEY_PRESSED(Space)) {
     if (!IsLevelEditorActive) {
         ++FrameCount;
 
@@ -411,7 +448,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
 
             // Right menu or being dragged
-            if (diamond_->TilePosition.X >= TILES_X) { continue; }
+            if (!diamond_->IsInField) { continue; }
 
             /// Find target monster
             // TODO(Tobi): This will target monsters outside the level since there is no DistanceToGoal set there
@@ -528,21 +565,34 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Menu logic
+        vec2i menuTilePos = { rightMenuMousePosition.X / GRID_SIZE, rightMenuMousePosition.Y / GRID_SIZE - MENU_OFFSET_TILES_Y };
+        vec2i mouseTilePos = { mainMousePosition.X / GRID_SIZE, mainMousePosition.Y / GRID_SIZE };
         {
             bool shallDrop = false;
 
             if (ins->Mouse.Left.Down) {
                 if (ins->Mouse.Left.Toggled) {
                     /// Clicked
-                    vec2i mouseTilePos = { ins->Mouse.PosX / GRID_SIZE, ins->Mouse.PosY / GRID_SIZE };
 
                     bool didSomething = false;
                     inc0 (diamond_i,   DiamondCount) {
                         diamond* diamond_ = &DiamondList[diamond_i];
                         if (diamond_->Inactive) { continue; }
 
-                        //if (diamond_->TilePosition == mouseTilePos) {
-                        if ((int)diamond_->TilePosition.X == mouseTilePos.X && (int)diamond_->TilePosition.Y == mouseTilePos.Y) {
+                        bool underCursor = false;
+                        if (diamond_->IsInField) {
+                            // Game
+                            if ((int)diamond_->TilePosition.X == mouseTilePos.X && (int)diamond_->TilePosition.Y == mouseTilePos.Y) {
+                                underCursor = true;
+                            }
+                        } else {
+                            // Menu
+                            if ((int)diamond_->TilePosition.X == menuTilePos.X && (int)diamond_->TilePosition.Y == menuTilePos.Y) {
+                                underCursor = true;
+                            }
+                        }
+
+                        if (underCursor) {
                             if (Menu.ShallLevelUp) {
                                 Menu.ShallLevelUp = false;
                                 // Double all the color counts
@@ -552,17 +602,19 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                     count += diamond_->ColorsCount[color_i];
                                 }
                                 DiamondSetValues(diamond_, count);
-                            } else {
-                                diamond_->TilePosition = DRAG_DROP_POSITION;
-                                Menu.DragDrop.Diamond = diamond_;
-                                Menu.DragDrop.Origin = mouseTilePos;
 
-                                if (mouseTilePos.X >= TILES_X) {
-                                    // this diamond is in the Menu
-                                    vec2i menuTilePos;
-                                    menuTilePos.X = mouseTilePos.X - TILES_X;
-                                    menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
+                                if (diamond_->IsInField) {
+                                    diamond_->CooldownFrames = SOCKETING_COOLDOWN;
                                 }
+                            } else {
+                                /// Pick up
+
+                                Menu.DragDrop.Diamond = diamond_;
+                                Menu.DragDrop.Origin = diamond_->IsInField ? mouseTilePos : menuTilePos;
+                                Menu.DragDrop.WasInField = diamond_->IsInField;
+
+                                diamond_->TilePosition = DRAG_DROP_POSITION;
+                                diamond_->IsInField = false;
                             }
 
                             didSomething = true;
@@ -571,17 +623,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     }
 
                     if (!didSomething && Menu.ShallBuy) {
-                        vec2i menuTilePos;
-                        menuTilePos.X = mouseTilePos.X - TILES_X;
-                        menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
-
                         bool isInGame = mouseTilePos.X < TILES_X && mouseTilePos.Y < TILES_Y;
                         bool isInMenu = menuTilePos.X >= 0 && menuTilePos.X < MENU_DIAMONDS_X && menuTilePos.Y >= 0 && menuTilePos.Y < MENU_DIAMONDS_Y;
 
                         if (isInMenu || (isInGame && Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER)) {
                             diamond* newDiamond = &DiamondList[DiamondCount++];
                             *newDiamond = {};
-                            newDiamond->TilePosition = vec2f { (float)mouseTilePos.X, (float)mouseTilePos.Y };
+                            newDiamond->TilePosition = isInGame ? vec2f { (float)mouseTilePos.X, (float)mouseTilePos.Y } : vec2f { (float)menuTilePos.X, (float)menuTilePos.Y };
                             newDiamond->Damage = DIAMOND_LEVEL_1_DAMAGE;
                             newDiamond->RangeRadius = DIAMOND_LEVEL_1_RANGE;
                             newDiamond->MaxCooldown = DIAMOND_LEVEL_1_COOLDOWN;
@@ -589,17 +637,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             int randomColor = rand() % 6;
                             newDiamond->ColorsCount[randomColor] = 1;
                             newDiamond->MixedColor = DiamondColors[randomColor];
+
+                            newDiamond->IsInField = isInGame;
                         }
                     }
 
                     Menu.ShallBuy = false;
-                } else {
-                    /// Already holding
-                    if (ins->Mouse.PosX < 0 || ins->Mouse.PosX >= ArrayWidth || ins->Mouse.PosY < 0 || ins->Mouse.PosY >= ArrayHeight) {
-                        // TODO(Tobi): This never gets called
-                        // TODO(Tobi): Do I actually want to trigger the drop logic though?; I think I would rather not draw it when outside (given that I actually get the correct mouse position)
-                        shallDrop = true;
-                    }
                 }
             } else {
                 // true if Released
@@ -609,26 +652,23 @@ void Update(color32* array, int width, int height, inputs* ins) {
             if (shallDrop) {
                 if (Menu.DragDrop.Diamond) {
 
-                    vec2i mouseTilePos = { ins->Mouse.PosX / GRID_SIZE, ins->Mouse.PosY / GRID_SIZE };
-
                     // Game and Menu are almost identical
                     bool canDropHere = false;
+                    bool dropInField = false;
                     if (mouseTilePos.X < TILES_X && mouseTilePos.Y < TILES_Y) {
                         /// Game
                         if (Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER) {
                             canDropHere = true;
+                            dropInField = true;
                         }
                     } else {
                         /// Menu
-                        vec2i menuTilePos;
-                        menuTilePos.X = mouseTilePos.X - TILES_X;
-                        menuTilePos.Y = mouseTilePos.Y - MENU_OFFSET_TILES_Y;
-
-                        if (menuTilePos.X < MENU_DIAMONDS_X && menuTilePos.Y >= 0 && menuTilePos.Y < MENU_DIAMONDS_Y) {
+                        if (menuTilePos.X >= 0 && menuTilePos.X < MENU_DIAMONDS_X && menuTilePos.Y >= 0 && menuTilePos.Y < MENU_DIAMONDS_Y) {
                             canDropHere = true;
                         }
                     }
 
+                    // NOTE(Tobi): I only check that for inGame, because it doesn't matter for the menu
                     bool sameTileAsGrabbed = Menu.DragDrop.Origin.X == mouseTilePos.X && (int) Menu.DragDrop.Origin.Y == mouseTilePos.Y;
                     if (sameTileAsGrabbed) {
                         canDropHere = false;
@@ -640,9 +680,16 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             diamond* diamond_ = &DiamondList[diamond_i];
                             if (diamond_->Inactive) { continue; }
 
-                            if ((int) diamond_->TilePosition.X == mouseTilePos.X && (int) diamond_->TilePosition.Y == mouseTilePos.Y) {
-                                exchangeDiamond = diamond_;
-                                break;
+                            if (diamond_->IsInField) {
+                                if ((int) diamond_->TilePosition.X == mouseTilePos.X && (int) diamond_->TilePosition.Y == mouseTilePos.Y) {
+                                    exchangeDiamond = diamond_;
+                                    break;
+                                }
+                            } else {
+                                if ((int) diamond_->TilePosition.X == menuTilePos.X && (int) diamond_->TilePosition.Y == menuTilePos.Y) {
+                                    exchangeDiamond = diamond_;
+                                    break;
+                                }
                             }
                         }
 
@@ -670,19 +717,22 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             } else {
                                 /// Actually exchange
                                 exchangeDiamond->TilePosition = vec2f { (float) Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
+                                exchangeDiamond->IsInField = Menu.DragDrop.WasInField;
+                                if (exchangeDiamond->IsInField) {
+                                    exchangeDiamond->CooldownFrames = SOCKETING_COOLDOWN;
+                                }
                             }
                         }
 
-                        // TODO(Tobi): Ask if merge button was pressed
-
-                        Menu.DragDrop.Diamond->TilePosition = vec2f { (float) mouseTilePos.X, (float) mouseTilePos.Y };
+                        Menu.DragDrop.Diamond->TilePosition = dropInField ? vec2f { (float) mouseTilePos.X, (float) mouseTilePos.Y } : vec2f { (float) menuTilePos.X, (float) menuTilePos.Y };
                         Menu.DragDrop.Diamond->CooldownFrames = SOCKETING_COOLDOWN;
+                        Menu.DragDrop.Diamond->IsInField = dropInField;
                     }
 
                     if (!canDropHere) {
                         /// Move back to where it was
                         Menu.DragDrop.Diamond->TilePosition = vec2f { (float)Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
-                        Menu.DragDrop.Diamond = nullptr;
+                        Menu.DragDrop.Diamond->IsInField = Menu.DragDrop.WasInField;
                     }
 
                     Menu.DragDrop.Diamond = nullptr;
@@ -698,9 +748,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
     /// Rendering
     {
         if (IsLevelEditorActive) {
-            DrawScreenRectangle(0, 0, width, height, COL32_RGB(0, 0, 192));
+            DrawScreenRectangle(&drawRectAll, 0, 0, width, height, COL32_RGB(0, 0, 192));
         } else {
-            DrawScreenRectangle(0, 0, width, height, BLACK);
+            DrawScreenRectangle(&drawRectAll, 0, 0, width, height, BLACK);
         }
 
         /// Render terrain
@@ -724,14 +774,15 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         col = PINK;
                     } break;
                 }
-                DrawBlock(x_i, y_i, col);
+                DrawBlock(&drawRectMain, x_i, y_i, col);
             }
         }
 
         /// Render right menu
         inc0 (y_i,   MENU_DIAMONDS_Y) {
             inc0 (x_i,   MENU_DIAMONDS_X) {
-                DrawBlock(x_i + TILES_X, y_i + MENU_OFFSET_TILES_Y, DARK_GREY);
+                // TODO(Tobi): I might even split the y stuff in smaller windows as well
+                DrawBlock(&drawRectMenuDiamonds, x_i, y_i, DARK_GREY);
             }
         }
 
@@ -758,12 +809,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }
 
-            DrawWorldBitmap(monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], monster_->Color);
+            DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], monster_->Color);
 
             /// Render Monster Healthbar
             if (monster_->Health < monster_->MaxHealth) {
-                DrawWorldRectangle(monster_->ActualPosition.X - 0.5f, monster_->ActualPosition.Y + 0.5f, monster_->Health / monster_->MaxHealth, 1 / 6.0f, RED);
-                DrawWorldRectangle(monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK);
+                DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f, monster_->ActualPosition.Y + 0.5f, monster_->Health / monster_->MaxHealth, 1 / 6.0f, RED);
+                DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK);
             }
         }
 
@@ -773,12 +824,15 @@ void Update(color32* array, int width, int height, inputs* ins) {
             if (diamond_->Inactive) { continue; }
 
             int frame;
-            if (diamond_->TilePosition.X < TILES_X) {
+            draw_rect* drawRect;
+            if (diamond_->IsInField) {
                 frame = FrameCount % 30 / 10;
+                drawRect = &drawRectMain;
             } else {
                 frame = 0;
+                drawRect = &drawRectMenuDiamonds;
             }
-            DrawWorldBitmap(diamond_->TilePosition.X, diamond_->TilePosition.Y, Cogwheels[frame], diamond_->MixedColor);
+            DrawWorldBitmap(drawRect, diamond_->TilePosition.X, diamond_->TilePosition.Y, Cogwheels[frame], diamond_->MixedColor);
             //  COL32_RGB(40, 20, 170)
             
             int count = 0;
@@ -787,17 +841,15 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderWorld(&DummyFontInfo, diamond_->TilePosition.X + 0.2f, diamond_->TilePosition.Y + 0.2f, dummy, BLACK, WHITE);
+            TextRenderWorld(drawRect, &DummyFontInfo, diamond_->TilePosition.X + 0.2f, diamond_->TilePosition.Y + 0.2f, dummy, BLACK, WHITE);
 
-            if (diamond_->TilePosition.X < TILES_X) {
-                /// Only in field; not in menu
-
+            if (diamond_->IsInField) {
                 /// Render Diamond Range
-                DrawWorldCircle(diamond_->TilePosition.X, diamond_->TilePosition.Y, diamond_->RangeRadius, YELLOW);
+                DrawWorldCircle(&drawRectMain, diamond_->TilePosition.X, diamond_->TilePosition.Y, diamond_->RangeRadius, YELLOW);
 
                 /// Render Diamond Cooldown
                 if (diamond_->CooldownFrames) {
-                    DrawWorldRectangle(diamond_->TilePosition.X - 0.5f, diamond_->TilePosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
+                    DrawWorldRectangle(&drawRectMain, diamond_->TilePosition.X - 0.5f, diamond_->TilePosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
                 }
 
             }
@@ -814,10 +866,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
             direction.Y /= length;
             direction.X /= (float) GRID_SIZE;
             direction.Y /= (float) GRID_SIZE;
-            DrawWorldDisc(projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
-            DrawWorldDisc(projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
-            DrawWorldDisc(projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 2 / (float)GRID_SIZE, WHITE);
-            DrawWorldDisc(projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 2 / (float)GRID_SIZE, WHITE);
+            DrawWorldDisc(&drawRectMain, projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
+            DrawWorldDisc(&drawRectMain, projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
+            DrawWorldDisc(&drawRectMain, projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 2 / (float)GRID_SIZE, WHITE);
+            DrawWorldDisc(&drawRectMain, projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 2 / (float)GRID_SIZE, WHITE);
         }
 
         /// Render Monster Stones
@@ -825,40 +877,41 @@ void Update(color32* array, int width, int height, inputs* ins) {
             int startWaveFrame = WAVE_FRAME_LENGTH * wave_i;
             if (startWaveFrame < MonsterWaveFrames) { continue; }
 
-            DrawScreenRectangle(2, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, MONSTER_STONE_BAR_WIDTH - 4, MONSTER_STONE_BAR_HEIGHT - 4, MonsterWaves[wave_i].Prototype.Color);
+            DrawScreenRectangle(&drawRectWaveStones, 2, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, MONSTER_STONE_BAR_WIDTH - 4, MONSTER_STONE_BAR_HEIGHT - 4, MonsterWaves[wave_i].Prototype.Color);
 
             color32 borderColor = wave_i <= MonsterWaveSpeedEnd ? RED : LIGHT_GREY;
-            DrawScreenBorder(0, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH, MONSTER_STONE_BAR_WIDTH, MONSTER_STONE_BAR_HEIGHT, -2, -2, borderColor);
+            DrawScreenBorder(&drawRectWaveStones, 0, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH, MONSTER_STONE_BAR_WIDTH, MONSTER_STONE_BAR_HEIGHT, -2, -2, borderColor);
 
             char* numbers[] = {
                 "1", "2", "3", "4", "5", "6", "7", "8", "9"
             };
-            TextRenderScreen(&DummyFontInfo, 8, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, numbers[wave_i], BLACK, WHITE);
+            TextRenderScreen(&drawRectWaveStones, &DummyFontInfo, 8, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, numbers[wave_i], BLACK, WHITE);
         }
 
         /// Render Menu
         {
-            DrawWorldBitmap(TILES_X + 0, 2, IconBuy, WHITE);
-            DrawWorldBitmap(TILES_X + 1, 2, IconLevelUp, WHITE);
-            DrawWorldBitmap(TILES_X + 2, 2, IconMerge, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 0, 2, IconBuy, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 1, 2, IconLevelUp, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 2, 2, IconMerge, WHITE);
 
             if (Menu.ShallBuy) {
-                DrawWorldBorder(TILES_X + 0 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
+                DrawWorldBorder(&drawRectRightMenu, 0 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
             }
 
             if (Menu.ShallLevelUp) {
-                DrawWorldBorder(TILES_X + 1 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
+                DrawWorldBorder(&drawRectRightMenu, 1 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
             }
 
             if (Menu.ShallMerge) {
-                DrawWorldBorder(TILES_X + 2 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
+                DrawWorldBorder(&drawRectRightMenu, 2 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
             }
         }
 
         /// Render drag-drop diamond
         if (Menu.DragDrop.Diamond) {
             loaded_bitmap bitmap = Cogwheels[0];
-            DrawScreenBitmap(ins->Mouse.PosX - bitmap.Width / 2 + MONSTER_STONE_BAR_WIDTH, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
+
+            DrawScreenBitmap(&drawRectAll, ins->Mouse.PosX - bitmap.Width / 2, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
 
             int count = 0;
             inc0 (color_i,   6) {
@@ -867,7 +920,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderScreen(&DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + MONSTER_STONE_BAR_WIDTH + 27, ins->Mouse.PosY - bitmap.Height / 2 + 27, dummy, BLACK, WHITE);
+            TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + 27, ins->Mouse.PosY - bitmap.Height / 2 + 27, dummy, BLACK, WHITE);
         }
 
     }

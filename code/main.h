@@ -30,6 +30,7 @@ struct monster {
 
 struct diamond {
     bool Inactive;
+    bool IsInField;
 
     vec2f TilePosition;
 
@@ -56,11 +57,6 @@ struct projectile {
     vec2f BuildupDelta;
     int BuildupFrames;
 };
-
-// Global Variables
-color32* Array;
-int ArrayWidth;
-int ArrayHeight;
 
 int FrameCount;
 
@@ -124,6 +120,7 @@ struct menu_data {
     struct {
         diamond* Diamond;
         vec2i Origin;
+        bool WasInField;
     } DragDrop;
 };
 

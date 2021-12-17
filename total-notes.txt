@@ -51,7 +51,9 @@ Additionally, I want to do some other stuff, that will use these things
 - Rumble effect, that seems easily achievable with draw_rect
 
 Episode 1:
-- DrawRect, rumble
+- DrawRect (This needs adjusting of quite some functions + adjusting mouse input and the right menu diamond logic)
+- 
+- rumble
 - Maybe also put the correct alpha stuff here
 - Exercise: Maybe rumble is the exercise?
 

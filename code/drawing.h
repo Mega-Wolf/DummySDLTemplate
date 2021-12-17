@@ -4,16 +4,30 @@
 #include "macros.h"
 #include "maths.h"
 
-void DrawScreenRectangle(int x, int y, int width, int height, color32 col) {
-    inc (y_i,   AtLeast(y, 0),    AtMost(y + height, ArrayHeight)) {
-        inc (x_i,   AtLeast(x, 0),    AtMost(x + width, ArrayWidth)) {
-            Array[Index2D(x_i, y_i, ArrayWidth)] = col;
+struct draw_rect {
+    int StartX;
+    int StartY;
+    int Width;
+    int Height;
+
+    color32* ArrayData;
+    int ArrayWidth;
+};
+
+int Index2d(int x, int y, draw_rect* drawRect) {
+    return Index2D(x + drawRect->StartX, y + drawRect->StartY, drawRect->ArrayWidth);
+}
+
+void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
+    inc (y_i,   AtLeast(y, 0),    AtMost(y + height, drawRect->Height)) {
+        inc (x_i,   AtLeast(x, 0),    AtMost(x + width, drawRect->Width)) {
+            drawRect->ArrayData[Index2d(x_i, y_i, drawRect)] = col;
         }
     }
 }
 
 // Negative border width/height means border goes inside
-void DrawScreenBorder(int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col) {
+void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col) {
 
     if (borderWidth > 0) {
         x -= borderWidth;
@@ -29,19 +43,19 @@ void DrawScreenBorder(int x, int y, int width, int height, int borderWidth, int 
         borderHeight = -borderHeight;
     }
 
-    DrawScreenRectangle(x, y, width, borderHeight, col);
-    DrawScreenRectangle(x, y + height - borderHeight, width, borderHeight, col);
+    DrawScreenRectangle(drawRect, x, y, width, borderHeight, col);
+    DrawScreenRectangle(drawRect, x, y + height - borderHeight, width, borderHeight, col);
 
-    DrawScreenRectangle(x, y, borderWidth, height, col);
-    DrawScreenRectangle(x + width - borderWidth, y, borderWidth, height, col);
+    DrawScreenRectangle(drawRect, x, y, borderWidth, height, col);
+    DrawScreenRectangle(drawRect, x + width - borderWidth, y, borderWidth, height, col);
 }
 
-void DrawScreenBitmap(int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
+void DrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
     int startX = AtLeast(-x, 0);
     int startY = AtLeast(-y, 0);
 
-    int endX = AtMost(bitmap.Width, ArrayWidth - x);
-    int endY = AtMost(bitmap.Height, ArrayHeight - y);
+    int endX = AtMost(bitmap.Width, drawRect->Width - x);
+    int endY = AtMost(bitmap.Height, drawRect->Height - y);
 
     inc (y_i,   startY,    endY) {
         inc (x_i,   startX,    endX) {
@@ -65,41 +79,41 @@ void DrawScreenBitmap(int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
                 finalColor.Green = (unsigned char) (resultGreen * 255);
                 finalColor.Blue  = (unsigned char) (resultBlue  * 255);
 
-                Array[Index2D(x + x_i, y + y_i, ArrayWidth)] = finalColor;
+                drawRect->ArrayData[Index2d(x + x_i, y + y_i, drawRect)] = finalColor;
             }
         }
     }
 }
 
-void DrawScreenDisc(int x, int y, int radius, color32 col) {
-    inc (y_i,   AtLeast(y - radius, 0),    AtMost(y + radius + 1, ArrayHeight)) {
-        inc (x_i,   AtLeast(x - radius, 0),    AtMost(x + radius + 1, ArrayWidth)) {
+void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) {
+    inc (y_i,   AtLeast(y - radius, 0),    AtMost(y + radius + 1, drawRect->Height)) {
+        inc (x_i,   AtLeast(x - radius, 0),    AtMost(x + radius + 1, drawRect->Width)) {
             float diffX = (float) (x_i - x);
             float diffY = (float) (y_i - y);
 
             if (diffX * diffX + diffY * diffY <= radius * radius) {
-                Array[Index2D(x_i, y_i, ArrayWidth)] = col;
+                drawRect->ArrayData[Index2d(x_i, y_i, drawRect)] = col;
             }
         }
     }
 }
 
-void TrySetPixel(int x, int y, color32 col) {
-    if (x >= 0 && x < ArrayWidth && y >= 0 && y < ArrayHeight) {
-        Array[Index2D(x, y, ArrayWidth)] = col;
+void TrySetPixel(draw_rect* drawRect, int x, int y, color32 col) {
+    if (x >= 0 && x < drawRect->Width && y >= 0 && y < drawRect->Height) {
+        drawRect->ArrayData[Index2d(x, y, drawRect)] = col;
     }
 }
 
 #define SQRT2 1.41421356237
 //#define SQRT2_DIV_2 0.70710678118
 
-void DrawScreenCircle(int x, int y, int radius, color32 col) {
+void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col) {
     // TODO(Tobi): The inputs are integers; this means that our circle will look a bit weird
 
-    TrySetPixel(x, y - radius, col);
-    TrySetPixel(x, y + radius, col);
-    TrySetPixel(x - radius, y, col);
-    TrySetPixel(x + radius, y, col);
+    TrySetPixel(drawRect, x, y - radius, col);
+    TrySetPixel(drawRect, x, y + radius, col);
+    TrySetPixel(drawRect, x - radius, y, col);
+    TrySetPixel(drawRect, x + radius, y, col);
 
     int radiusSq = radius * radius;
     int maxRadiusToCheck = (int) (radius * (float) SQRT2 / 2);
@@ -107,21 +121,21 @@ void DrawScreenCircle(int x, int y, int radius, color32 col) {
 
         int offset = (int) (sqrtf((float) (radiusSq - i * i)) + 0.5f);
 
-        TrySetPixel(x + i, y - offset, col);
-        TrySetPixel(x - i, y - offset, col);
-        TrySetPixel(x + i, y + offset, col);
-        TrySetPixel(x - i, y + offset, col);
-        TrySetPixel(x - offset, y + i, col);
-        TrySetPixel(x - offset, y - i, col);
-        TrySetPixel(x + offset, y + i, col);
-        TrySetPixel(x + offset, y - i, col);
+        TrySetPixel(drawRect, x + i, y - offset, col);
+        TrySetPixel(drawRect, x - i, y - offset, col);
+        TrySetPixel(drawRect, x + i, y + offset, col);
+        TrySetPixel(drawRect, x - i, y + offset, col);
+        TrySetPixel(drawRect, x - offset, y + i, col);
+        TrySetPixel(drawRect, x - offset, y - i, col);
+        TrySetPixel(drawRect, x + offset, y + i, col);
+        TrySetPixel(drawRect, x + offset, y - i, col);
     }
 }
 
 // NOTE(Tobi): This supports rendering only part of the BMP; also it supoports setting a colour
 // void DrawScreenBMPText(int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
 
-void DrawScreenBMPText(int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
+void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
     // TODO(Tobi): Optimise
     // TODO(Tobi): Assert correct bitmap
     inc0 (y_i,   bmpHeight) {
@@ -136,36 +150,36 @@ void DrawScreenBMPText(int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHe
             resultingColor.Green = (unsigned char) (alpha * color.Green + ((1 - alpha) * pxColor.Green) + 0.5f);
             resultingColor.Blue  = (unsigned char) (alpha * color.Blue  + ((1 - alpha) * pxColor.Blue) + 0.5f);
 
-            TrySetPixel(x + x_i, y + y_i, resultingColor);
+            TrySetPixel(drawRect, x + x_i, y + y_i, resultingColor);
         }
     }
 }
 
-void DrawWorldRectangle(float x, float y, float width, float height, color32 col) {
-    DrawScreenRectangle((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
+void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
+    DrawScreenRectangle(drawRect, (int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
 }
 
-void DrawWorldBorder(float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
-    DrawScreenBorder((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), (int) (GRID_SIZE * borderWidth), (int) (GRID_SIZE * borderHeight), col);
+void DrawWorldBorder(draw_rect* drawRect, float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
+    DrawScreenBorder(drawRect, (int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), (int) (GRID_SIZE * borderWidth), (int) (GRID_SIZE * borderHeight), col);
 }
 
-void DrawWorldBitmap(float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
-    DrawScreenBitmap((int) (GRID_SIZE * x) + (GRID_SIZE - bitmap.Width) / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + (GRID_SIZE - bitmap.Height) / 2, bitmap, wantedColor);
+void DrawWorldBitmap(draw_rect* drawRect, float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
+    DrawScreenBitmap(drawRect, (int) (GRID_SIZE * x) + (GRID_SIZE - bitmap.Width) / 2, (int) (GRID_SIZE * y) + (GRID_SIZE - bitmap.Height) / 2, bitmap, wantedColor);
 }
 
-void DrawWorldDisc(float x, float y, float radius, color32 col) {
-    DrawScreenDisc((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
+void DrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col) {
+    DrawScreenDisc(drawRect, (int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
 }
 
-void DrawWorldCircle(float x, float y, float radius, color32 col) {
-    DrawScreenCircle((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
+void DrawWorldCircle(draw_rect* drawRect, float x, float y, float radius, color32 col) {
+    DrawScreenCircle(drawRect, (int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
 }
 
-void DrawBlock(int x, int y, color32 col) {
+void DrawBlock(draw_rect* drawRect, int x, int y, color32 col) {
     // NOTE(Tobi): I don't know whether I like this function anymore; should I just call DrawWorldRectangle?
-    DrawScreenRectangle((int) (GRID_SIZE * x) + 1 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
+    DrawScreenRectangle(drawRect, (int) (GRID_SIZE * x) + 1, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
 }
 
 // void DrawWorldBMPText(float x, float y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
-//     DrawScreenBMPText((int) (GRID_SIZE * x) + GRID_SIZE / 2 + MONSTER_STONE_BAR_WIDTH, (int) (GRID_SIZE * y) + GRID_SIZE / 2, bmpX, bmpY, bmpWidth, bmpHeight, color, backgroundColor, bitmap);
+//     DrawScreenBMPText((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, bmpX, bmpY, bmpWidth, bmpHeight, color, backgroundColor, bitmap);
 // }
