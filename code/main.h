@@ -4,6 +4,7 @@
 
 #include "maths.h"
 #include "bitmap.h"
+#include "waveform.h"
 
 enum terrain {
     T_GRASS,
@@ -211,3 +212,7 @@ int MonsterWaveSpeedEnd;
 #define KEY_BUY F2
 
 #define KEY_SPEED_WAVE F5
+
+loaded_audio Music;
+loaded_audio SoundHit;
+loaded_audio SoundDeath;

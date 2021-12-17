@@ -1,7 +1,5 @@
 #pragma once
 
-#define PLATFORM_NO_AUDIO
-
 #define FPS 60
 #define DELTA_TIME (    1 / (float) FPS)
 

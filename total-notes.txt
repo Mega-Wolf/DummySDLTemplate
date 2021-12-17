@@ -1,6 +1,8 @@
 Since I will separate the lectures, 4b is now Sprites
 
 5a is fonts stuff then
+// Since I don't really need all the printing stuff; I don't really need text either
+// This however means, that I don't use any sort of printf in the whole series
 
 5b is maybe some diamonds stuff; like drag-drop, buying, merging, leveling them etc.
 this would also make the add kills necessary
@@ -16,7 +18,22 @@ this would also make the add kills necessary
 - Make the buttons clickable (I think this is not important for now; volunteers can do that)
 
 6a might be same as above; maybe also add effects; monster waves
+// No visual effects though; did I mean stuff like poison? That probably seems reasonable
 
 6b music/sound
 
 7 "polish"; disable level editor stuff in final build; show something before start and after end maybe
+// I think I do not do that
+
+
+
+//TODO(Tobi): I definitely want to add asserts in the code
+
+
+
+
+
+
+
+Series 2:
+

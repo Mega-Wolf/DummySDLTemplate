@@ -12,6 +12,8 @@
 #include "drawing.h"
 #include "text.h"
 
+#include "audio.h"
+
 font_info DummyFontInfo;
 
 void InitDistanceArray() {
@@ -92,6 +94,12 @@ void InitDistanceArray() {
 }
 
 void Init() {
+    Music = LoadWav("assets\\audio\\LevelMusic.wav");
+    SoundHit = LoadWav("assets\\audio\\SplatHit.wav");
+    SoundDeath = LoadWav("assets\\audio\\SplatDeathReverb.wav");
+
+    AudioClipStart(Music, true, 0.75f);
+
     DummyFontInfo = AcquireDebugFont();
 
     Cogwheels[0] = BitmapLoad("assets\\sprites\\CogwheelSmall0.bmp");
@@ -495,7 +503,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     target->Health -= projectile_->Damage;
                     if (target->Health <= 0) {
                         target->Health = 0;
+                        AudioClipStart(SoundDeath, false, 0.7f);
                         // TODO(Tobi): The monster has been killed; do something
+                    } else {
+                        AudioClipStart(SoundHit, false, 0.2f);
                     }
 
                     Projectiles[projectile_i] = Projectiles[--ProjectileCount];
