@@ -169,6 +169,15 @@ vec2i TranslateMousePosition(draw_rect* drawRect, inputs* ins) {
 
 void Update(color32* array, int width, int height, inputs* ins) {
 
+    if (ShakeFrames > 0) {
+        --ShakeFrames;
+        Camera.X = rand() % 9 - 4;
+        Camera.Y = rand() % 9 - 4;
+    } else {
+        Camera.X = 0;
+        Camera.Y = 0;
+    }
+
     draw_rect drawRectAll = {};
     drawRectAll.ArrayData = array;
     drawRectAll.ArrayWidth = width;
@@ -297,6 +306,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     int distanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
                     if (distanceToGoal == 1) {
                         // TODO(Tobi): Cause damage to the orb
+                        ShakeFrames = 15;
 
                         // NOTE(Tobi): I do that, so that projectiles etc. will not move towards it
                         ++monster_->Generation;

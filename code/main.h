@@ -213,3 +213,5 @@ int MonsterWaveSpeedEnd;
 loaded_audio Music;
 loaded_audio SoundHit;
 loaded_audio SoundDeath;
+
+int ShakeFrames;

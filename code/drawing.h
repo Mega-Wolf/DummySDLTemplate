@@ -18,7 +18,21 @@ int Index2d(int x, int y, draw_rect* drawRect) {
     return Index2D(x + drawRect->StartX, y + drawRect->StartY, drawRect->ArrayWidth);
 }
 
+void TrySetPixel(draw_rect* drawRect, int x, int y, color32 col) {
+    if (x >= 0 && x < drawRect->Width && y >= 0 && y < drawRect->Height) {
+        drawRect->ArrayData[Index2d(x, y, drawRect)] = col;
+    }
+}
+
+#define SQRT2 1.41421356237
+//#define SQRT2_DIV_2 0.70710678118
+
+vec2i Camera;
+
 void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
+    x += Camera.X;
+    y += Camera.Y;
+
     inc (y_i,   AtLeast(y, 0),    AtMost(y + height, drawRect->Height)) {
         inc (x_i,   AtLeast(x, 0),    AtMost(x + width, drawRect->Width)) {
             drawRect->ArrayData[Index2d(x_i, y_i, drawRect)] = col;
@@ -28,6 +42,9 @@ void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int heigh
 
 // Negative border width/height means border goes inside
 void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col) {
+    // NOTE(Tobi): I don't have to offset that, since it will call DrawScreenRectangle later on, however, it kind of looks cool
+    // x += Camera.X;
+    // y += Camera.Y;
 
     if (borderWidth > 0) {
         x -= borderWidth;
@@ -51,6 +68,9 @@ void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, 
 }
 
 void DrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
+    x += Camera.X;
+    y += Camera.Y;
+
     int startX = AtLeast(-x, 0);
     int startY = AtLeast(-y, 0);
 
@@ -86,6 +106,9 @@ void DrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, c
 }
 
 void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) {
+    x += Camera.X;
+    y += Camera.Y;
+
     inc (y_i,   AtLeast(y - radius, 0),    AtMost(y + radius + 1, drawRect->Height)) {
         inc (x_i,   AtLeast(x - radius, 0),    AtMost(x + radius + 1, drawRect->Width)) {
             float diffX = (float) (x_i - x);
@@ -98,16 +121,10 @@ void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) 
     }
 }
 
-void TrySetPixel(draw_rect* drawRect, int x, int y, color32 col) {
-    if (x >= 0 && x < drawRect->Width && y >= 0 && y < drawRect->Height) {
-        drawRect->ArrayData[Index2d(x, y, drawRect)] = col;
-    }
-}
-
-#define SQRT2 1.41421356237
-//#define SQRT2_DIV_2 0.70710678118
-
 void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col) {
+    x += Camera.X;
+    y += Camera.Y;
+
     // TODO(Tobi): The inputs are integers; this means that our circle will look a bit weird
 
     TrySetPixel(drawRect, x, y - radius, col);
@@ -132,10 +149,10 @@ void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col
     }
 }
 
-// NOTE(Tobi): This supports rendering only part of the BMP; also it supoports setting a colour
-// void DrawScreenBMPText(int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
-
 void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
+    x += Camera.X;
+    y += Camera.Y;
+    
     // TODO(Tobi): Optimise
     // TODO(Tobi): Assert correct bitmap
     inc0 (y_i,   bmpHeight) {
