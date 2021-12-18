@@ -582,7 +582,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     if (target->Health <= 0) {
                         target->Health = 0;
                         AudioClipStart(SoundDeath, false, 0.7f);
-                        ParticleEffectStartWorld(&drawRectMain, 16, BitmapsSmoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGB(100, 80, 80));
+                        ParticleEffectStartWorld(&drawRectMain, 16, BitmapsSmoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGBA(100, 80, 80, 160));
                         // TODO(Tobi): The monster has been killed; do something
                     } else {
                         AudioClipStart(SoundHit, false, 0.2f);

@@ -80,27 +80,43 @@ void DrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, c
     inc (y_i,   startY,    endY) {
         inc (x_i,   startX,    endX) {
             color32 bitmapColor = bitmap.Data[Index2D(x_i, y_i, bitmap.Width)];
-            if (bitmapColor.Alpha > 127) {
+            if (bitmapColor.Alpha == 0) { continue; }
 
-                float bitmapRed   = bitmapColor.Red   / 255.0f;
-                float bitmapGreen = bitmapColor.Green / 255.0f;
-                float bitmapBlue  = bitmapColor.Blue  / 255.0f;
+            int outputIndex = Index2d(x + x_i, y + y_i, drawRect);
 
-                float wantedRed   = wantedColor.Red   / 255.0f;
-                float wantedGreen = wantedColor.Green / 255.0f;
-                float wantedBlue  = wantedColor.Blue  / 255.0f;
+            float bitmapRed   = bitmapColor.Red   / 255.0f;
+            float bitmapGreen = bitmapColor.Green / 255.0f;
+            float bitmapBlue  = bitmapColor.Blue  / 255.0f;
+            float bitmapAlpha = bitmapColor.Alpha / 255.0f;
 
-                float resultRed   = bitmapRed   * wantedRed;
-                float resultGreen = bitmapGreen * wantedGreen;
-                float resultBlue  = bitmapBlue  * wantedBlue;
+            float wantedRed   = wantedColor.Red   / 255.0f;
+            float wantedGreen = wantedColor.Green / 255.0f;
+            float wantedBlue  = wantedColor.Blue  / 255.0f;
+            float wantedAlpha = wantedColor.Alpha / 255.0f;
 
-                color32 finalColor = {};
-                finalColor.Red   = (unsigned char) (resultRed   * 255);
-                finalColor.Green = (unsigned char) (resultGreen * 255);
-                finalColor.Blue  = (unsigned char) (resultBlue  * 255);
+            float resultRed   = bitmapRed   * wantedRed;
+            float resultGreen = bitmapGreen * wantedGreen;
+            float resultBlue  = bitmapBlue  * wantedBlue;
+    	    float resultAlpha = bitmapAlpha * wantedAlpha;
 
-                drawRect->ArrayData[Index2d(x + x_i, y + y_i, drawRect)] = finalColor;
+            if (resultAlpha < 1.0f) {
+
+                color32 dstColor = drawRect->ArrayData[outputIndex];
+                float dstRed   = dstColor.Red   / 255.0f;
+                float dstGreen = dstColor.Green / 255.0f;
+                float dstBlue  = dstColor.Blue  / 255.0f;
+
+                resultRed   = resultRed   * resultAlpha + dstRed   * (1 - resultAlpha);
+                resultGreen = resultGreen * resultAlpha + dstGreen * (1 - resultAlpha);
+                resultBlue  = resultBlue  * resultAlpha + dstBlue  * (1 - resultAlpha);
             }
+
+            color32 finalColor = {};
+            finalColor.Red   = (unsigned char) (resultRed   * 255);
+            finalColor.Green = (unsigned char) (resultGreen * 255);
+            finalColor.Blue  = (unsigned char) (resultBlue  * 255);
+
+            drawRect->ArrayData[outputIndex] = finalColor;
         }
     }
 }
