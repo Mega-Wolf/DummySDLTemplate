@@ -78,6 +78,7 @@ void AudioCallback(void *userdata, unsigned char *stream8, int len) {
                 playing_audio_->StartFrame += playing_audio_->AudioFile.Frames;
             } else {
                 AudioClips[clip_i--] = AudioClips[--AudioClipsCount];
+                continue;
             }
         }
     }

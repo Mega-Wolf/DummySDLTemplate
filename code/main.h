@@ -224,3 +224,5 @@ loaded_bitmap BitmapsPath[16];
 
 loaded_bitmap BitmapTower;
 loaded_bitmap BitmapGoal;
+
+loaded_bitmap BitmapsSmoke[16];

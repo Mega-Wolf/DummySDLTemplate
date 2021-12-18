@@ -13,6 +13,7 @@
 #include "text.h"
 
 #include "audio.h"
+#include "particles.h"
 
 font_info DummyFontInfo;
 
@@ -98,6 +99,23 @@ void Init() {
     Music = LoadWav("assets\\audio\\Background.wav");
     SoundHit = LoadWav("assets\\audio\\SplatHit.wav");
     SoundDeath = LoadWav("assets\\audio\\SplatDeathReverb.wav");
+
+    BitmapsSmoke[0] = BitmapLoad("assets\\sprites\\smoke\\Smoke0.bmp");
+    BitmapsSmoke[1] = BitmapLoad("assets\\sprites\\smoke\\Smoke1.bmp");
+    BitmapsSmoke[2] = BitmapLoad("assets\\sprites\\smoke\\Smoke2.bmp");
+    BitmapsSmoke[3] = BitmapLoad("assets\\sprites\\smoke\\Smoke3.bmp");
+    BitmapsSmoke[4] = BitmapLoad("assets\\sprites\\smoke\\Smoke4.bmp");
+    BitmapsSmoke[5] = BitmapLoad("assets\\sprites\\smoke\\Smoke5.bmp");
+    BitmapsSmoke[6] = BitmapLoad("assets\\sprites\\smoke\\Smoke6.bmp");
+    BitmapsSmoke[7] = BitmapLoad("assets\\sprites\\smoke\\Smoke7.bmp");
+    BitmapsSmoke[8] = BitmapLoad("assets\\sprites\\smoke\\Smoke8.bmp");
+    BitmapsSmoke[9] = BitmapLoad("assets\\sprites\\smoke\\Smoke9.bmp");
+    BitmapsSmoke[10] = BitmapLoad("assets\\sprites\\smoke\\Smoke10.bmp");
+    BitmapsSmoke[11] = BitmapLoad("assets\\sprites\\smoke\\Smoke11.bmp");
+    BitmapsSmoke[12] = BitmapLoad("assets\\sprites\\smoke\\Smoke12.bmp");
+    BitmapsSmoke[13] = BitmapLoad("assets\\sprites\\smoke\\Smoke13.bmp");
+    BitmapsSmoke[14] = BitmapLoad("assets\\sprites\\smoke\\Smoke14.bmp");
+    BitmapsSmoke[15] = BitmapLoad("assets\\sprites\\smoke\\Smoke15.bmp");
 
     AudioClipStart(Music, true, 0.75f);
 
@@ -564,6 +582,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     if (target->Health <= 0) {
                         target->Health = 0;
                         AudioClipStart(SoundDeath, false, 0.7f);
+                        ParticleEffectStartWorld(&drawRectMain, 16, BitmapsSmoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGB(100, 80, 80));
                         // TODO(Tobi): The monster has been killed; do something
                     } else {
                         AudioClipStart(SoundHit, false, 0.2f);
@@ -916,6 +935,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawWorldDisc(&drawRectMain, projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 2 / (float)GRID_SIZE, WHITE);
             DrawWorldDisc(&drawRectMain, projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 2 / (float)GRID_SIZE, WHITE);
         }
+
+        ParticlesUpdate();
 
         /// Render Monster Stones
         inc0 (wave_i,   WAVE_COUNT) {
