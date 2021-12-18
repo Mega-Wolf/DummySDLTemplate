@@ -94,13 +94,33 @@ void InitDistanceArray() {
 }
 
 void Init() {
-    Music = LoadWav("assets\\audio\\LevelMusic.wav");
+    //Music = LoadWav("assets\\audio\\LevelMusic.wav");
+    Music = LoadWav("assets\\audio\\Background.wav");
     SoundHit = LoadWav("assets\\audio\\SplatHit.wav");
     SoundDeath = LoadWav("assets\\audio\\SplatDeathReverb.wav");
 
     AudioClipStart(Music, true, 0.75f);
 
     DummyFontInfo = AcquireDebugFont();
+
+    BitmapGoal = BitmapLoad("assets\\sprites\\Goal.bmp");
+    BitmapTower = BitmapLoad("assets\\sprites\\Tower.bmp");
+    BitmapsPath[0] = BitmapLoad("assets\\sprites\\Grass.bmp");
+    BitmapsPath[PATH_BMP_UP                                                 ] = BitmapLoad("assets\\sprites\\PathUp.bmp");
+    BitmapsPath[              PATH_BMP_DOWN                                 ] = BitmapLoad("assets\\sprites\\PathDown.bmp");
+    BitmapsPath[PATH_BMP_UP + PATH_BMP_DOWN                                 ] = BitmapLoad("assets\\sprites\\PathUpDown.bmp");
+    BitmapsPath[                              PATH_BMP_LEFT                 ] = BitmapLoad("assets\\sprites\\PathLeft.bmp");
+    BitmapsPath[PATH_BMP_UP +                 PATH_BMP_LEFT                 ] = BitmapLoad("assets\\sprites\\PathUpLeft.bmp");
+    BitmapsPath[              PATH_BMP_DOWN + PATH_BMP_LEFT                 ] = BitmapLoad("assets\\sprites\\PathDownLeft.bmp");
+    BitmapsPath[PATH_BMP_UP + PATH_BMP_DOWN + PATH_BMP_LEFT                 ] = BitmapLoad("assets\\sprites\\PathUpDownLeft.bmp");
+    BitmapsPath[                                              PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathRight.bmp");
+    BitmapsPath[PATH_BMP_UP                                 + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathUpRight.bmp");
+    BitmapsPath[              PATH_BMP_DOWN                 + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathDownRight.bmp");
+    BitmapsPath[PATH_BMP_UP + PATH_BMP_DOWN                 + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathUpDownRight.bmp");
+    BitmapsPath[                              PATH_BMP_LEFT + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathLeftRight.bmp");
+    BitmapsPath[PATH_BMP_UP +                 PATH_BMP_LEFT + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathUpLeftRight.bmp");
+    BitmapsPath[              PATH_BMP_DOWN + PATH_BMP_LEFT + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathDownLeftRight.bmp");
+    BitmapsPath[PATH_BMP_UP + PATH_BMP_DOWN + PATH_BMP_LEFT + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\Street.bmp");
 
     Cogwheels[0] = BitmapLoad("assets\\sprites\\CogwheelSmall0.bmp");
     Cogwheels[1] = BitmapLoad("assets\\sprites\\CogwheelSmall1.bmp");
@@ -216,6 +236,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
     drawRectMenuDiamonds.StartY = MENU_OFFSET_Y;
     drawRectMenuDiamonds.Height = MENU_DIAMONDS_Y * GRID_SIZE;
 
+    vec2i mouseTilePos = { mainMousePosition.X / GRID_SIZE, mainMousePosition.Y / GRID_SIZE };
+
     /// Handle Input
     {
         if (IS_KEY_PRESSED(F1)) {
@@ -229,32 +251,23 @@ void Update(color32* array, int width, int height, inputs* ins) {
         /// "Level Editor"
         if (IsLevelEditorActive) {
             if (ins->Mouse.Left.Down) {
-                int xCell = ins->Mouse.PosX / GRID_SIZE;
-                int yCell = ins->Mouse.PosY / GRID_SIZE;
-
-                if (xCell >= 0 && xCell <TILES_X && yCell >= 0 && yCell < TILES_Y) {
-                    Ground[yCell][xCell] = T_PATH;
+                if (mouseTilePos.X >= 0 && mouseTilePos.X <TILES_X && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y) {
+                    Ground[mouseTilePos.Y][mouseTilePos.X] = T_PATH;
                 }
             }
 
             if (ins->Mouse.Middle.Down) {
-                int xCell = ins->Mouse.PosX / GRID_SIZE;
-                int yCell = ins->Mouse.PosY / GRID_SIZE;
-
-                if (xCell >= 0 && xCell < TILES_X && yCell >= 0 && yCell < TILES_Y) {
-                    Ground[yCell][xCell] = T_GRASS;
+                if (mouseTilePos.X >= 0 && mouseTilePos.X < TILES_X && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y) {
+                    Ground[mouseTilePos.Y][mouseTilePos.X] = T_GRASS;
                 }
             }
 
             if (ins->Mouse.Right.Down && ins->Mouse.Right.Toggled) {
-                int xCell = ins->Mouse.PosX / GRID_SIZE;
-                int yCell = ins->Mouse.PosY / GRID_SIZE;
-
-                if (xCell >= 0 && xCell < TILES_X && yCell >= 0 && yCell < TILES_Y) {
-                    if (Ground[yCell][xCell] == T_TOWER) {
-                        Ground[yCell][xCell] = T_GOAL;
+                if (mouseTilePos.X >= 0 && mouseTilePos.X < TILES_X && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y) {
+                    if (Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER) {
+                        Ground[mouseTilePos.Y][mouseTilePos.X] = T_GOAL;
                     } else {
-                        Ground[yCell][xCell] = T_TOWER;
+                        Ground[mouseTilePos.Y][mouseTilePos.X] = T_TOWER;
                     }
                 }
             }
@@ -576,7 +589,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Menu logic
         vec2i menuTilePos = { rightMenuMousePosition.X / GRID_SIZE, rightMenuMousePosition.Y / GRID_SIZE - MENU_OFFSET_TILES_Y };
-        vec2i mouseTilePos = { mainMousePosition.X / GRID_SIZE, mainMousePosition.Y / GRID_SIZE };
         {
             bool shallDrop = false;
 
@@ -769,22 +781,45 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 color32 col;
                 switch (Ground[y_i][x_i]) {
                     case T_GRASS: {
-                        col = DARK_GREEN;
+                        DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapsPath[0], WHITE);
                     } break;
                     case T_PATH: {
-                        col = ORANGE;
+                        int pathBMPIndex = 0;
+                        if (y_i == 0 || Ground[y_i - 1][x_i] & (T_PATH | T_GOAL)) {
+                            pathBMPIndex += PATH_BMP_UP;
+                        }
+                        if (y_i == TILES_Y - 1 || Ground[y_i + 1][x_i] & (T_PATH | T_GOAL)) {
+                            pathBMPIndex += PATH_BMP_DOWN;
+                        }
+                        if (x_i == 0 || Ground[y_i][x_i - 1] & (T_PATH | T_GOAL)) {
+                            pathBMPIndex += PATH_BMP_LEFT;
+                        }
+                        if (x_i == TILES_X - 1 || Ground[y_i][x_i + 1] & (T_PATH | T_GOAL)) {
+                            pathBMPIndex += PATH_BMP_RIGHT;
+                        }
+                        DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapsPath[pathBMPIndex], WHITE);
                     } break;
                     case T_TOWER: {
-                        col = LIGHT_GREY;
+                        DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapTower, WHITE);
                     } break;
                     case T_GOAL: {
-                        col = PURPLE;
+                        DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapGoal, WHITE);
                     } break;
                     default: {
                         col = PINK;
+                        DrawBlock(&drawRectMain, x_i, y_i, col);
                     } break;
                 }
-                DrawBlock(&drawRectMain, x_i, y_i, col);
+            }
+        }
+
+        if (IsLevelEditorActive) {
+            inc0 (x_i,   TILES_X - 1) {
+                DrawScreenRectangle(&drawRectMain, GRID_SIZE * (x_i + 1), 0, 1, drawRectMain.Height, BLUE);
+            }
+
+            inc0 (y_i,   TILES_Y - 1) {
+                DrawScreenRectangle(&drawRectMain, 0, GRID_SIZE * (y_i + 1), drawRectMain.Width, 1, BLUE);
             }
         }
 

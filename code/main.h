@@ -7,10 +7,10 @@
 #include "waveform.h"
 
 enum terrain {
-    T_GRASS,
-    T_PATH,
-    T_TOWER,
-    T_GOAL,
+    T_GRASS = 1,
+    T_PATH = 2,
+    T_TOWER = 4,
+    T_GOAL = 8,
 };
 
 struct monster {
@@ -215,3 +215,12 @@ loaded_audio SoundHit;
 loaded_audio SoundDeath;
 
 int ShakeFrames;
+
+#define PATH_BMP_UP 1
+#define PATH_BMP_DOWN 2
+#define PATH_BMP_LEFT 4
+#define PATH_BMP_RIGHT 8
+loaded_bitmap BitmapsPath[16];
+
+loaded_bitmap BitmapTower;
+loaded_bitmap BitmapGoal;
