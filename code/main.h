@@ -3,6 +3,7 @@
 #include "../helpers/backend.h"
 
 #include "maths.h"
+#include "diamond.h"
 #include "bitmap.h"
 #include "waveform.h"
 
@@ -11,51 +12,6 @@ enum terrain {
     T_PATH = 2,
     T_TOWER = 4,
     T_GOAL = 8,
-};
-
-struct monster {
-    unsigned int Generation;
-
-    vec2i GoalPosition;
-    vec2i OldPosition;
-    float Radius;
-    float Speed;
-    float Health;
-    float MaxHealth;
-    color32 Color;
-
-    float MovementT;
-    vec2f ActualPosition;
-};
-
-struct diamond {
-    bool Inactive;
-    bool IsInField;
-
-    vec2f TilePosition;
-
-    float RangeRadius;
-    int CooldownFrames;
-    int MaxCooldown; // Make these float?
-    float Damage;
-
-    int ColorsCount[6];
-
-    color32 MixedColor; // NOTE(Tobi): This is only used so I don't have to calculalte it every frame; it is completely redundant though
-};
-
-struct projectile {
-    vec2f Position;
-    monster* Target;
-    unsigned int TargetGeneration;
-    float Speed;
-    float Damage;
-    color32 Color;
-
-    vec2f Direction;
-
-    vec2f BuildupDelta;
-    int BuildupFrames;
 };
 
 int FrameCount;
@@ -71,13 +27,7 @@ vec2i StartPositions[TILES_Y * 2 + (TILES_X - 2) * 2];
 int MonsterListEnd; // TODO(Tobi): Decrease MonsterListEnd if we have deleted the last monster
 monster Monsters[MONSTER_COUNT_MAX];
 
-int DiamondCount;
-diamond DiamondList[TILES_Y * TILES_X];
-
 int DistanceToGoal[TILES_Y][TILES_X];
-
-int ProjectileCount;
-projectile Projectiles[TILES_Y * TILES_X];
 
 loaded_bitmap Cogwheels[3];
 loaded_bitmap MonsterSprites[8];
@@ -86,14 +36,7 @@ loaded_bitmap IconBuy;
 loaded_bitmap IconLevelUp;
 loaded_bitmap IconMerge;
 
-color32 DiamondColors[6] = {
-    RED,
-    GREEN,
-    AQUA,
-    PURPLE,
-    ORANGE,
-    YELLOW
-};
+
 
 #define MENU_DIAMONDS_Y 3
 #define MENU_DIAMONDS_X 3
@@ -102,15 +45,6 @@ color32 DiamondColors[6] = {
 #define MENU_OFFSET_X (GRID_SIZE * TILES_X)
 
 #define DRAG_DROP_POSITION vec2f { 99999.0f, 99999.0f }
-
-// TODO(Tobi): This doesn't fit with the animation since the bar will now be bigger instead of going slower
-// TODO(Tobi): I don't set the socketing cooldown to the exchanged diamond
-#define SOCKETING_COOLDOWN 200;
-#define DIAMOND_LEVEL_1_RANGE 4.0f
-#define DIAMOND_LEVEL_1_COOLDOWN 60
-#define DIAMOND_LEVEL_1_DAMAGE 10.0f
-
-#define PROJECTILE_SPEED 0.4f
 
 struct menu_data {
     bool ShallMerge;

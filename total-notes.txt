@@ -41,14 +41,15 @@ A lot of focus in sprite stuff/rendering etc.
 The problem is, that all this zooming and rotating stuff is not really used in the game and not at all used when using OpenGL etc.
 However, one should understand what e.g. MipMaps are
 I see both scaling and rotating being used for a few things, so it's not too bad
+-> I actually think I should just move all that to the 3d series
 
 Additionally, I want to do some other stuff, that will use these things
 - e.g. having a context menu when adding the text rendering
 - I want to switch to hexagonal tiles
-- Particle effects
-- Correct alpha
+DONE - Particle effects
+DONE - Correct alpha
 - Scaling something a bit smaller and 
-- Rumble effect, that seems easily achievable with draw_rect
+DONE - Rumble effect, that seems easily achievable with draw_rect (nope, not with draw_rect; whole screen)
 
 Episode 1:
 - DrawRect (This needs adjusting of quite some functions + adjusting mouse input and the right menu diamond logic)
@@ -60,15 +61,19 @@ Episode 1:
 This is by far not enough for a lesson
 
 Episode 2:
--
+- Particle Effects
+- Correct alpha for DrawBitmap (bot for the rest though, they are not that important)
+- Clean-up either here or in episode before
 - Exercise: 
 
 Episode 3:
--
+- Text rendering stuff
+- Context menu?
 - Exercise:
 
 Episode 4:
--
+- Hexagonal tiles / triangle tiles
+- 
 - Exercise:
 
 Episode 5:

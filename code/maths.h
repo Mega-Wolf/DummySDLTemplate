@@ -70,3 +70,11 @@ struct vec2f {
     float Y;
 };
 
+vec2f Normalised(vec2f value) {
+    // TODO(Tobi): Assert not zero
+    vec2f ret = {};
+    float length = sqrtf(value.X * value.X + value.Y * value.Y);
+    ret.X = value.X / length;
+    ret.Y = value.Y / length;
+    return ret;
+}

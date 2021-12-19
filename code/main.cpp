@@ -166,13 +166,6 @@ void Init() {
     InitDistanceArray();
 }
 
-void DiamondSetValues(diamond* dim, int count) {
-    dim->Damage = count * DIAMOND_LEVEL_1_DAMAGE;
-    dim->RangeRadius = sqrtf(1.0f + (count - 1) /100.0f)  * DIAMOND_LEVEL_1_RANGE;
-    dim->MaxCooldown = (int) (powf(0.975f, (float) (count - 1)) * DIAMOND_LEVEL_1_COOLDOWN);
-    dim->CooldownFrames = SOCKETING_COOLDOWN;
-}
-
 void MonsterSetToStartingPosition(monster* mon) {
     int startPositionIndex = rand() % StartPositionsCount;
     mon->GoalPosition = StartPositions[startPositionIndex];
@@ -326,92 +319,102 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Update Monsters
         {
-            /// Pathfinding and Movement
             inc0 (monster_i,   MonsterListEnd) {
                 monster* monster_ = &Monsters[monster_i];
                 if (!monster_->Health) { continue; }
 
-                if (monster_->MovementT >= 1.0f) {
-                    monster_->MovementT -= 1.0f;
+                /// React to effects
+                {
+                    if (monster_->PoisonSpeed) {
+                        monster_->Health -= monster_->PoisonSpeed;
+                        monster_->PoisonSpeed = AtLeast(monster_->PoisonSpeed - MONSTER_POISON_DECREASE_PER_FRAME, 0.0f);
+                    }
+                }
 
-                    int distanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
-                    if (distanceToGoal == 1) {
-                        // TODO(Tobi): Cause damage to the orb
-                        ShakeFrames = 15;
+                /// Pathfinding and Movement
+                {
+                    if (monster_->MovementT >= 1.0f) {
+                        monster_->MovementT -= 1.0f;
 
-                        // NOTE(Tobi): I do that, so that projectiles etc. will not move towards it
-                        ++monster_->Generation;
-                        MonsterSetToStartingPosition(monster_);
+                        int distanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
+                        if (distanceToGoal == 1) {
+                            // TODO(Tobi): Cause damage to the orb
+                            ShakeFrames = 15;
 
-                        // NOTE(Tobi): This is just what has been in the else-path
+                            // NOTE(Tobi): I do that, so that projectiles etc. will not move towards it
+                            ++monster_->Generation;
+                            MonsterSetToStartingPosition(monster_);
+
+                            // NOTE(Tobi): This is just what has been in the else-path
+                            monster_->MovementT += monster_->Speed;
+                        }
+
+                        // NOTE(Tobi): This assumes monsters can only walk vertical/horizontal
+
+                        int closestDistance = 9999999;
+                        vec2i deltaPos = { 0, 0 };
+
+                        if (monster_->GoalPosition.Y > 0 && DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X]) {
+                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X];
+                            closestDistance = proposedDistance;
+                            deltaPos = vec2i { 0, -1 };
+                        }
+
+                        int sameAmount = 1;
+                        
+                        if (monster_->GoalPosition.X > 0 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X - 1]) {
+                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X - 1];
+                            if (proposedDistance < closestDistance) {
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { -1, 0 };
+                                sameAmount = 1;
+                            } else if (proposedDistance == closestDistance) {
+                                if (rand() < RAND_MAX / 2) {
+                                    deltaPos = vec2i { -1, 0 };
+                                }
+                                sameAmount = 2;
+                            }
+                        }
+                        
+                        if (monster_->GoalPosition.Y < TILES_Y - 1 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
+                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X];
+                            if (proposedDistance < closestDistance) {
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { 0, +1 };
+                                sameAmount = 1;
+                            } else if (proposedDistance == closestDistance) {
+                                ++sameAmount;
+                                if (rand() < RAND_MAX / sameAmount) {
+                                    deltaPos = vec2i { 0, +1 };
+                                }
+                            }
+                        }
+                        
+                        if (monster_->GoalPosition.X < TILES_X - 1 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1]) {
+                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1];
+                            if (proposedDistance < closestDistance) {
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { +1, 0 };
+                                sameAmount = 1;
+                            } else if (proposedDistance == closestDistance) {
+                                ++sameAmount;
+                                if (rand() < RAND_MAX / sameAmount) {
+                                    deltaPos = vec2i { +1, 0 };
+                                }
+                            }
+                        }
+
+                        monster_->OldPosition.X = monster_->GoalPosition.X;
+                        monster_->OldPosition.Y = monster_->GoalPosition.Y;
+                        monster_->GoalPosition.X += deltaPos.X;
+                        monster_->GoalPosition.Y += deltaPos.Y;
+                    } else {
                         monster_->MovementT += monster_->Speed;
                     }
 
-                    // NOTE(Tobi): This assumes monsters can only walk vertical/horizontal
-
-                    int closestDistance = 9999999;
-                    vec2i deltaPos = { 0, 0 };
-
-                    if (monster_->GoalPosition.Y > 0 && DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X]) {
-                        int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X];
-                        closestDistance = proposedDistance;
-                        deltaPos = vec2i { 0, -1 };
-                    }
-
-                    int sameAmount = 1;
-                    
-                    if (monster_->GoalPosition.X > 0 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X - 1]) {
-                        int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X - 1];
-                        if (proposedDistance < closestDistance) {
-                            closestDistance = proposedDistance;
-                            deltaPos = vec2i { -1, 0 };
-                            sameAmount = 1;
-                        } else if (proposedDistance == closestDistance) {
-                            if (rand() < RAND_MAX / 2) {
-                                deltaPos = vec2i { -1, 0 };
-                            }
-                            sameAmount = 2;
-                        }
-                    }
-                    
-                    if (monster_->GoalPosition.Y < TILES_Y - 1 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
-                        int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X];
-                        if (proposedDistance < closestDistance) {
-                            closestDistance = proposedDistance;
-                            deltaPos = vec2i { 0, +1 };
-                            sameAmount = 1;
-                        } else if (proposedDistance == closestDistance) {
-                            ++sameAmount;
-                            if (rand() < RAND_MAX / sameAmount) {
-                                deltaPos = vec2i { 0, +1 };
-                            }
-                        }
-                    }
-                    
-                    if (monster_->GoalPosition.X < TILES_X - 1 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1]) {
-                        int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1];
-                        if (proposedDistance < closestDistance) {
-                            closestDistance = proposedDistance;
-                            deltaPos = vec2i { +1, 0 };
-                            sameAmount = 1;
-                        } else if (proposedDistance == closestDistance) {
-                            ++sameAmount;
-                            if (rand() < RAND_MAX / sameAmount) {
-                                deltaPos = vec2i { +1, 0 };
-                            }
-                        }
-                    }
-
-                    monster_->OldPosition.X = monster_->GoalPosition.X;
-                    monster_->OldPosition.Y = monster_->GoalPosition.Y;
-                    monster_->GoalPosition.X += deltaPos.X;
-                    monster_->GoalPosition.Y += deltaPos.Y;
-                } else {
-                    monster_->MovementT += monster_->Speed;
+                    monster_->ActualPosition.X = (1 - monster_->MovementT) * monster_->OldPosition.X + monster_->MovementT * monster_->GoalPosition.X;
+                    monster_->ActualPosition.Y = (1 - monster_->MovementT) * monster_->OldPosition.Y + monster_->MovementT * monster_->GoalPosition.Y;
                 }
-
-                monster_->ActualPosition.X = (1 - monster_->MovementT) * monster_->OldPosition.X + monster_->MovementT * monster_->GoalPosition.X;
-                monster_->ActualPosition.Y = (1 - monster_->MovementT) * monster_->OldPosition.Y + monster_->MovementT * monster_->GoalPosition.Y;
             }
 
             /// Update Monster Waves
@@ -537,6 +540,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 newProjectile->Speed = PROJECTILE_SPEED;
                 newProjectile->Target = &Monsters[targetIndex];
                 newProjectile->TargetGeneration = newProjectile->Target->Generation;
+                inc0 (color_i,   6) {
+                    newProjectile->ColorsCount[color_i] = diamond_->ColorsCount[color_i];
+                }
 
                 float randomAngle = (rand() / (float)(RAND_MAX + 1)) * 2 * PI;
                 vec2f delta;
@@ -586,6 +592,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         // TODO(Tobi): The monster has been killed; do something
                     } else {
                         AudioClipStart(SoundHit, false, 0.2f);
+
+                        /// Assign effects
+                        target->PoisonSpeed = sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
                     }
 
                     Projectiles[projectile_i] = Projectiles[--ProjectileCount];
@@ -988,6 +997,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
             snprintf(dummy, 5, "%d", count);
             TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + 27, ins->Mouse.PosY - bitmap.Height / 2 + 27, dummy, BLACK, WHITE);
         }
+
+        DrawScreenLineThick(&drawRectAll, 100, 100, ins->Mouse.PosX, ins->Mouse.PosY, 5, RED);
 
     }
 }
