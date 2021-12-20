@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "assets.h"
+
 #include "settings.h"
 #include "../helpers/sdl_layer.h"
 
@@ -100,6 +102,12 @@ void Init() {
     SoundHit = LoadWav("assets\\audio\\SplatHit.wav");
     SoundDeath = LoadWav("assets\\audio\\SplatDeathReverb.wav");
 
+    //AudioClipStart(Music, true, 0.75f);
+
+    BitmapTower = BitmapLoad("assets\\sprites\\hexagon\\Tower.bmp");
+    BitmapTrap = BitmapLoad("assets\\sprites\\hexagon\\Trap.bmp");
+    BitmapGoal = BitmapLoad("assets\\sprites\\hexagon\\Goal.bmp");
+
     BitmapsSmoke[0] = BitmapLoad("assets\\sprites\\smoke\\Smoke0.bmp");
     BitmapsSmoke[1] = BitmapLoad("assets\\sprites\\smoke\\Smoke1.bmp");
     BitmapsSmoke[2] = BitmapLoad("assets\\sprites\\smoke\\Smoke2.bmp");
@@ -117,32 +125,31 @@ void Init() {
     BitmapsSmoke[14] = BitmapLoad("assets\\sprites\\smoke\\Smoke14.bmp");
     BitmapsSmoke[15] = BitmapLoad("assets\\sprites\\smoke\\Smoke15.bmp");
 
-    AudioClipStart(Music, true, 0.75f);
+    BitmapGrassDown = BitmapLoad("assets\\sprites\\hexagon\\Down_Grass.bmp");
+    BitmapsPathDown[0] = BitmapLoad("assets\\sprites\\hexagon\\Down_None.bmp");
+    BitmapsPathDown[TRI_DOWN_TOP                                 ] = BitmapLoad("assets\\sprites\\hexagon\\Down_Top.bmp");
+    BitmapsPathDown[               TRI_DOWN_LEFT                 ] = BitmapLoad("assets\\sprites\\hexagon\\Down_Left.bmp");
+    BitmapsPathDown[TRI_DOWN_TOP + TRI_DOWN_LEFT                 ] = BitmapLoad("assets\\sprites\\hexagon\\Down_TopLeft.bmp");
+    BitmapsPathDown[                               TRI_DOWN_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Down_Right.bmp");
+    BitmapsPathDown[TRI_DOWN_TOP                 + TRI_DOWN_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Down_TopRight.bmp");
+    BitmapsPathDown[               TRI_DOWN_LEFT + TRI_DOWN_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Down_LeftRight.bmp");
+    BitmapsPathDown[TRI_DOWN_TOP + TRI_DOWN_LEFT + TRI_DOWN_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Down_Street.bmp");
+
+    BitmapGrassUp = BitmapLoad("assets\\sprites\\hexagon\\Up_Grass.bmp");
+    BitmapsPathUp[0] = BitmapLoad("assets\\sprites\\hexagon\\Up_None.bmp");
+    BitmapsPathUp[TRI_UP_BOTTOM                             ] = BitmapLoad("assets\\sprites\\hexagon\\Up_Bottom.bmp");
+    BitmapsPathUp[                TRI_UP_LEFT               ] = BitmapLoad("assets\\sprites\\hexagon\\Up_Left.bmp");
+    BitmapsPathUp[TRI_UP_BOTTOM + TRI_UP_LEFT               ] = BitmapLoad("assets\\sprites\\hexagon\\Up_BottomLeft.bmp");
+    BitmapsPathUp[                              TRI_UP_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Up_Right.bmp");
+    BitmapsPathUp[TRI_UP_BOTTOM               + TRI_UP_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Up_BottomRight.bmp");
+    BitmapsPathUp[                TRI_UP_LEFT + TRI_UP_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Up_LeftRight.bmp");
+    BitmapsPathUp[TRI_UP_BOTTOM + TRI_UP_LEFT + TRI_UP_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Up_Street.bmp");
 
     DummyFontInfo = AcquireDebugFont();
 
-    BitmapGoal = BitmapLoad("assets\\sprites\\Goal.bmp");
-    BitmapTower = BitmapLoad("assets\\sprites\\Tower.bmp");
-    BitmapsPath[0] = BitmapLoad("assets\\sprites\\Grass.bmp");
-    BitmapsPath[PATH_BMP_UP                                                 ] = BitmapLoad("assets\\sprites\\PathUp.bmp");
-    BitmapsPath[              PATH_BMP_DOWN                                 ] = BitmapLoad("assets\\sprites\\PathDown.bmp");
-    BitmapsPath[PATH_BMP_UP + PATH_BMP_DOWN                                 ] = BitmapLoad("assets\\sprites\\PathUpDown.bmp");
-    BitmapsPath[                              PATH_BMP_LEFT                 ] = BitmapLoad("assets\\sprites\\PathLeft.bmp");
-    BitmapsPath[PATH_BMP_UP +                 PATH_BMP_LEFT                 ] = BitmapLoad("assets\\sprites\\PathUpLeft.bmp");
-    BitmapsPath[              PATH_BMP_DOWN + PATH_BMP_LEFT                 ] = BitmapLoad("assets\\sprites\\PathDownLeft.bmp");
-    BitmapsPath[PATH_BMP_UP + PATH_BMP_DOWN + PATH_BMP_LEFT                 ] = BitmapLoad("assets\\sprites\\PathUpDownLeft.bmp");
-    BitmapsPath[                                              PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathRight.bmp");
-    BitmapsPath[PATH_BMP_UP                                 + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathUpRight.bmp");
-    BitmapsPath[              PATH_BMP_DOWN                 + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathDownRight.bmp");
-    BitmapsPath[PATH_BMP_UP + PATH_BMP_DOWN                 + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathUpDownRight.bmp");
-    BitmapsPath[                              PATH_BMP_LEFT + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathLeftRight.bmp");
-    BitmapsPath[PATH_BMP_UP +                 PATH_BMP_LEFT + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathUpLeftRight.bmp");
-    BitmapsPath[              PATH_BMP_DOWN + PATH_BMP_LEFT + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\PathDownLeftRight.bmp");
-    BitmapsPath[PATH_BMP_UP + PATH_BMP_DOWN + PATH_BMP_LEFT + PATH_BMP_RIGHT] = BitmapLoad("assets\\sprites\\Street.bmp");
-
-    Cogwheels[0] = BitmapLoad("assets\\sprites\\CogwheelSmall0.bmp");
-    Cogwheels[1] = BitmapLoad("assets\\sprites\\CogwheelSmall1.bmp");
-    Cogwheels[2] = BitmapLoad("assets\\sprites\\CogwheelSmall2.bmp");
+    Cogwheels[0] = BitmapLoad("assets\\sprites\\hexagon\\Gear0.bmp");
+    Cogwheels[1] = BitmapLoad("assets\\sprites\\hexagon\\Gear15.bmp");
+    Cogwheels[2] = BitmapLoad("assets\\sprites\\hexagon\\Gear30.bmp");
 
     MonsterSprites[0] = BitmapLoad("assets\\sprites\\MonsterUp.bmp");
     MonsterSprites[1] = BitmapLoad("assets\\sprites\\MonsterUpRight.bmp");
@@ -228,7 +235,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
     draw_rect drawRectMain = {};
     drawRectMain.ArrayData = array;
     drawRectMain.ArrayWidth = width;
-    drawRectMain.Width = TILES_X * GRID_SIZE;
+    drawRectMain.Width = (TRIANGLE_PAIRS_X + 1) * HALF_HEXAGON_PIXEL_WIDTH;
     drawRectMain.Height = height;
     drawRectMain.StartX = drawRectWaveStones.Width;
     drawRectMain.StartY = 0;
@@ -247,7 +254,49 @@ void Update(color32* array, int width, int height, inputs* ins) {
     drawRectMenuDiamonds.StartY = MENU_OFFSET_Y;
     drawRectMenuDiamonds.Height = MENU_DIAMONDS_Y * GRID_SIZE;
 
-    vec2i mouseTilePos = { mainMousePosition.X / GRID_SIZE, mainMousePosition.Y / GRID_SIZE };
+    vec2i mouseTilePos;
+    mouseTilePos.Y = mainMousePosition.Y / HALF_HEXAGON_PIXEL_HEIGHT;
+    bool oddLine = mouseTilePos.Y % 2;
+
+    int evenTileIndex = mainMousePosition.X / HALF_HEXAGON_PIXEL_WIDTH;
+    int oddTileIndex  = (mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2)) / HALF_HEXAGON_PIXEL_WIDTH;
+
+    int deltaY = mainMousePosition.Y - HALF_HEXAGON_PIXEL_HEIGHT * mouseTilePos.Y;
+    float yRelative = deltaY / (float) HALF_HEXAGON_PIXEL_HEIGHT;
+
+    if (oddLine) {
+        // NOTE(Tobi): The even tile index is down
+
+        if (evenTileIndex == oddTileIndex) {
+            // NOTE(Tobi): Up - Down
+            int deltaX = mainMousePosition.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+            float xRelative = (float)deltaX / (HALF_HEXAGON_PIXEL_WIDTH / 2);
+            bool isOnRight = xRelative > yRelative;
+            mouseTilePos.X = 2 * evenTileIndex + isOnRight - 1;
+        } else {
+            // NOTE(Tobi): Down - Up
+            int deltaX = mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
+            bool isOnRight = xRelative > 1 - yRelative;
+            mouseTilePos.X = 2 * evenTileIndex + isOnRight;
+        }
+    } else {
+        // NOTE(Tobi): The even tile index is up
+
+        if (evenTileIndex == oddTileIndex) {
+            // NOTE(Tobi): Down - Up
+            int deltaX = mainMousePosition.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
+            bool isOnRight = xRelative > 1 - yRelative;
+            mouseTilePos.X = 2 * evenTileIndex + isOnRight - 1;
+        } else {
+            // NOTE(Tobi): Up - Down
+            int deltaX = mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH) / 2);
+            bool isOnRight = xRelative > yRelative;
+            mouseTilePos.X = 2 * evenTileIndex + isOnRight;
+        }
+    }
 
     /// Handle Input
     {
@@ -314,6 +363,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
     }
 
     /// Logic Update
+    #if 0
     if (!IsLevelEditorActive) {
         ++FrameCount;
 
@@ -794,53 +844,81 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
     }
+    #endif
 
     /// Rendering
     {
+        /// Clear screen
         if (IsLevelEditorActive) {
             DrawScreenRectangle(&drawRectAll, 0, 0, width, height, COL32_RGB(0, 0, 192));
         } else {
             DrawScreenRectangle(&drawRectAll, 0, 0, width, height, BLACK);
         }
 
+        // TODO(Tobi): Wasn't their something with a half pair at the end?
         /// Render terrain
         inc0 (y_i,   TILES_Y) {
+            int evenLineOffset = 1 - (y_i % 2);
             inc0 (x_i,   TILES_X) {
                 color32 col;
+                bool triangleIsDown = (x_i + y_i) % 2;
                 switch (Ground[y_i][x_i]) {
                     case T_GRASS: {
-                        DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapsPath[0], WHITE);
+                        if (triangleIsDown) {
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassDown, WHITE);
+                        } else {
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassUp, WHITE);
+                        }
                     } break;
                     case T_PATH: {
                         int pathBMPIndex = 0;
-                        if (y_i == 0 || Ground[y_i - 1][x_i] & (T_PATH | T_GOAL)) {
-                            pathBMPIndex += PATH_BMP_UP;
+
+                        if (triangleIsDown) {
+                            if (y_i == 0 || Ground[y_i - 1][x_i] & (T_PATH | T_GOAL)) {
+                                pathBMPIndex += TRI_DOWN_TOP;
+                            }
+                            if (x_i == 0 || Ground[y_i][x_i - 1] & (T_PATH | T_GOAL)) {
+                                pathBMPIndex += TRI_DOWN_LEFT;
+                            }
+                            if (x_i == TILES_X - 1 || Ground[y_i][x_i + 1] & (T_PATH | T_GOAL)) {
+                                pathBMPIndex += TRI_DOWN_RIGHT;
+                            }
+
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassDown, WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathDown[pathBMPIndex], WHITE);
+                        } else {
+                            if (y_i == TILES_Y - 1 || Ground[y_i + 1][x_i] & (T_PATH | T_GOAL)) {
+                                pathBMPIndex += TRI_UP_BOTTOM;
+                            }
+                            if (x_i == 0 || Ground[y_i][x_i - 1] & (T_PATH | T_GOAL)) {
+                                pathBMPIndex += TRI_UP_LEFT;
+                            }
+                            if (x_i == TILES_X - 1 || Ground[y_i][x_i + 1] & (T_PATH | T_GOAL)) {
+                                pathBMPIndex += TRI_UP_RIGHT;
+                            }
+
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassUp, WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[pathBMPIndex], WHITE);
                         }
-                        if (y_i == TILES_Y - 1 || Ground[y_i + 1][x_i] & (T_PATH | T_GOAL)) {
-                            pathBMPIndex += PATH_BMP_DOWN;
-                        }
-                        if (x_i == 0 || Ground[y_i][x_i - 1] & (T_PATH | T_GOAL)) {
-                            pathBMPIndex += PATH_BMP_LEFT;
-                        }
-                        if (x_i == TILES_X - 1 || Ground[y_i][x_i + 1] & (T_PATH | T_GOAL)) {
-                            pathBMPIndex += PATH_BMP_RIGHT;
-                        }
-                        DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapsPath[pathBMPIndex], WHITE);
                     } break;
                     case T_TOWER: {
-                        DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapTower, WHITE);
+                        // TODO(Tobi): Tower; maybe they will be done differently since they get drawn over other stuff
+                        //DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapTower, WHITE);
                     } break;
                     case T_GOAL: {
-                        DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapGoal, WHITE);
+                        // TODO(Tobi): GOAL; maybe they will be done differently since they get drawn over other stuff
+                        //DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapGoal, WHITE);
                     } break;
                     default: {
-                        col = PINK;
-                        DrawBlock(&drawRectMain, x_i, y_i, col);
+                        // col = PINK;
+                        // DrawBlock(&drawRectMain, x_i, y_i, col);
                     } break;
                 }
             }
         }
 
+        /// Draw lines in edit mode
+        #if 0
         if (IsLevelEditorActive) {
             inc0 (x_i,   TILES_X - 1) {
                 DrawScreenRectangle(&drawRectMain, GRID_SIZE * (x_i + 1), 0, 1, drawRectMain.Height, BLUE);
@@ -850,6 +928,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 DrawScreenRectangle(&drawRectMain, 0, GRID_SIZE * (y_i + 1), drawRectMain.Width, 1, BLUE);
             }
         }
+        #endif
 
         /// Render right menu
         inc0 (y_i,   MENU_DIAMONDS_Y) {
@@ -860,6 +939,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Render Monsters
+        #if 0
         inc0 (monster_i,   MonsterListEnd) {
             monster* monster_ = &Monsters[monster_i];
             if (!monster_->Health) { continue; }
@@ -890,8 +970,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK);
             }
         }
+        #endif
 
         /// Render Diamonds
+        #if 0
         inc0 (diamond_i,   DiamondCount) {
             diamond* diamond_ = &DiamondList[diamond_i];
             if (diamond_->Inactive) { continue; }
@@ -927,6 +1009,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             }
         }
+        #endif
 
         /// Render Projectiles
         inc0 (projectile_i,   ProjectileCount) {
@@ -995,10 +1078,47 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + 27, ins->Mouse.PosY - bitmap.Height / 2 + 27, dummy, BLACK, WHITE);
+            TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + HALF_HEXAGON_PIXEL_HEIGHT, ins->Mouse.PosY - bitmap.Height / 2 + HALF_HEXAGON_PIXEL_HEIGHT, dummy, BLACK, WHITE);
         }
 
-        DrawScreenLineThick(&drawRectAll, 100, 100, ins->Mouse.PosX, ins->Mouse.PosY, 5, RED);
+        #if 0
+
+        #define SQRT_3 1.73205080757f
+        #define HEXAGON_HEIGHT 54.0f
+        #define HALF_HEXAGON_HEIGHT (HEXAGON_HEIGHT / 2)
+        #define HEXAGON_A (HALF_HEXAGON_HEIGHT * 2 / SQRT_3)
+
+        inc0 (y_i,   TRIANGLE_LINES_Y) {
+            DrawScreenLine(&drawRectMain, 0, HALF_HEXAGON_HEIGHT * y_i, drawRectMain.Width, HALF_HEXAGON_HEIGHT * y_i, RED);
+        }
+
+        // Top Right -> Bottom Left
+        inc0 (x_i,   TRIANGLE_PAIRS_X + 1 + TRIANGLE_LINE_PAIRS_Y) {
+            DrawScreenLine(&drawRectMain, HEXAGON_A / 2 + HEXAGON_A * x_i, 0, -(TRIANGLE_LINES_Y - 1) * HEXAGON_A / 2 + HEXAGON_A * x_i, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT /*drawRectMain.Height*/, RED);
+        }
+
+        // Top Left -> Bottom Right
+        inc (x_i,   -TRIANGLE_LINE_PAIRS_Y,   TRIANGLE_PAIRS_X + 1) {
+            DrawScreenLine(&drawRectMain, HEXAGON_A / 2 + HEXAGON_A * x_i, 0, (TRIANGLE_LINES_Y + 1) * HEXAGON_A / 2 + HEXAGON_A * x_i, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT /*drawRectMain.Height*/, RED);
+        }
+
+        DrawScreenLine(&drawRectMain, 0, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, BLACK);
+        DrawScreenLine(&drawRectMain, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, 0, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, BLACK);
+
+        DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[TRI_UP_RIGHT + TRI_UP_BOTTOM], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathDown[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathDown[TRI_DOWN_LEFT + TRI_DOWN_RIGHT], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[TRI_UP_LEFT + TRI_UP_BOTTOM], WHITE);
+
+        DrawScreenBitmap(&drawRectMain, 100, 100, BitmapsPathDown[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100, 100, BitmapsPathDown[TRI_DOWN_RIGHT + TRI_DOWN_TOP], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, BitmapsPathUp[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, BitmapsPathUp[TRI_UP_LEFT + TRI_UP_RIGHT], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, BitmapsPathDown[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, BitmapsPathDown[TRI_DOWN_LEFT + TRI_DOWN_TOP], WHITE);
+        #endif
 
     }
 }

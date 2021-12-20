@@ -144,19 +144,7 @@ int MonsterWaveSpeedEnd;
 
 #define KEY_SPEED_WAVE F5
 
-loaded_audio Music;
-loaded_audio SoundHit;
-loaded_audio SoundDeath;
+
 
 int ShakeFrames;
 
-#define PATH_BMP_UP 1
-#define PATH_BMP_DOWN 2
-#define PATH_BMP_LEFT 4
-#define PATH_BMP_RIGHT 8
-loaded_bitmap BitmapsPath[16];
-
-loaded_bitmap BitmapTower;
-loaded_bitmap BitmapGoal;
-
-loaded_bitmap BitmapsSmoke[16];

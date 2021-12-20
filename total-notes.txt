@@ -72,8 +72,14 @@ Episode 3:
 - Exercise:
 
 Episode 4:
-- Hexagonal tiles / triangle tiles
-- 
+- Hexagonal tiles / triangle tiles (This will need several episodes I think)
+- Line drawing function DONE
+- Drawing hexagons (new sprites)
+- New way of storing map data
+- Mouse-to-hex mapping
+- New Level Editor workings
+- Building during the game
+- Pathfinding with triangles
 - Exercise:
 
 Episode 5:
