@@ -246,6 +246,54 @@ vec2f HexToActualPos(vec2i hexPosition) {
     return ret;
 }
 
+vec2i MouseToTilePos(vec2i mousePos) {
+    vec2i tilePos;
+    tilePos.Y = mousePos.Y / HALF_HEXAGON_PIXEL_HEIGHT;
+    bool oddLine = tilePos.Y % 2;
+
+    int evenTileIndex = mousePos.X / HALF_HEXAGON_PIXEL_WIDTH;
+    int oddTileIndex  = (mousePos.X + (HALF_HEXAGON_PIXEL_WIDTH / 2)) / HALF_HEXAGON_PIXEL_WIDTH;
+
+    int deltaY = mousePos.Y - HALF_HEXAGON_PIXEL_HEIGHT * mousePos.Y;
+    float yRelative = deltaY / (float) HALF_HEXAGON_PIXEL_HEIGHT;
+
+    if (oddLine) {
+        // NOTE(Tobi): The even tile index is down
+
+        if (evenTileIndex == oddTileIndex) {
+            // NOTE(Tobi): Up - Down
+            int deltaX = mousePos.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+            float xRelative = (float)deltaX / (HALF_HEXAGON_PIXEL_WIDTH / 2);
+            bool isOnRight = xRelative > yRelative;
+            tilePos.X = 2 * evenTileIndex + isOnRight - 1;
+        } else {
+            // NOTE(Tobi): Down - Up
+            int deltaX = mousePos.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
+            bool isOnRight = xRelative > 1 - yRelative;
+            tilePos.X = 2 * evenTileIndex + isOnRight;
+        }
+    } else {
+        // NOTE(Tobi): The even tile index is up
+
+        if (evenTileIndex == oddTileIndex) {
+            // NOTE(Tobi): Down - Up
+            int deltaX = mousePos.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
+            bool isOnRight = xRelative > 1 - yRelative;
+            tilePos.X = 2 * evenTileIndex + isOnRight - 1;
+        } else {
+            // NOTE(Tobi): Up - Down
+            int deltaX = mousePos.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH) / 2);
+            bool isOnRight = xRelative > yRelative;
+            tilePos.X = 2 * evenTileIndex + isOnRight;
+        }
+    }
+
+    return tilePos;
+}
+
 void Update(color32* array, int width, int height, inputs* ins) {
 
     if (ShakeFrames > 0) {
@@ -294,53 +342,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
     draw_rect drawRectMenuDiamonds = drawRectRightMenu;
     drawRectMenuDiamonds.StartY = MENU_OFFSET_Y;
     drawRectMenuDiamonds.Height = MENU_DIAMONDS_Y * GRID_SIZE;
+    vec2i menuDiamondsMousePosition = TranslateMousePosition(&drawRectMenuDiamonds, ins);
 
-    /// Converting mouse position
-    vec2i mouseTilePos;
-    {
-        mouseTilePos.Y = mainMousePosition.Y / HALF_HEXAGON_PIXEL_HEIGHT;
-        bool oddLine = mouseTilePos.Y % 2;
-
-        int evenTileIndex = mainMousePosition.X / HALF_HEXAGON_PIXEL_WIDTH;
-        int oddTileIndex  = (mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2)) / HALF_HEXAGON_PIXEL_WIDTH;
-
-        int deltaY = mainMousePosition.Y - HALF_HEXAGON_PIXEL_HEIGHT * mouseTilePos.Y;
-        float yRelative = deltaY / (float) HALF_HEXAGON_PIXEL_HEIGHT;
-
-        if (oddLine) {
-            // NOTE(Tobi): The even tile index is down
-
-            if (evenTileIndex == oddTileIndex) {
-                // NOTE(Tobi): Up - Down
-                int deltaX = mainMousePosition.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
-                float xRelative = (float)deltaX / (HALF_HEXAGON_PIXEL_WIDTH / 2);
-                bool isOnRight = xRelative > yRelative;
-                mouseTilePos.X = 2 * evenTileIndex + isOnRight - 1;
-            } else {
-                // NOTE(Tobi): Down - Up
-                int deltaX = mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
-                float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
-                bool isOnRight = xRelative > 1 - yRelative;
-                mouseTilePos.X = 2 * evenTileIndex + isOnRight;
-            }
-        } else {
-            // NOTE(Tobi): The even tile index is up
-
-            if (evenTileIndex == oddTileIndex) {
-                // NOTE(Tobi): Down - Up
-                int deltaX = mainMousePosition.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
-                float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
-                bool isOnRight = xRelative > 1 - yRelative;
-                mouseTilePos.X = 2 * evenTileIndex + isOnRight - 1;
-            } else {
-                // NOTE(Tobi): Up - Down
-                int deltaX = mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
-                float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH) / 2);
-                bool isOnRight = xRelative > yRelative;
-                mouseTilePos.X = 2 * evenTileIndex + isOnRight;
-            }
-        }
-    }
+    vec2i mouseTilePos = MouseToTilePos(mainMousePosition);
+    vec2i menuTilePos = MouseToTilePos(menuDiamondsMousePosition);
 
     /// Handle Input
     {
@@ -711,9 +716,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        #if 0
         /// Menu logic
-        vec2i menuTilePos = { rightMenuMousePosition.X / GRID_SIZE, rightMenuMousePosition.Y / GRID_SIZE - MENU_OFFSET_TILES_Y };
+        // TODO(Tobi): This whole menu logic is really ugly; I hope that will change at one point
         {
             bool shallDrop = false;
 
@@ -890,7 +894,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }
         }
-        #endif
     }
 
     /// Rendering

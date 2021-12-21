@@ -81,6 +81,7 @@ Episode 4:
 - Building during the game
 - Pathfinding with triangles DONE
 - Diamonds again
+
 - Exercise:
 
 Episode 5:
