@@ -74,12 +74,13 @@ Episode 3:
 Episode 4:
 - Hexagonal tiles / triangle tiles (This will need several episodes I think)
 - Line drawing function DONE
-- Drawing hexagons (new sprites)
-- New way of storing map data
-- Mouse-to-hex mapping
-- New Level Editor workings
+- Drawing hexagons (new sprites) DONE
+- New way of storing map data DONE
+- Mouse-to-hex mapping DONE
+- New Level Editor workings DONE
 - Building during the game
-- Pathfinding with triangles
+- Pathfinding with triangles DONE
+- Diamonds again
 - Exercise:
 
 Episode 5:

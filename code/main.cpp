@@ -54,15 +54,29 @@ void InitDistanceArray() {
     /// Reset DistanceToGoal
     inc0 (y_i,   TILES_Y) {
         inc0 (x_i,   TILES_X) {
+            DistanceToGoal[y_i][x_i] = 0;
+        }
+    }
+
+    /// Set DistanceToGoal at the goal fields
+    inc0 (y_i,   TILES_Y) {
+        inc0 (x_i,   TILES_X) {
+            bool triangleIsDown = (x_i + y_i) % 2;
+            if (triangleIsDown) { continue; }
+
             if (Ground[y_i][x_i] == T_GOAL) {
-                DistanceToGoal[y_i][x_i] = 1;
-            } else {
-                DistanceToGoal[y_i][x_i] = 0;
+                DistanceToGoal[y_i    ][x_i    ] = 1;
+                DistanceToGoal[y_i    ][x_i + 1] = 1;
+                DistanceToGoal[y_i    ][x_i + 2] = 1;
+                DistanceToGoal[y_i + 1][x_i    ] = 1;
+                DistanceToGoal[y_i + 1][x_i + 1] = 1;
+                DistanceToGoal[y_i + 1][x_i + 2] = 1;
             }
         }
     }
 
     /// Fill DistanceToGoal
+    // TODO(Tobi): I am not sure how good using ints is here
     int currentDistance = 0;
     bool changedSomething = true;
     while (changedSomething) {
@@ -70,15 +84,19 @@ void InitDistanceArray() {
         ++currentDistance;
         inc0 (y_i,   TILES_Y) {
             inc0 (x_i,   TILES_X) {
-                if (DistanceToGoal[y_i][x_i] == currentDistance) {
-                    if (y_i > 0 && !DistanceToGoal[y_i - 1][x_i] && Ground[y_i - 1][x_i] == T_PATH) {
-                        DistanceToGoal[y_i - 1][x_i] = currentDistance + 1;
-                        changedSomething = true;
-                    }
+                bool triangleIsDown = (x_i + y_i) % 2;
 
-                    if (y_i < TILES_Y - 1 && !DistanceToGoal[y_i + 1][x_i] && Ground[y_i + 1][x_i] == T_PATH) {
-                        DistanceToGoal[y_i + 1][x_i] = currentDistance + 1;
-                        changedSomething = true;
+                if (DistanceToGoal[y_i][x_i] == currentDistance) {
+                    if (triangleIsDown) {
+                        if (y_i > 0 && !DistanceToGoal[y_i - 1][x_i] && Ground[y_i - 1][x_i] == T_PATH) {
+                            DistanceToGoal[y_i - 1][x_i] = currentDistance + 1;
+                            changedSomething = true;
+                        }
+                    } else {
+                        if (y_i < TILES_Y - 1 && !DistanceToGoal[y_i + 1][x_i] && Ground[y_i + 1][x_i] == T_PATH) {
+                            DistanceToGoal[y_i + 1][x_i] = currentDistance + 1;
+                            changedSomething = true;
+                        }
                     }
 
                     if (x_i > 0 && !DistanceToGoal[y_i][x_i - 1] && Ground[y_i][x_i - 1] == T_PATH) {
@@ -103,6 +121,9 @@ void Init() {
     SoundDeath = LoadWav("assets\\audio\\SplatDeathReverb.wav");
 
     //AudioClipStart(Music, true, 0.75f);
+
+    BitmapWhiteUp = BitmapLoad("assets\\sprites\\hexagon\\Up_White.bmp");
+    BitmapWhiteDown = BitmapLoad("assets\\sprites\\hexagon\\Down_White.bmp");
 
     BitmapTower = BitmapLoad("assets\\sprites\\hexagon\\Tower.bmp");
     BitmapTrap = BitmapLoad("assets\\sprites\\hexagon\\Trap.bmp");
@@ -205,6 +226,26 @@ vec2i TranslateMousePosition(draw_rect* drawRect, inputs* ins) {
     return ret;
 }
 
+vec2f HexToActualPos(vec2i hexPosition) {
+    bool triangleIsDown = (hexPosition.X + hexPosition.Y) % 2;
+    bool oddLine = hexPosition.Y % 2;
+
+    vec2f floatPos;
+
+    if (triangleIsDown) {
+        floatPos.Y = hexPosition.Y + 1 / 3.0f;
+    } else {
+        floatPos.Y = hexPosition.Y + 2 / 3.0f;
+    }
+
+    floatPos.X = (float) hexPosition.X;
+
+    #define SQRT_3 1.73205080757f
+    #define HEXAGON_H (SQRT_3 / 2)
+    vec2f ret = { (floatPos.X + 1) * 0.5f, floatPos.Y * HEXAGON_H };
+    return ret;
+}
+
 void Update(color32* array, int width, int height, inputs* ins) {
 
     if (ShakeFrames > 0) {
@@ -254,58 +295,65 @@ void Update(color32* array, int width, int height, inputs* ins) {
     drawRectMenuDiamonds.StartY = MENU_OFFSET_Y;
     drawRectMenuDiamonds.Height = MENU_DIAMONDS_Y * GRID_SIZE;
 
+    /// Converting mouse position
     vec2i mouseTilePos;
-    mouseTilePos.Y = mainMousePosition.Y / HALF_HEXAGON_PIXEL_HEIGHT;
-    bool oddLine = mouseTilePos.Y % 2;
+    {
+        mouseTilePos.Y = mainMousePosition.Y / HALF_HEXAGON_PIXEL_HEIGHT;
+        bool oddLine = mouseTilePos.Y % 2;
 
-    int evenTileIndex = mainMousePosition.X / HALF_HEXAGON_PIXEL_WIDTH;
-    int oddTileIndex  = (mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2)) / HALF_HEXAGON_PIXEL_WIDTH;
+        int evenTileIndex = mainMousePosition.X / HALF_HEXAGON_PIXEL_WIDTH;
+        int oddTileIndex  = (mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2)) / HALF_HEXAGON_PIXEL_WIDTH;
 
-    int deltaY = mainMousePosition.Y - HALF_HEXAGON_PIXEL_HEIGHT * mouseTilePos.Y;
-    float yRelative = deltaY / (float) HALF_HEXAGON_PIXEL_HEIGHT;
+        int deltaY = mainMousePosition.Y - HALF_HEXAGON_PIXEL_HEIGHT * mouseTilePos.Y;
+        float yRelative = deltaY / (float) HALF_HEXAGON_PIXEL_HEIGHT;
 
-    if (oddLine) {
-        // NOTE(Tobi): The even tile index is down
+        if (oddLine) {
+            // NOTE(Tobi): The even tile index is down
 
-        if (evenTileIndex == oddTileIndex) {
-            // NOTE(Tobi): Up - Down
-            int deltaX = mainMousePosition.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
-            float xRelative = (float)deltaX / (HALF_HEXAGON_PIXEL_WIDTH / 2);
-            bool isOnRight = xRelative > yRelative;
-            mouseTilePos.X = 2 * evenTileIndex + isOnRight - 1;
+            if (evenTileIndex == oddTileIndex) {
+                // NOTE(Tobi): Up - Down
+                int deltaX = mainMousePosition.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+                float xRelative = (float)deltaX / (HALF_HEXAGON_PIXEL_WIDTH / 2);
+                bool isOnRight = xRelative > yRelative;
+                mouseTilePos.X = 2 * evenTileIndex + isOnRight - 1;
+            } else {
+                // NOTE(Tobi): Down - Up
+                int deltaX = mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+                float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
+                bool isOnRight = xRelative > 1 - yRelative;
+                mouseTilePos.X = 2 * evenTileIndex + isOnRight;
+            }
         } else {
-            // NOTE(Tobi): Down - Up
-            int deltaX = mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
-            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
-            bool isOnRight = xRelative > 1 - yRelative;
-            mouseTilePos.X = 2 * evenTileIndex + isOnRight;
-        }
-    } else {
-        // NOTE(Tobi): The even tile index is up
+            // NOTE(Tobi): The even tile index is up
 
-        if (evenTileIndex == oddTileIndex) {
-            // NOTE(Tobi): Down - Up
-            int deltaX = mainMousePosition.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
-            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
-            bool isOnRight = xRelative > 1 - yRelative;
-            mouseTilePos.X = 2 * evenTileIndex + isOnRight - 1;
-        } else {
-            // NOTE(Tobi): Up - Down
-            int deltaX = mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
-            float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH) / 2);
-            bool isOnRight = xRelative > yRelative;
-            mouseTilePos.X = 2 * evenTileIndex + isOnRight;
+            if (evenTileIndex == oddTileIndex) {
+                // NOTE(Tobi): Down - Up
+                int deltaX = mainMousePosition.X - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+                float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH + 1) / 2);
+                bool isOnRight = xRelative > 1 - yRelative;
+                mouseTilePos.X = 2 * evenTileIndex + isOnRight - 1;
+            } else {
+                // NOTE(Tobi): Up - Down
+                int deltaX = mainMousePosition.X + (HALF_HEXAGON_PIXEL_WIDTH / 2) - HALF_HEXAGON_PIXEL_WIDTH * oddTileIndex;
+                float xRelative = (float)deltaX / ((HALF_HEXAGON_PIXEL_WIDTH) / 2);
+                bool isOnRight = xRelative > yRelative;
+                mouseTilePos.X = 2 * evenTileIndex + isOnRight;
+            }
         }
     }
 
     /// Handle Input
     {
-        if (IS_KEY_PRESSED(F1)) {
+        if (IS_KEY_PRESSED(KEY_TOGGLE_EDITOR)) {
             IsLevelEditorActive = !IsLevelEditorActive;
 
             if (!IsLevelEditorActive) {
                 InitDistanceArray();
             }
+        }
+
+        if (IS_KEY_PRESSED(KEY_TOGGLE_SHOW_PATHFINDING)) {
+            ShowPathfinding = !ShowPathfinding;
         }
 
         /// "Level Editor"
@@ -323,7 +371,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
 
             if (ins->Mouse.Right.Down && ins->Mouse.Right.Toggled) {
-                if (mouseTilePos.X >= 0 && mouseTilePos.X < TILES_X && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y) {
+                bool triangleIsDown = (mouseTilePos.X + mouseTilePos.Y) % 2;
+                if (!triangleIsDown && mouseTilePos.X >= 0 && mouseTilePos.X < TILES_X && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y) {
                     if (Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER) {
                         Ground[mouseTilePos.Y][mouseTilePos.X] = T_GOAL;
                     } else {
@@ -363,7 +412,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
     }
 
     /// Logic Update
-    #if 0
     if (!IsLevelEditorActive) {
         ++FrameCount;
 
@@ -399,15 +447,22 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             monster_->MovementT += monster_->Speed;
                         }
 
-                        // NOTE(Tobi): This assumes monsters can only walk vertical/horizontal
-
+                        bool triangleIsDown = (monster_->GoalPosition.X + monster_->GoalPosition.Y) % 2;
                         int closestDistance = 9999999;
                         vec2i deltaPos = { 0, 0 };
 
-                        if (monster_->GoalPosition.Y > 0 && DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X]) {
-                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X];
-                            closestDistance = proposedDistance;
-                            deltaPos = vec2i { 0, -1 };
+                        if (triangleIsDown) {
+                            if (monster_->GoalPosition.Y > 0 && DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X]) {
+                                int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X];
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { 0, -1 };
+                            }
+                        } else {
+                            if (monster_->GoalPosition.Y < TILES_Y - 1 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
+                                int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X];
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { 0, +1 };
+                            }
                         }
 
                         int sameAmount = 1;
@@ -419,23 +474,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 deltaPos = vec2i { -1, 0 };
                                 sameAmount = 1;
                             } else if (proposedDistance == closestDistance) {
-                                if (rand() < RAND_MAX / 2) {
-                                    deltaPos = vec2i { -1, 0 };
-                                }
-                                sameAmount = 2;
-                            }
-                        }
-                        
-                        if (monster_->GoalPosition.Y < TILES_Y - 1 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
-                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X];
-                            if (proposedDistance < closestDistance) {
-                                closestDistance = proposedDistance;
-                                deltaPos = vec2i { 0, +1 };
-                                sameAmount = 1;
-                            } else if (proposedDistance == closestDistance) {
                                 ++sameAmount;
                                 if (rand() < RAND_MAX / sameAmount) {
-                                    deltaPos = vec2i { 0, +1 };
+                                    deltaPos = vec2i { -1, 0 };
                                 }
                             }
                         }
@@ -462,8 +503,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         monster_->MovementT += monster_->Speed;
                     }
 
-                    monster_->ActualPosition.X = (1 - monster_->MovementT) * monster_->OldPosition.X + monster_->MovementT * monster_->GoalPosition.X;
-                    monster_->ActualPosition.Y = (1 - monster_->MovementT) * monster_->OldPosition.Y + monster_->MovementT * monster_->GoalPosition.Y;
+                    // TODO(Tobi): That whole thing will probably move away from lerping movement anyway at one point
+
+                    vec2f actualOldPos = HexToActualPos(monster_->OldPosition);
+                    vec2f actualNewPos = HexToActualPos(monster_->GoalPosition);
+
+                    monster_->ActualPosition.X = (1 - monster_->MovementT) * actualOldPos.X + monster_->MovementT * actualNewPos.X;
+                    monster_->ActualPosition.Y = (1 - monster_->MovementT) * actualOldPos.Y + monster_->MovementT * actualNewPos.Y;
                 }
             }
 
@@ -665,6 +711,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
+        #if 0
         /// Menu logic
         vec2i menuTilePos = { rightMenuMousePosition.X / GRID_SIZE, rightMenuMousePosition.Y / GRID_SIZE - MENU_OFFSET_TILES_Y };
         {
@@ -843,8 +890,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }
         }
+        #endif
     }
-    #endif
 
     /// Rendering
     {
@@ -855,22 +902,36 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawScreenRectangle(&drawRectAll, 0, 0, width, height, BLACK);
         }
 
-        // TODO(Tobi): Wasn't their something with a half pair at the end?
-        /// Render terrain
+        /// Render Grass / Path
         inc0 (y_i,   TILES_Y) {
             int evenLineOffset = 1 - (y_i % 2);
             inc0 (x_i,   TILES_X) {
-                color32 col;
                 bool triangleIsDown = (x_i + y_i) % 2;
-                switch (Ground[y_i][x_i]) {
-                    case T_GRASS: {
+                if (ShowPathfinding) {
+                    color32 col;
+                    if (!DistanceToGoal[y_i][x_i]) {
+                        col = WHITE;
+                    } else {
+                        int r = AtMost(5 * DistanceToGoal[y_i][x_i], 255);
+                        int g = Clamp(5 * DistanceToGoal[y_i][x_i] - 255, 0, 255);
+                        int b = 0;
+                        col = COL32_RGB(r, g, b);
+                    }
+                    if (triangleIsDown) {
+                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapWhiteDown, col);
+                    } else {
+                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapWhiteUp, col);
+                    }
+                } else {
+                    if (!(Ground[y_i][x_i] & (T_PATH | T_GOAL))) {
+                        // Grass
                         if (triangleIsDown) {
                             DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassDown, WHITE);
                         } else {
                             DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassUp, WHITE);
                         }
-                    } break;
-                    case T_PATH: {
+                    } else {
+                        // Path
                         int pathBMPIndex = 0;
 
                         if (triangleIsDown) {
@@ -900,19 +961,37 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassUp, WHITE);
                             DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[pathBMPIndex], WHITE);
                         }
-                    } break;
+                    }
+                }
+            }
+        }
+
+        /// Render buildings
+        inc0 (y_i,   TILES_Y) {
+            int oddLineOffset = y_i % 2;
+            int y = y_i * HALF_HEXAGON_PIXEL_HEIGHT;
+            inc0 (x_i,   TILES_X) {
+                bool triangleIsDown = (x_i + y_i) % 2;
+                if (triangleIsDown) { continue; }
+
+                int x = x_i / 2 * HALF_HEXAGON_PIXEL_WIDTH + oddLineOffset * (HALF_HEXAGON_PIXEL_WIDTH / 2);
+                loaded_bitmap* buildingBitmap = nullptr;
+                color32 buildingColor = WHITE;
+                switch (Ground[y_i][x_i]) {
                     case T_TOWER: {
-                        // TODO(Tobi): Tower; maybe they will be done differently since they get drawn over other stuff
-                        //DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapTower, WHITE);
+                        buildingBitmap = &BitmapTower;
                     } break;
                     case T_GOAL: {
-                        // TODO(Tobi): GOAL; maybe they will be done differently since they get drawn over other stuff
-                        //DrawWorldBitmap(&drawRectMain, (float) x_i, (float) y_i, BitmapGoal, WHITE);
+                        buildingBitmap = &BitmapGoal;
+                        buildingColor = RED;
                     } break;
-                    default: {
-                        // col = PINK;
-                        // DrawBlock(&drawRectMain, x_i, y_i, col);
+                    case T_TRAP: {
+                        buildingBitmap = &BitmapTrap;
                     } break;
+                }
+
+                if (buildingBitmap) {
+                    DrawScreenBitmap(&drawRectMain, x, y, *buildingBitmap, buildingColor);
                 }
             }
         }
@@ -933,36 +1012,38 @@ void Update(color32* array, int width, int height, inputs* ins) {
         /// Render right menu
         inc0 (y_i,   MENU_DIAMONDS_Y) {
             inc0 (x_i,   MENU_DIAMONDS_X) {
-                // TODO(Tobi): I might even split the y stuff in smaller windows as well
                 DrawBlock(&drawRectMenuDiamonds, x_i, y_i, DARK_GREY);
             }
         }
 
         /// Render Monsters
-        #if 0
         inc0 (monster_i,   MonsterListEnd) {
             monster* monster_ = &Monsters[monster_i];
             if (!monster_->Health) { continue; }
 
-            //DrawWorldDisc(monster_->ActualPosition.X, monster_->ActualPosition.Y, monster_->Radius, BLUE);
-
-            int directionInt = 0;
-            {
-                //vec2i deltaPosition = monster_->GoalPosition - monster_->OldPosition;
-                int deltaX = monster_->GoalPosition.X - monster_->OldPosition.X;
-                int deltaY = monster_->GoalPosition.Y - monster_->OldPosition.Y;
-                if (deltaY == -1) {
-                    directionInt = 0;
-                } else if (deltaX == +1) {
-                    directionInt = 2;
-                } else if (deltaY == +1) {
-                    directionInt = 4;
-                } else if (deltaX == -1) {
-                    directionInt = 6;
+            #if 1
+                // TODO(Tobi): I need new sprites otherwise
+                // TODO(Tobi): Do I want to have hex pos and actual pos separated
+                DrawWorldDisc(&drawRectMain, monster_->ActualPosition.X, monster_->ActualPosition.Y, monster_->Radius, BLUE);
+            #else
+                int directionInt = 0;
+                {
+                    //vec2i deltaPosition = monster_->GoalPosition - monster_->OldPosition;
+                    int deltaX = monster_->GoalPosition.X - monster_->OldPosition.X;
+                    int deltaY = monster_->GoalPosition.Y - monster_->OldPosition.Y;
+                    if (deltaY == -1) {
+                        directionInt = 0;
+                    } else if (deltaX == +1) {
+                        directionInt = 2;
+                    } else if (deltaY == +1) {
+                        directionInt = 4;
+                    } else if (deltaX == -1) {
+                        directionInt = 6;
+                    }
                 }
-            }
 
-            DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], monster_->Color);
+                DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], monster_->Color);
+            #endif
 
             /// Render Monster Healthbar
             if (monster_->Health < monster_->MaxHealth) {
@@ -970,7 +1051,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK);
             }
         }
-        #endif
 
         /// Render Diamonds
         #if 0
@@ -1048,20 +1128,21 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Render Menu
         {
-            DrawWorldBitmap(&drawRectRightMenu, 0, 2, IconBuy, WHITE);
-            DrawWorldBitmap(&drawRectRightMenu, 1, 2, IconLevelUp, WHITE);
-            DrawWorldBitmap(&drawRectRightMenu, 2, 2, IconMerge, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 0.5f, 2, IconBuy, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 2.5f, 2, IconLevelUp, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 4.5f, 2, IconMerge, WHITE);
 
             if (Menu.ShallBuy) {
-                DrawWorldBorder(&drawRectRightMenu, 0 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
+                //DrawWorldBorder(&drawRectRightMenu, 0.5f - 1.0f, 2 - 1.0f, 2.0f, 2.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
+                DrawWorldCircle(&drawRectRightMenu, 0.5f, 2, 1, YELLOW);
             }
 
             if (Menu.ShallLevelUp) {
-                DrawWorldBorder(&drawRectRightMenu, 1 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
+                DrawWorldCircle(&drawRectRightMenu, 2.5f, 2, 1, YELLOW);
             }
 
             if (Menu.ShallMerge) {
-                DrawWorldBorder(&drawRectRightMenu, 2 - 0.5f, 2 - 0.5f, 1.0f, 1.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
+                DrawWorldCircle(&drawRectRightMenu, 4.5f, 2, 1, YELLOW);
             }
         }
 

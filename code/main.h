@@ -8,10 +8,11 @@
 #include "waveform.h"
 
 enum terrain {
-    T_GRASS = 1,
-    T_PATH = 2,
-    T_TOWER = 4,
-    T_GOAL = 8,
+    T_GRASS = 0,
+    T_PATH = 1,
+    T_TOWER = 2,
+    T_GOAL = 4,
+    T_TRAP = 8,
 };
 
 int FrameCount;
@@ -35,8 +36,6 @@ loaded_bitmap MonsterSprites[8];
 loaded_bitmap IconBuy;
 loaded_bitmap IconLevelUp;
 loaded_bitmap IconMerge;
-
-
 
 #define MENU_DIAMONDS_Y 3
 #define MENU_DIAMONDS_X 3
@@ -138,13 +137,16 @@ int MonsterWaveSpeedEnd;
 
 #define MONSTER_WAVE_FAST_SPEED 7
 
+#define KEY_TOGGLE_EDITOR F1
+#define KEY_TOGGLE_SHOW_PATHFINDING F6
+
 #define KEY_MERGE F4
 #define KEY_LEVEL_UP F3
 #define KEY_BUY F2
 
 #define KEY_SPEED_WAVE F5
 
-
+bool ShowPathfinding;
 
 int ShakeFrames;
 

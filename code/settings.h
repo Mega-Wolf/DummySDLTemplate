@@ -6,6 +6,7 @@
 // TODO(Tobi): Get rid of this
 #define GRID_SIZE 54
 
+#define HEXAGON_A 31
 #define HALF_HEXAGON_PIXEL_HEIGHT 27
 #define HEXAGON_PIXEL_HEIGHT 54
 #define HALF_HEXAGON_PIXEL_WIDTH 31

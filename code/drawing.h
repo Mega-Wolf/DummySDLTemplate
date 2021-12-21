@@ -336,43 +336,39 @@ void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, in
 }
 
 void DrawWorldLine(draw_rect* drawRect, float startX, float startY, float endX, float endY, color32 col) {
-    DrawScreenLine(drawRect, RoundFloatToInt((GRID_SIZE * startX) + GRID_SIZE / 2), RoundFloatToInt((GRID_SIZE * startY) + GRID_SIZE / 2), RoundFloatToInt((GRID_SIZE * endX) + GRID_SIZE / 2), RoundFloatToInt((GRID_SIZE * endY) + GRID_SIZE / 2), col);
+    DrawScreenLine(drawRect, RoundFloatToInt(HEXAGON_A * startX), RoundFloatToInt(HEXAGON_A * startY), RoundFloatToInt(HEXAGON_A * endX), RoundFloatToInt(HEXAGON_A * endY), col);
 }
 
 void DrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float endX, float endY, int pixelThickness, color32 col) {
-    int intStartX = RoundFloatToInt((GRID_SIZE * startX) + GRID_SIZE / 2);
-    int intStartY = RoundFloatToInt((GRID_SIZE * startY) + GRID_SIZE / 2);
-    int intEndX = RoundFloatToInt((GRID_SIZE * endX) + GRID_SIZE / 2);
-    int intEndY = RoundFloatToInt((GRID_SIZE * endY) + GRID_SIZE / 2);
+    int intStartX = RoundFloatToInt(HEXAGON_A * startX);
+    int intStartY = RoundFloatToInt(HEXAGON_A * startY);
+    int intEndX = RoundFloatToInt(HEXAGON_A * endX);
+    int intEndY = RoundFloatToInt(HEXAGON_A * endY);
 
     DrawScreenLineThick(drawRect, intStartX, intStartY, intEndX, intEndY, pixelThickness, col);
 }
 
 void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
-    DrawScreenRectangle(drawRect, (int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), col);
+    DrawScreenRectangle(drawRect, (int) (HEXAGON_A * x), (int) (HEXAGON_A * y), (int) (HEXAGON_A * width), (int) (HEXAGON_A * height), col);
 }
 
 void DrawWorldBorder(draw_rect* drawRect, float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
-    DrawScreenBorder(drawRect, (int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * width), (int) (GRID_SIZE * height), (int) (GRID_SIZE * borderWidth), (int) (GRID_SIZE * borderHeight), col);
+    DrawScreenBorder(drawRect, (int) (HEXAGON_A * x), (int) (HEXAGON_A * y), (int) (HEXAGON_A * width), (int) (HEXAGON_A * height), (int) (HEXAGON_A * borderWidth), (int) (HEXAGON_A * borderHeight), col);
 }
 
 void DrawWorldBitmap(draw_rect* drawRect, float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
-    DrawScreenBitmap(drawRect, (int) (GRID_SIZE * x) + (GRID_SIZE - bitmap.Width) / 2, (int) (GRID_SIZE * y) + (GRID_SIZE - bitmap.Height) / 2, bitmap, wantedColor);
+    DrawScreenBitmap(drawRect, (int) (HEXAGON_A * x) - bitmap.Width / 2, (int) (HEXAGON_A * y) - bitmap.Height / 2, bitmap, wantedColor);
 }
 
 void DrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col) {
-    DrawScreenDisc(drawRect, (int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
+    DrawScreenDisc(drawRect, (int) (HEXAGON_A * x), (int) (HEXAGON_A * y), (int) (HEXAGON_A * radius), col);
 }
 
 void DrawWorldCircle(draw_rect* drawRect, float x, float y, float radius, color32 col) {
-    DrawScreenCircle(drawRect, (int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, (int) (GRID_SIZE * radius), col);
+    DrawScreenCircle(drawRect, (int) (HEXAGON_A * x), (int) (HEXAGON_A * y), (int) (HEXAGON_A * radius), col);
 }
 
 void DrawBlock(draw_rect* drawRect, int x, int y, color32 col) {
     // NOTE(Tobi): I don't know whether I like this function anymore; should I just call DrawWorldRectangle?
     DrawScreenRectangle(drawRect, (int) (GRID_SIZE * x) + 1, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
 }
-
-// void DrawWorldBMPText(float x, float y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
-//     DrawScreenBMPText((int) (GRID_SIZE * x) + GRID_SIZE / 2, (int) (GRID_SIZE * y) + GRID_SIZE / 2, bmpX, bmpY, bmpWidth, bmpHeight, color, backgroundColor, bitmap);
-// }

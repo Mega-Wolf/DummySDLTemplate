@@ -16,6 +16,9 @@ loaded_audio SoundDeath;
 
 /// Sprites
 
+loaded_bitmap BitmapWhiteUp;
+loaded_bitmap BitmapWhiteDown;
+
 loaded_bitmap BitmapTower;
 loaded_bitmap BitmapTrap;
 loaded_bitmap BitmapGoal;
