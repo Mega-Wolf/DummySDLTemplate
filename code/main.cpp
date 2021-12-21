@@ -190,7 +190,7 @@ vec2i MouseToTilePos(vec2i mousePos) {
     int evenTileIndex = mousePos.X / HALF_HEXAGON_PIXEL_WIDTH;
     int oddTileIndex  = (mousePos.X + (HALF_HEXAGON_PIXEL_WIDTH / 2)) / HALF_HEXAGON_PIXEL_WIDTH;
 
-    int deltaY = mousePos.Y - HALF_HEXAGON_PIXEL_HEIGHT * mousePos.Y;
+    int deltaY = mousePos.Y - HALF_HEXAGON_PIXEL_HEIGHT * tilePos.Y;
     float yRelative = deltaY / (float) HALF_HEXAGON_PIXEL_HEIGHT;
 
     if (oddLine) {
