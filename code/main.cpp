@@ -115,75 +115,11 @@ void InitDistanceArray() {
 }
 
 void Init() {
-    //Music = LoadWav("assets\\audio\\LevelMusic.wav");
-    Music = LoadWav("assets\\audio\\Background.wav");
-    SoundHit = LoadWav("assets\\audio\\SplatHit.wav");
-    SoundDeath = LoadWav("assets\\audio\\SplatDeathReverb.wav");
+    AssetsInit();
 
     //AudioClipStart(Music, true, 0.75f);
 
-    BitmapWhiteUp = BitmapLoad("assets\\sprites\\hexagon\\Up_White.bmp");
-    BitmapWhiteDown = BitmapLoad("assets\\sprites\\hexagon\\Down_White.bmp");
-
-    BitmapTower = BitmapLoad("assets\\sprites\\hexagon\\Tower.bmp");
-    BitmapTrap = BitmapLoad("assets\\sprites\\hexagon\\Trap.bmp");
-    BitmapGoal = BitmapLoad("assets\\sprites\\hexagon\\Goal.bmp");
-
-    BitmapsSmoke[0] = BitmapLoad("assets\\sprites\\smoke\\Smoke0.bmp");
-    BitmapsSmoke[1] = BitmapLoad("assets\\sprites\\smoke\\Smoke1.bmp");
-    BitmapsSmoke[2] = BitmapLoad("assets\\sprites\\smoke\\Smoke2.bmp");
-    BitmapsSmoke[3] = BitmapLoad("assets\\sprites\\smoke\\Smoke3.bmp");
-    BitmapsSmoke[4] = BitmapLoad("assets\\sprites\\smoke\\Smoke4.bmp");
-    BitmapsSmoke[5] = BitmapLoad("assets\\sprites\\smoke\\Smoke5.bmp");
-    BitmapsSmoke[6] = BitmapLoad("assets\\sprites\\smoke\\Smoke6.bmp");
-    BitmapsSmoke[7] = BitmapLoad("assets\\sprites\\smoke\\Smoke7.bmp");
-    BitmapsSmoke[8] = BitmapLoad("assets\\sprites\\smoke\\Smoke8.bmp");
-    BitmapsSmoke[9] = BitmapLoad("assets\\sprites\\smoke\\Smoke9.bmp");
-    BitmapsSmoke[10] = BitmapLoad("assets\\sprites\\smoke\\Smoke10.bmp");
-    BitmapsSmoke[11] = BitmapLoad("assets\\sprites\\smoke\\Smoke11.bmp");
-    BitmapsSmoke[12] = BitmapLoad("assets\\sprites\\smoke\\Smoke12.bmp");
-    BitmapsSmoke[13] = BitmapLoad("assets\\sprites\\smoke\\Smoke13.bmp");
-    BitmapsSmoke[14] = BitmapLoad("assets\\sprites\\smoke\\Smoke14.bmp");
-    BitmapsSmoke[15] = BitmapLoad("assets\\sprites\\smoke\\Smoke15.bmp");
-
-    BitmapGrassDown = BitmapLoad("assets\\sprites\\hexagon\\Down_Grass.bmp");
-    BitmapsPathDown[0] = BitmapLoad("assets\\sprites\\hexagon\\Down_None.bmp");
-    BitmapsPathDown[TRI_DOWN_TOP                                 ] = BitmapLoad("assets\\sprites\\hexagon\\Down_Top.bmp");
-    BitmapsPathDown[               TRI_DOWN_LEFT                 ] = BitmapLoad("assets\\sprites\\hexagon\\Down_Left.bmp");
-    BitmapsPathDown[TRI_DOWN_TOP + TRI_DOWN_LEFT                 ] = BitmapLoad("assets\\sprites\\hexagon\\Down_TopLeft.bmp");
-    BitmapsPathDown[                               TRI_DOWN_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Down_Right.bmp");
-    BitmapsPathDown[TRI_DOWN_TOP                 + TRI_DOWN_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Down_TopRight.bmp");
-    BitmapsPathDown[               TRI_DOWN_LEFT + TRI_DOWN_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Down_LeftRight.bmp");
-    BitmapsPathDown[TRI_DOWN_TOP + TRI_DOWN_LEFT + TRI_DOWN_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Down_Street.bmp");
-
-    BitmapGrassUp = BitmapLoad("assets\\sprites\\hexagon\\Up_Grass.bmp");
-    BitmapsPathUp[0] = BitmapLoad("assets\\sprites\\hexagon\\Up_None.bmp");
-    BitmapsPathUp[TRI_UP_BOTTOM                             ] = BitmapLoad("assets\\sprites\\hexagon\\Up_Bottom.bmp");
-    BitmapsPathUp[                TRI_UP_LEFT               ] = BitmapLoad("assets\\sprites\\hexagon\\Up_Left.bmp");
-    BitmapsPathUp[TRI_UP_BOTTOM + TRI_UP_LEFT               ] = BitmapLoad("assets\\sprites\\hexagon\\Up_BottomLeft.bmp");
-    BitmapsPathUp[                              TRI_UP_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Up_Right.bmp");
-    BitmapsPathUp[TRI_UP_BOTTOM               + TRI_UP_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Up_BottomRight.bmp");
-    BitmapsPathUp[                TRI_UP_LEFT + TRI_UP_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Up_LeftRight.bmp");
-    BitmapsPathUp[TRI_UP_BOTTOM + TRI_UP_LEFT + TRI_UP_RIGHT] = BitmapLoad("assets\\sprites\\hexagon\\Up_Street.bmp");
-
     DummyFontInfo = AcquireDebugFont();
-
-    Cogwheels[0] = BitmapLoad("assets\\sprites\\hexagon\\Gear0.bmp");
-    Cogwheels[1] = BitmapLoad("assets\\sprites\\hexagon\\Gear15.bmp");
-    Cogwheels[2] = BitmapLoad("assets\\sprites\\hexagon\\Gear30.bmp");
-
-    MonsterSprites[0] = BitmapLoad("assets\\sprites\\MonsterUp.bmp");
-    MonsterSprites[1] = BitmapLoad("assets\\sprites\\MonsterUpRight.bmp");
-    MonsterSprites[2] = BitmapLoad("assets\\sprites\\MonsterRight.bmp");
-    MonsterSprites[3] = BitmapLoad("assets\\sprites\\MonsterDownRight.bmp");
-    MonsterSprites[4] = BitmapLoad("assets\\sprites\\MonsterDown.bmp");
-    MonsterSprites[5] = BitmapLoad("assets\\sprites\\MonsterDownLeft.bmp");
-    MonsterSprites[6] = BitmapLoad("assets\\sprites\\MonsterLeft.bmp");
-    MonsterSprites[7] = BitmapLoad("assets\\sprites\\MonsterUpLeft.bmp");
-
-    IconBuy     = BitmapLoad("assets\\sprites\\Buy.bmp");
-    IconLevelUp = BitmapLoad("assets\\sprites\\LevelUp.bmp");
-    IconMerge   = BitmapLoad("assets\\sprites\\Merge.bmp");
 
     FILE* file = fopen("assets/levels/dummy.lvl", "rb");
     if (file != nullptr) {
@@ -688,11 +624,11 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     target->Health -= projectile_->Damage;
                     if (target->Health <= 0) {
                         target->Health = 0;
-                        AudioClipStart(SoundDeath, false, 0.7f);
-                        ParticleEffectStartWorld(&drawRectMain, 16, BitmapsSmoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGBA(100, 80, 80, 160));
+                        AudioClipStart(Sounds.Death, false, 0.7f);
+                        ParticleEffectStartWorld(&drawRectMain, 16, Particles.Smoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGBA(100, 80, 80, 160));
                         // TODO(Tobi): The monster has been killed; do something
                     } else {
-                        AudioClipStart(SoundHit, false, 0.2f);
+                        AudioClipStart(Sounds.Hit, false, 0.2f);
 
                         /// Assign effects
                         target->PoisonSpeed = sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
@@ -921,17 +857,17 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         col = COL32_RGB(r, g, b);
                     }
                     if (triangleIsDown) {
-                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapWhiteDown, col);
+                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteDown, col);
                     } else {
-                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapWhiteUp, col);
+                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteUp, col);
                     }
                 } else {
                     if (!(Ground[y_i][x_i] & (T_PATH | T_GOAL))) {
                         // Grass
                         if (triangleIsDown) {
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassDown, WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, WHITE);
                         } else {
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassUp, WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, WHITE);
                         }
                     } else {
                         // Path
@@ -948,8 +884,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 pathBMPIndex += TRI_DOWN_RIGHT;
                             }
 
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassDown, WHITE);
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathDown[pathBMPIndex], WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[pathBMPIndex], WHITE);
                         } else {
                             if (y_i == TILES_Y - 1 || Ground[y_i + 1][x_i] & (T_PATH | T_GOAL)) {
                                 pathBMPIndex += TRI_UP_BOTTOM;
@@ -961,8 +897,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 pathBMPIndex += TRI_UP_RIGHT;
                             }
 
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapGrassUp, WHITE);
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[pathBMPIndex], WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[pathBMPIndex], WHITE);
                         }
                     }
                 }
@@ -982,14 +918,14 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 color32 buildingColor = WHITE;
                 switch (Ground[y_i][x_i]) {
                     case T_TOWER: {
-                        buildingBitmap = &BitmapTower;
+                        buildingBitmap = &Sprites.Tower;
                     } break;
                     case T_GOAL: {
-                        buildingBitmap = &BitmapGoal;
+                        buildingBitmap = &Sprites.Goal;
                         buildingColor = RED;
                     } break;
                     case T_TRAP: {
-                        buildingBitmap = &BitmapTrap;
+                        buildingBitmap = &Sprites.Trap;
                     } break;
                 }
 
@@ -1126,14 +1062,14 @@ void Update(color32* array, int width, int height, inputs* ins) {
             char* numbers[] = {
                 "1", "2", "3", "4", "5", "6", "7", "8", "9"
             };
-            TextRenderScreen(&drawRectWaveStones, &DummyFontInfo, 8, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, numbers[wave_i], BLACK, WHITE);
+            TextRenderScreen(&drawRectWaveStones, &DummyFontInfo, 8, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, numbers[wave_i], BLACK);
         }
 
         /// Render Menu
         {
-            DrawWorldBitmap(&drawRectRightMenu, 0.5f, 2, IconBuy, WHITE);
-            DrawWorldBitmap(&drawRectRightMenu, 2.5f, 2, IconLevelUp, WHITE);
-            DrawWorldBitmap(&drawRectRightMenu, 4.5f, 2, IconMerge, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 0.5f, 2, Sprites.IconBuy, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 2.5f, 2, Sprites.IconLevelUp, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 4.5f, 2, Sprites.IconMerge, WHITE);
 
             if (Menu.ShallBuy) {
                 //DrawWorldBorder(&drawRectRightMenu, 0.5f - 1.0f, 2 - 1.0f, 2.0f, 2.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
@@ -1162,7 +1098,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + HALF_HEXAGON_PIXEL_HEIGHT, ins->Mouse.PosY - bitmap.Height / 2 + HALF_HEXAGON_PIXEL_HEIGHT, dummy, BLACK, WHITE);
+            TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + HALF_HEXAGON_PIXEL_HEIGHT, ins->Mouse.PosY - bitmap.Height / 2 + HALF_HEXAGON_PIXEL_HEIGHT, dummy, BLACK);
         }
 
         #if 0
@@ -1189,19 +1125,19 @@ void Update(color32* array, int width, int height, inputs* ins) {
         DrawScreenLine(&drawRectMain, 0, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, BLACK);
         DrawScreenLine(&drawRectMain, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, 0, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, BLACK);
 
-        DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[TRI_UP_RIGHT + TRI_UP_BOTTOM], WHITE);
-        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathDown[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathDown[TRI_DOWN_LEFT + TRI_DOWN_RIGHT], WHITE);
-        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, BitmapsPathUp[TRI_UP_LEFT + TRI_UP_BOTTOM], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[TRI_UP_RIGHT + TRI_UP_BOTTOM], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_RIGHT], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[TRI_UP_LEFT + TRI_UP_BOTTOM], WHITE);
 
-        DrawScreenBitmap(&drawRectMain, 100, 100, BitmapsPathDown[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100, 100, BitmapsPathDown[TRI_DOWN_RIGHT + TRI_DOWN_TOP], WHITE);
-        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, BitmapsPathUp[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, BitmapsPathUp[TRI_UP_LEFT + TRI_UP_RIGHT], WHITE);
-        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, BitmapsPathDown[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, BitmapsPathDown[TRI_DOWN_LEFT + TRI_DOWN_TOP], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100, 100, Sprites.PathDown[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100, 100, Sprites.PathDown[TRI_DOWN_RIGHT + TRI_DOWN_TOP], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, Sprites.PathUp[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, Sprites.PathUp[TRI_UP_LEFT + TRI_UP_RIGHT], WHITE);
+        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[0], WHITE);
+        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_TOP], WHITE);
         #endif
 
     }

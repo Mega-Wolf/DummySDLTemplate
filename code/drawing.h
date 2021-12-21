@@ -138,9 +138,9 @@ void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, 
         {
             float strength = 1 - AtLeast((abs(err - dx + dy) / ed - thickness +1), 0.0f);
             color32 resultColor;
-            resultColor.Red = RoundFloatToInt(wantedRed * strength * 255);
-            resultColor.Green = RoundFloatToInt(wantedGreen * strength * 255);
-            resultColor.Blue = RoundFloatToInt(wantedBlue * strength * 255);
+            resultColor.Red =   (unsigned char) RoundFloatToInt(wantedRed * strength * 255);
+            resultColor.Green = (unsigned char) RoundFloatToInt(wantedGreen * strength * 255);
+            resultColor.Blue =  (unsigned char) RoundFloatToInt(wantedBlue * strength * 255);
             // TODO(Tobi): This ignores alpha, but I could just change alpha instead of everythign else
             TrySetPixel(drawRect, startX, startY, resultColor);
         }
@@ -150,9 +150,9 @@ void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, 
             for (e2 += dy, y2 = startY; e2 < ed * thickness && (endY != y2 || dx > dy); e2 += dx) {
                 float strength = 1 - AtLeast(255 * (abs(e2) / ed - thickness + 1), 0.0f);
                 color32 resultColor;
-                resultColor.Red = RoundFloatToInt(wantedRed * strength * 255);
-                resultColor.Green = RoundFloatToInt(wantedGreen * strength * 255);
-                resultColor.Blue = RoundFloatToInt(wantedBlue * strength * 255);
+                resultColor.Red =   (unsigned char) RoundFloatToInt(wantedRed * strength * 255);
+                resultColor.Green = (unsigned char) RoundFloatToInt(wantedGreen * strength * 255);
+                resultColor.Blue =  (unsigned char) RoundFloatToInt(wantedBlue * strength * 255);
                 TrySetPixel(drawRect, startX, y2 += sy, resultColor);
             }
             if (startX == endX) { break; }
@@ -164,9 +164,9 @@ void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, 
             for (e2 = dx - e2; e2 < ed * thickness && (endX != x2 || dx < dy); e2 += dy) {
                 float strength = 1 - AtLeast(255 * (abs(e2) / ed - thickness + 1), 0.0f);
                 color32 resultColor;
-                resultColor.Red = RoundFloatToInt(wantedRed * strength * 255);
-                resultColor.Green = RoundFloatToInt(wantedGreen * strength * 255);
-                resultColor.Blue = RoundFloatToInt(wantedBlue * strength * 255);
+                resultColor.Red =   (unsigned char) RoundFloatToInt(wantedRed * strength * 255);
+                resultColor.Green = (unsigned char) RoundFloatToInt(wantedGreen * strength * 255);
+                resultColor.Blue =  (unsigned char) RoundFloatToInt(wantedBlue * strength * 255);
                 TrySetPixel(drawRect, x2 += sx, startY, resultColor);
             }
             if (startY == endY) { break; }
@@ -312,7 +312,7 @@ void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col
     }
 }
 
-void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, color32 backgroundColor, loaded_bitmap* bitmap) {
+void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, /*color32 backgroundColor,*/ loaded_bitmap* bitmap) {
     x += Camera.X;
     y += Camera.Y;
     
@@ -345,7 +345,7 @@ void DrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float e
     int intEndX = RoundFloatToInt(HEXAGON_A * endX);
     int intEndY = RoundFloatToInt(HEXAGON_A * endY);
 
-    DrawScreenLineThick(drawRect, intStartX, intStartY, intEndX, intEndY, pixelThickness, col);
+    DrawScreenLineThick(drawRect, intStartX, intStartY, intEndX, intEndY, (float) pixelThickness, col);
 }
 
 void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
