@@ -349,26 +349,21 @@ void DrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float e
 }
 
 void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
-    DrawScreenRectangle(drawRect, (int) (HEXAGON_A * x), (int) (HEXAGON_A * y), (int) (HEXAGON_A * width), (int) (HEXAGON_A * height), col);
+    DrawScreenRectangle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
 }
 
 void DrawWorldBorder(draw_rect* drawRect, float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
-    DrawScreenBorder(drawRect, (int) (HEXAGON_A * x), (int) (HEXAGON_A * y), (int) (HEXAGON_A * width), (int) (HEXAGON_A * height), (int) (HEXAGON_A * borderWidth), (int) (HEXAGON_A * borderHeight), col);
+    DrawScreenBorder(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), (int) (HEXAGON_A * height), (int) (HEXAGON_A * borderWidth), (int) (HEXAGON_A * borderHeight), col);
 }
 
 void DrawWorldBitmap(draw_rect* drawRect, float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
-    DrawScreenBitmap(drawRect, (int) (HEXAGON_A * x) - bitmap.Width / 2, (int) (HEXAGON_A * y) - bitmap.Height / 2, bitmap, wantedColor);
+    DrawScreenBitmap(drawRect, RoundFloatToInt(HEXAGON_A * x) - (bitmap.Width) / 2, RoundFloatToInt(HEXAGON_A * y) - (bitmap.Height) / 2, bitmap, wantedColor);
 }
 
 void DrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col) {
-    DrawScreenDisc(drawRect, (int) (HEXAGON_A * x), (int) (HEXAGON_A * y), (int) (HEXAGON_A * radius), col);
+    DrawScreenDisc(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col);
 }
 
 void DrawWorldCircle(draw_rect* drawRect, float x, float y, float radius, color32 col) {
-    DrawScreenCircle(drawRect, (int) (HEXAGON_A * x), (int) (HEXAGON_A * y), (int) (HEXAGON_A * radius), col);
-}
-
-void DrawBlock(draw_rect* drawRect, int x, int y, color32 col) {
-    // NOTE(Tobi): I don't know whether I like this function anymore; should I just call DrawWorldRectangle?
-    DrawScreenRectangle(drawRect, (int) (GRID_SIZE * x) + 1, (int) (GRID_SIZE * y) + 1, GRID_SIZE - 2, GRID_SIZE - 2, col);
+    DrawScreenCircle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col);
 }

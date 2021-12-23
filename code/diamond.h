@@ -15,27 +15,31 @@ enum diamond_color {
     DC_YELLOW
 };
 
-color32 DiamondColors[6] = {
-    RED,
+#define DIAMOND_COLORS 8
+color32 DiamondColors[DIAMOND_COLORS] = {
+    WHITE,
+    YELLOW,
     GREEN,
     AQUA,
+    BLUE,
     PURPLE,
-    ORANGE,
-    YELLOW
+    RED,
+    DARK_GREY,
 };
 
 struct diamond {
     bool Inactive;
     bool IsInField;
 
-    vec2f TilePosition;
+    vec2f ActualPosition;
+    vec2i TilePositionTopLeft;
 
     float RangeRadius;
     int CooldownFrames;
     int MaxCooldown; // Make these float?
     float Damage;
 
-    int ColorsCount[6];
+    int ColorsCount[DIAMOND_COLORS];
 
     color32 MixedColor; // NOTE(Tobi): This is only used so I don't have to calculalte it every frame; it is completely redundant though
 };
@@ -64,7 +68,7 @@ struct projectile {
     float Speed;
     float Damage;
 
-    int ColorsCount[6];
+    int ColorsCount[DIAMOND_COLORS];
     color32 Color;
 
     vec2f Direction;

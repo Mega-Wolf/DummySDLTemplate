@@ -70,6 +70,22 @@ struct vec2f {
     float Y;
 };
 
+bool operator==(vec2i vec1, vec2i vec2) {
+    return vec1.X == vec2.X && vec1.Y == vec2.Y;
+}
+
+bool operator!=(vec2i vec1, vec2i vec2) {
+    return !(vec1.X == vec2.X && vec1.Y == vec2.Y);
+}
+
+bool operator==(vec2f vec1, vec2f vec2) {
+    return vec1.X == vec2.X && vec1.Y == vec2.Y;
+}
+
+bool operator!=(vec2f vec1, vec2f vec2) {
+    return !(vec1.X == vec2.X && vec1.Y == vec2.Y);
+}
+
 vec2f Normalised(vec2f value) {
     // TODO(Tobi): Assert not zero
     vec2f ret = {};

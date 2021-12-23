@@ -130,6 +130,25 @@ void Init() {
     InitDistanceArray();
 }
 
+vec2f HexToActualPos(vec2i hexPosition) {
+    bool triangleIsDown = (hexPosition.X + hexPosition.Y) % 2;
+
+    vec2f floatPos;
+
+    if (triangleIsDown) {
+        floatPos.Y = hexPosition.Y + 1 / 3.0f;
+    } else {
+        floatPos.Y = hexPosition.Y + 2 / 3.0f;
+    }
+
+    floatPos.X = (float) hexPosition.X;
+
+    #define SQRT_3 1.73205080757f
+    #define HEXAGON_H (SQRT_3 / 2)
+    vec2f ret = { (floatPos.X + 1) * 0.5f, floatPos.Y * HEXAGON_H };
+    return ret;
+}
+
 void MonsterSetToStartingPosition(monster* mon) {
     int startPositionIndex = rand() % StartPositionsCount;
     mon->GoalPosition = StartPositions[startPositionIndex];
@@ -151,34 +170,13 @@ void MonsterSetToStartingPosition(monster* mon) {
         mon->OldPosition.Y = TILES_Y;
     }
 
-    mon->ActualPosition.X = (float) mon->OldPosition.X;
-    mon->ActualPosition.Y = (float) mon->OldPosition.Y;
+    mon->ActualPosition = HexToActualPos(mon->OldPosition);
 }
 
 vec2i TranslateMousePosition(draw_rect* drawRect, inputs* ins) {
     vec2i ret;
     ret.X = ins->Mouse.PosX - drawRect->StartX;
     ret.Y = ins->Mouse.PosY - drawRect->StartY;
-    return ret;
-}
-
-vec2f HexToActualPos(vec2i hexPosition) {
-    bool triangleIsDown = (hexPosition.X + hexPosition.Y) % 2;
-    bool oddLine = hexPosition.Y % 2;
-
-    vec2f floatPos;
-
-    if (triangleIsDown) {
-        floatPos.Y = hexPosition.Y + 1 / 3.0f;
-    } else {
-        floatPos.Y = hexPosition.Y + 2 / 3.0f;
-    }
-
-    floatPos.X = (float) hexPosition.X;
-
-    #define SQRT_3 1.73205080757f
-    #define HEXAGON_H (SQRT_3 / 2)
-    vec2f ret = { (floatPos.X + 1) * 0.5f, floatPos.Y * HEXAGON_H };
     return ret;
 }
 
@@ -277,8 +275,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
     draw_rect drawRectMenuDiamonds = drawRectRightMenu;
     drawRectMenuDiamonds.StartY = MENU_OFFSET_Y;
-    drawRectMenuDiamonds.Height = MENU_DIAMONDS_Y * GRID_SIZE;
+    drawRectMenuDiamonds.Height = MENU_DIAMONDS_Y * HEXAGON_PIXEL_HEIGHT;
     vec2i menuDiamondsMousePosition = TranslateMousePosition(&drawRectMenuDiamonds, ins);
+
+    draw_rect drawRectMenuBuild = drawRectRightMenu;
+    drawRectMenuBuild.StartY = height - 10 * HALF_HEXAGON_PIXEL_HEIGHT;
+    drawRectMenuBuild.Height = 10 * HALF_HEXAGON_PIXEL_HEIGHT;
+    vec2i menuBuildMousePosition = TranslateMousePosition(&drawRectMenuBuild, ins);
 
     vec2i mouseTilePos = MouseToTilePos(mainMousePosition);
     vec2i menuTilePos = MouseToTilePos(menuDiamondsMousePosition);
@@ -539,8 +542,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 monster* monster_ = &Monsters[monster_i];
                 if (!monster_->Health) { continue; }
 
-                float deltaX = monster_->ActualPosition.X - (float) diamond_->TilePosition.X;
-                float deltaY = monster_->ActualPosition.Y - (float) diamond_->TilePosition.Y;
+                float deltaX = monster_->ActualPosition.X - (float) diamond_->ActualPosition.X;
+                float deltaY = monster_->ActualPosition.Y - (float) diamond_->ActualPosition.Y;
 
                 float distanceSq = deltaX * deltaX + deltaY * deltaY;
 
@@ -572,12 +575,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 projectile* newProjectile = &Projectiles[ProjectileCount++];
                 *newProjectile = {};
                 newProjectile->Color = diamond_->MixedColor;
-                newProjectile->Position = diamond_->TilePosition;
+                newProjectile->Position = diamond_->ActualPosition;
                 newProjectile->Damage = diamond_->Damage;
                 newProjectile->Speed = PROJECTILE_SPEED;
                 newProjectile->Target = &Monsters[targetIndex];
                 newProjectile->TargetGeneration = newProjectile->Target->Generation;
-                inc0 (color_i,   6) {
+                inc0 (color_i,   DIAMOND_COLORS) {
                     newProjectile->ColorsCount[color_i] = diamond_->ColorsCount[color_i];
                 }
 
@@ -666,15 +669,16 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         diamond* diamond_ = &DiamondList[diamond_i];
                         if (diamond_->Inactive) { continue; }
 
+                        // TODO(Tobi): These checks will be quite a bit more difficult
                         bool underCursor = false;
                         if (diamond_->IsInField) {
                             // Game
-                            if ((int)diamond_->TilePosition.X == mouseTilePos.X && (int)diamond_->TilePosition.Y == mouseTilePos.Y) {
+                            if ((int)diamond_->TilePositionTopLeft.X == mouseTilePos.X && (int)diamond_->TilePositionTopLeft.Y == mouseTilePos.Y) {
                                 underCursor = true;
                             }
                         } else {
                             // Menu
-                            if ((int)diamond_->TilePosition.X == menuTilePos.X && (int)diamond_->TilePosition.Y == menuTilePos.Y) {
+                            if ((int)diamond_->TilePositionTopLeft.X == menuTilePos.X && (int)diamond_->TilePositionTopLeft.Y == menuTilePos.Y) {
                                 underCursor = true;
                             }
                         }
@@ -684,7 +688,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 Menu.ShallLevelUp = false;
                                 // Double all the color counts
                                 int count = 0;
-                                inc0 (color_i,   6) {
+                                inc0 (color_i,   DIAMOND_COLORS) {
                                     diamond_->ColorsCount[color_i] *= 2;
                                     count += diamond_->ColorsCount[color_i];
                                 }
@@ -700,7 +704,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 Menu.DragDrop.Origin = diamond_->IsInField ? mouseTilePos : menuTilePos;
                                 Menu.DragDrop.WasInField = diamond_->IsInField;
 
-                                diamond_->TilePosition = DRAG_DROP_POSITION;
+                                diamond_->TilePositionTopLeft = DRAG_DROP_POSITION;
                                 diamond_->IsInField = false;
                             }
 
@@ -710,18 +714,25 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     }
 
                     if (!didSomething && Menu.ShallBuy) {
+                        // TODO(Tobi): This is wrong
                         bool isInGame = mouseTilePos.X < TILES_X && mouseTilePos.Y < TILES_Y;
                         bool isInMenu = menuTilePos.X >= 0 && menuTilePos.X < MENU_DIAMONDS_X && menuTilePos.Y >= 0 && menuTilePos.Y < MENU_DIAMONDS_Y;
 
                         if (isInMenu || (isInGame && Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER)) {
                             diamond* newDiamond = &DiamondList[DiamondCount++];
                             *newDiamond = {};
-                            newDiamond->TilePosition = isInGame ? vec2f { (float)mouseTilePos.X, (float)mouseTilePos.Y } : vec2f { (float)menuTilePos.X, (float)menuTilePos.Y };
+                            newDiamond->TilePositionTopLeft = isInGame ? mouseTilePos : menuTilePos;
+
+                            vec2f midPointOfTopleftTriangle = HexToActualPos(newDiamond->TilePositionTopLeft);
+                            midPointOfTopleftTriangle.X += 0.5f;
+                            midPointOfTopleftTriangle.Y += 1 / 3.0f * HEXAGON_H;
+                            newDiamond->ActualPosition = midPointOfTopleftTriangle;
+
                             newDiamond->Damage = DIAMOND_LEVEL_1_DAMAGE;
                             newDiamond->RangeRadius = DIAMOND_LEVEL_1_RANGE;
                             newDiamond->MaxCooldown = DIAMOND_LEVEL_1_COOLDOWN;
 
-                            int randomColor = rand() % 6;
+                            int randomColor = rand() % DIAMOND_COLORS;
                             newDiamond->ColorsCount[randomColor] = 1;
                             newDiamond->MixedColor = DiamondColors[randomColor];
 
@@ -768,12 +779,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             if (diamond_->Inactive) { continue; }
 
                             if (diamond_->IsInField) {
-                                if ((int) diamond_->TilePosition.X == mouseTilePos.X && (int) diamond_->TilePosition.Y == mouseTilePos.Y) {
+                                if (diamond_->TilePositionTopLeft == diamond_->TilePositionTopLeft) {
                                     exchangeDiamond = diamond_;
                                     break;
                                 }
                             } else {
-                                if ((int) diamond_->TilePosition.X == menuTilePos.X && (int) diamond_->TilePosition.Y == menuTilePos.Y) {
+                                if (diamond_->TilePositionTopLeft == menuTilePos) {
                                     exchangeDiamond = diamond_;
                                     break;
                                 }
@@ -789,7 +800,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 int green = 0;
                                 int blue = 0;
                                 int count = 0;
-                                inc0 (color_i,   6) {
+                                inc0 (color_i,   DIAMOND_COLORS) {
                                     exchangeDiamond->ColorsCount[color_i] += Menu.DragDrop.Diamond->ColorsCount[color_i];
                                     red += exchangeDiamond->ColorsCount[color_i] * DiamondColors[color_i].Red;
                                     green += exchangeDiamond->ColorsCount[color_i] * DiamondColors[color_i].Green;
@@ -803,7 +814,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 Menu.DragDrop.Diamond->Inactive = true;
                             } else {
                                 /// Actually exchange
-                                exchangeDiamond->TilePosition = vec2f { (float) Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
+                                exchangeDiamond->TilePositionTopLeft = Menu.DragDrop.Origin;
                                 exchangeDiamond->IsInField = Menu.DragDrop.WasInField;
                                 if (exchangeDiamond->IsInField) {
                                     exchangeDiamond->CooldownFrames = SOCKETING_COOLDOWN;
@@ -811,14 +822,14 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             }
                         }
 
-                        Menu.DragDrop.Diamond->TilePosition = dropInField ? vec2f { (float) mouseTilePos.X, (float) mouseTilePos.Y } : vec2f { (float) menuTilePos.X, (float) menuTilePos.Y };
+                        Menu.DragDrop.Diamond->TilePositionTopLeft = dropInField ? mouseTilePos : menuTilePos;
                         Menu.DragDrop.Diamond->CooldownFrames = SOCKETING_COOLDOWN;
                         Menu.DragDrop.Diamond->IsInField = dropInField;
                     }
 
                     if (!canDropHere) {
                         /// Move back to where it was
-                        Menu.DragDrop.Diamond->TilePosition = vec2f { (float)Menu.DragDrop.Origin.X, (float) Menu.DragDrop.Origin.Y };
+                        Menu.DragDrop.Diamond->TilePositionTopLeft = Menu.DragDrop.Origin;
                         Menu.DragDrop.Diamond->IsInField = Menu.DragDrop.WasInField;
                     }
 
@@ -949,10 +960,51 @@ void Update(color32* array, int width, int height, inputs* ins) {
         #endif
 
         /// Render right menu
-        inc0 (y_i,   MENU_DIAMONDS_Y) {
-            inc0 (x_i,   MENU_DIAMONDS_X) {
-                DrawBlock(&drawRectMenuDiamonds, x_i, y_i, DARK_GREY);
+        {
+            inc0 (y_i,   MENU_DIAMONDS_Y) {
+                bool oddLine = y_i % 2;
+                inc0 (x_i,   MENU_DIAMONDS_PAIRS_X + 1) {
+                    if (oddLine && x_i == MENU_DIAMONDS_PAIRS_X) { break; }
+                    if (oddLine) {
+                        DrawScreenBitmap(&drawRectMenuDiamonds, x_i * (HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH) + HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, DARK_GREY);
+                    } else {
+                        DrawScreenBitmap(&drawRectMenuDiamonds, x_i * (HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH), y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, DARK_GREY);
+                    }
+                }
             }
+
+            // Render the stuff at the bottom
+            // Hard-coded, because everythign else isn't really better
+
+            DrawScreenRectangle(&drawRectMenuBuild, 0, 0 * HALF_HEXAGON_PIXEL_HEIGHT, 5 * HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, COL32_RGB(120, 130, 30));
+            DrawScreenRectangle(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, 5 * HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, COL32_RGB(30, 20, 90));
+
+            // Left ones
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], RED);
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], PURPLE);
+
+            // Middle ones
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 0 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 2 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 6 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 8 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 0 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 2 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], YELLOW);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 6 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], BLUE);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 8 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], DARK_GREY);
+
+            // Right ones
+            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+
+            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], GREEN);
+            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], AQUA);
+
+            //DrawScreenBitmap(&drawRectMenuDiamonds, 1 * (HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH), y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Trap, DARK_GREY);
         }
 
         /// Render Monsters
@@ -992,7 +1044,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Render Diamonds
-        #if 0
         inc0 (diamond_i,   DiamondCount) {
             diamond* diamond_ = &DiamondList[diamond_i];
             if (diamond_->Inactive) { continue; }
@@ -1006,29 +1057,28 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 frame = 0;
                 drawRect = &drawRectMenuDiamonds;
             }
-            DrawWorldBitmap(drawRect, diamond_->TilePosition.X, diamond_->TilePosition.Y, Cogwheels[frame], diamond_->MixedColor);
+            DrawWorldBitmap(drawRect, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, Sprites.Cogwheels[frame], diamond_->MixedColor);
             //  COL32_RGB(40, 20, 170)
             
             int count = 0;
-            inc0 (color_i,   6) {
+            inc0 (color_i,   DIAMOND_COLORS) {
                 count += diamond_->ColorsCount[color_i];
             }
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderWorld(drawRect, &DummyFontInfo, diamond_->TilePosition.X + 0.2f, diamond_->TilePosition.Y + 0.2f, dummy, BLACK, WHITE);
+            TextRenderWorld(drawRect, &DummyFontInfo, diamond_->ActualPosition.X + 0.2f, diamond_->ActualPosition.Y + 0.2f, dummy, BLACK);
 
             if (diamond_->IsInField) {
                 /// Render Diamond Range
-                DrawWorldCircle(&drawRectMain, diamond_->TilePosition.X, diamond_->TilePosition.Y, diamond_->RangeRadius, YELLOW);
+                DrawWorldCircle(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, diamond_->RangeRadius, YELLOW);
 
                 /// Render Diamond Cooldown
                 if (diamond_->CooldownFrames) {
-                    DrawWorldRectangle(&drawRectMain, diamond_->TilePosition.X - 0.5f, diamond_->TilePosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
+                    DrawWorldRectangle(&drawRectMain, diamond_->ActualPosition.X - 0.5f, diamond_->ActualPosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
                 }
 
             }
         }
-        #endif
 
         /// Render Projectiles
         inc0 (projectile_i,   ProjectileCount) {
@@ -1087,12 +1137,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Render drag-drop diamond
         if (Menu.DragDrop.Diamond) {
-            loaded_bitmap bitmap = Cogwheels[0];
+            loaded_bitmap bitmap = Sprites.Cogwheels[0];
 
             DrawScreenBitmap(&drawRectAll, ins->Mouse.PosX - bitmap.Width / 2, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
 
             int count = 0;
-            inc0 (color_i,   6) {
+            inc0 (color_i,   DIAMOND_COLORS) {
                 count += Menu.DragDrop.Diamond->ColorsCount[color_i];
             }
 

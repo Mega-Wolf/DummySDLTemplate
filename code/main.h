@@ -30,20 +30,14 @@ monster Monsters[MONSTER_COUNT_MAX];
 
 int DistanceToGoal[TILES_Y][TILES_X];
 
-loaded_bitmap Cogwheels[3];
-loaded_bitmap MonsterSprites[8];
-
-loaded_bitmap IconBuy;
-loaded_bitmap IconLevelUp;
-loaded_bitmap IconMerge;
-
-#define MENU_DIAMONDS_Y 3
-#define MENU_DIAMONDS_X 3
+#define MENU_DIAMONDS_Y 7
+#define MENU_DIAMONDS_X 3 // TODO(Tobi): Remove
+#define MENU_DIAMONDS_PAIRS_X 1
 #define MENU_OFFSET_TILES_Y 3
 #define MENU_OFFSET_Y (GRID_SIZE * MENU_OFFSET_TILES_Y)
 #define MENU_OFFSET_X (GRID_SIZE * TILES_X)
 
-#define DRAG_DROP_POSITION vec2f { 99999.0f, 99999.0f }
+#define DRAG_DROP_POSITION vec2i { 99999, 99999 }
 
 struct menu_data {
     bool ShallMerge;
