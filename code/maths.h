@@ -261,6 +261,7 @@ void operator*=(vec2f &vec, float scalar) {
 //     vec.Y *= scalar;
 // }
 
+
 void operator/=(vec2f &vec, int scalar) {
     vec.X /= scalar;
     vec.Y /= scalar;
@@ -346,12 +347,21 @@ bool BetweenInEx(T value, T min, T max) {
 
 // TODO(Tobi): Is this really the order of paramters I want to have?
 template<typename T>
-bool BoxContains(T left, T top, T right, T bottom, T x, T y) {
+bool BoxContainsInIn(T left, T top, T right, T bottom, T x, T y) {
     return 
         x >= left &&
         x <= right &&
         y >= top &&
         y <= bottom;
+}
+
+template<typename T>
+bool BoxContainsInEx(T left, T top, T right, T bottom, T x, T y) {
+    return 
+        x >= left &&
+        x < right &&
+        y >= top &&
+        y < bottom;
 }
 
 #define LERP(x, y, t) ((t)*(y) + (1 - (t)) * (x))

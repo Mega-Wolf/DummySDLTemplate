@@ -699,13 +699,21 @@ void Update(color32* array, int width, int height, inputs* ins) {
         // TODO(Tobi): I kind of ignore all the invalid stuff, so I have to come back after doing the generation thing
         {
             vec2i menuTilePos = MouseToTilePos(menuDiamondsMousePosition);
+            if (!BoxContainsInEx(0, 0, drawRectMenuDiamonds.Width, drawRectMenuDiamonds.Height, menuDiamondsMousePosition.X, menuDiamondsMousePosition.Y)) {
+                menuTilePos = { -1000, -1000 };
+            }
 
             int diamondMenuHexX = menuTilePos.X / 3; 
             if (diamondMenuHexX == 1) {
                 --menuTilePos.Y;
             }
+
+            if (menuTilePos.Y < 0) {
+                menuTilePos = { -1000, -1000 };
+            }
+
             vec2i diamondMenuHexPos = { diamondMenuHexX, menuTilePos.Y / 2 };
-            bool overValidDiamondMenuSlot = BoxContains(0, 0, 3, 4, diamondMenuHexPos.X, diamondMenuHexPos.Y) && !(diamondMenuHexPos.X == 1 && diamondMenuHexPos.Y == 3);
+            bool overValidDiamondMenuSlot = BoxContainsInEx(0, 0, 3, 4, diamondMenuHexPos.X, diamondMenuHexPos.Y) && !(diamondMenuHexPos.X == 1 && diamondMenuHexPos.Y == 3);
 
             if (IS_MOUSE_PRESSED(Left)) {
                 /// Buying
@@ -765,7 +773,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 /// Drag-Drop
                 {
                     // TODO(Tobi): Assert that I don't hold something
-                    if (BoxContains(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
+                    if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
                         vec2i topLeftTower = TranslateToTopLeftPosition(mouseTilePos, T_TOWER);
                         if (topLeftTower != TRANSLATE_NOTHING_FOUND) {
                             inc0 (diamond_i,   DiamondCount) {
@@ -797,7 +805,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 /// Check if something underneath where I can actually put my diamond
                 diamond* exchangeDiamond = nullptr;
                 bool canPut = false;
-                if (BoxContains(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
+                if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
                     vec2i topLeftTower = TranslateToTopLeftPosition(mouseTilePos, T_TOWER);
                     if (topLeftTower != TRANSLATE_NOTHING_FOUND) {
                         // TODO(Tobi): I migth improve on that in the future
