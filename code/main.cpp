@@ -117,6 +117,9 @@ void InitDistanceArray() {
 void Init() {
     AssetsInit();
 
+    // TODO(Tobi): Not sure if that is needed at the moment
+    Menu.Diamonds[MENU_DIAMONDS_Y / 2][1] = (diamond*) -1;
+
     //AudioClipStart(Music, true, 0.75f);
 
     DummyFontInfo = AcquireDebugFont();
@@ -130,23 +133,61 @@ void Init() {
     InitDistanceArray();
 }
 
-vec2f HexToActualPos(vec2i hexPosition) {
-    bool triangleIsDown = (hexPosition.X + hexPosition.Y) % 2;
+vec2f TriToActualPos(vec2i triPosition) {
+    bool triangleIsDown = (triPosition.X + triPosition.Y) % 2;
 
     vec2f floatPos;
 
     if (triangleIsDown) {
-        floatPos.Y = hexPosition.Y + 1 / 3.0f;
+        floatPos.Y = triPosition.Y + 1 / 3.0f;
     } else {
-        floatPos.Y = hexPosition.Y + 2 / 3.0f;
+        floatPos.Y = triPosition.Y + 2 / 3.0f;
     }
 
-    floatPos.X = (float) hexPosition.X;
+    floatPos.X = (float) triPosition.X;
 
-    #define SQRT_3 1.73205080757f
-    #define HEXAGON_H (SQRT_3 / 2)
     vec2f ret = { (floatPos.X + 1) * 0.5f, floatPos.Y * HEXAGON_H };
     return ret;
+}
+
+vec2f HexToActualPos(vec2i hexPosition) {
+    bool oddColumn = hexPosition.X % 2;
+
+    if (oddColumn) {
+        return { 1.0f + 1.5f * hexPosition.X, (2.0f + 2.0f * hexPosition.Y) * HEXAGON_H };
+    } else {
+        return { 1.0f + 1.5f * hexPosition.X, (1.0f + 2.0f * hexPosition.Y) * HEXAGON_H };
+    }
+}
+
+#define TRANSLATE_NOTHING_FOUND vec2i { -1, -1 }
+#define TOP_LEFT_TO_CENTRE_OFFSET vec2f { 0.5f, 1 / 3.0f * HEXAGON_H };
+
+vec2i TranslateToTopLeftPosition(vec2i triPosition, terrain compareThing) {
+    bool downTriangle = (triPosition.X + triPosition.Y) % 2;
+
+    int x = triPosition.X;
+    int y = triPosition.Y;
+
+    if (downTriangle) {
+        if (y >= 1 && Ground[y - 1][x] & compareThing) {
+            return vec2i { x, y - 1 };
+        } else if (x >= 1 && Ground[y][x - 1] & compareThing) {
+            return vec2i { x - 1, y };
+        } else if (x >= 2 && y >= 1 && Ground[y - 1][x - 2] & compareThing) {
+            return vec2i { x - 2, y - 1 };
+        }
+    } else {
+        if (Ground[y][x] & compareThing) {
+            return triPosition;
+        } else if (x >= 1 && y >= 1 && Ground[y - 1][x - 1] & compareThing) {
+            return vec2i { x - 1, y - 1 };
+        } else if (x >= 2 && Ground[y][x - 2] & compareThing) {
+            return vec2i { x - 2, y };
+        }
+    }
+
+    return TRANSLATE_NOTHING_FOUND;
 }
 
 void MonsterSetToStartingPosition(monster* mon) {
@@ -170,7 +211,7 @@ void MonsterSetToStartingPosition(monster* mon) {
         mon->OldPosition.Y = TILES_Y;
     }
 
-    mon->ActualPosition = HexToActualPos(mon->OldPosition);
+    mon->ActualPosition = TriToActualPos(mon->OldPosition);
 }
 
 vec2i TranslateMousePosition(draw_rect* drawRect, inputs* ins) {
@@ -180,10 +221,10 @@ vec2i TranslateMousePosition(draw_rect* drawRect, inputs* ins) {
     return ret;
 }
 
-vec2i MouseToTilePos(vec2i mousePos) {
+vec2i MouseToTilePos(vec2i mousePos, bool invert = false) {
     vec2i tilePos;
     tilePos.Y = mousePos.Y / HALF_HEXAGON_PIXEL_HEIGHT;
-    bool oddLine = tilePos.Y % 2;
+    bool oddLine = (invert + tilePos.Y) % 2;
 
     int evenTileIndex = mousePos.X / HALF_HEXAGON_PIXEL_WIDTH;
     int oddTileIndex  = (mousePos.X + (HALF_HEXAGON_PIXEL_WIDTH / 2)) / HALF_HEXAGON_PIXEL_WIDTH;
@@ -284,7 +325,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
     vec2i menuBuildMousePosition = TranslateMousePosition(&drawRectMenuBuild, ins);
 
     vec2i mouseTilePos = MouseToTilePos(mainMousePosition);
-    vec2i menuTilePos = MouseToTilePos(menuDiamondsMousePosition);
 
     /// Handle Input
     {
@@ -327,27 +367,27 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Buy / Level up / Merge etc.
-        if (IS_KEY_PRESSED(KEY_BUY)) {
-            Menu.ShallBuy = !Menu.ShallBuy;
-            if (Menu.ShallBuy) {
-                Menu.ShallLevelUp = false;
-                Menu.ShallMerge = false;
-            }
-        }
-        if (IS_KEY_PRESSED(KEY_LEVEL_UP)) {
-            Menu.ShallLevelUp = !Menu.ShallLevelUp;
-            if (Menu.ShallLevelUp) {
-                Menu.ShallBuy = false;
-                Menu.ShallMerge = false;
-            }
-        }
-        if (IS_KEY_PRESSED(KEY_MERGE)) {
-            Menu.ShallMerge = !Menu.ShallMerge;
-            if (Menu.ShallMerge) {
-                Menu.ShallBuy = false;
-                Menu.ShallLevelUp = false;
-            }
-        }
+        // if (IS_KEY_PRESSED(KEY_BUY)) {
+        //     Menu.ShallBuy = !Menu.ShallBuy;
+        //     if (Menu.ShallBuy) {
+        //         Menu.ShallLevelUp = false;
+        //         Menu.ShallMerge = false;
+        //     }
+        // }
+        // if (IS_KEY_PRESSED(KEY_LEVEL_UP)) {
+        //     Menu.ShallLevelUp = !Menu.ShallLevelUp;
+        //     if (Menu.ShallLevelUp) {
+        //         Menu.ShallBuy = false;
+        //         Menu.ShallMerge = false;
+        //     }
+        // }
+        // if (IS_KEY_PRESSED(KEY_MERGE)) {
+        //     Menu.ShallMerge = !Menu.ShallMerge;
+        //     if (Menu.ShallMerge) {
+        //         Menu.ShallBuy = false;
+        //         Menu.ShallLevelUp = false;
+        //     }
+        // }
 
         /// Wave Stone Speed
         if (IS_KEY_PRESSED(KEY_SPEED_WAVE)) {
@@ -449,8 +489,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                     // TODO(Tobi): That whole thing will probably move away from lerping movement anyway at one point
 
-                    vec2f actualOldPos = HexToActualPos(monster_->OldPosition);
-                    vec2f actualNewPos = HexToActualPos(monster_->GoalPosition);
+                    vec2f actualOldPos = TriToActualPos(monster_->OldPosition);
+                    vec2f actualNewPos = TriToActualPos(monster_->GoalPosition);
 
                     monster_->ActualPosition.X = (1 - monster_->MovementT) * actualOldPos.X + monster_->MovementT * actualNewPos.X;
                     monster_->ActualPosition.Y = (1 - monster_->MovementT) * actualOldPos.Y + monster_->MovementT * actualNewPos.Y;
@@ -656,193 +696,171 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Menu logic
-        // TODO(Tobi): This whole menu logic is really ugly; I hope that will change at one point
+        // TODO(Tobi): I kind of ignore all the invalid stuff, so I have to come back after doing the generation thing
         {
-            bool shallDrop = false;
+            vec2i menuTilePos = MouseToTilePos(menuDiamondsMousePosition);
 
-            if (ins->Mouse.Left.Down) {
-                if (ins->Mouse.Left.Toggled) {
-                    /// Clicked
+            int diamondMenuHexX = menuTilePos.X / 3; 
+            if (diamondMenuHexX == 1) {
+                --menuTilePos.Y;
+            }
+            vec2i diamondMenuHexPos = { diamondMenuHexX, menuTilePos.Y / 2 };
+            bool overValidDiamondMenuSlot = BoxContains(0, 0, 3, 4, diamondMenuHexPos.X, diamondMenuHexPos.Y) && !(diamondMenuHexPos.X == 1 && diamondMenuHexPos.Y == 3);
 
-                    bool didSomething = false;
-                    inc0 (diamond_i,   DiamondCount) {
-                        diamond* diamond_ = &DiamondList[diamond_i];
-                        if (diamond_->Inactive) { continue; }
+            if (IS_MOUSE_PRESSED(Left)) {
+                /// Buying
+                {
+                    vec2i buildMenuTilePos = MouseToTilePos(menuBuildMousePosition, true);
 
-                        // TODO(Tobi): These checks will be quite a bit more difficult
-                        bool underCursor = false;
-                        if (diamond_->IsInField) {
-                            // Game
-                            if ((int)diamond_->TilePositionTopLeft.X == mouseTilePos.X && (int)diamond_->TilePositionTopLeft.Y == mouseTilePos.Y) {
-                                underCursor = true;
-                            }
-                        } else {
-                            // Menu
-                            if ((int)diamond_->TilePositionTopLeft.X == menuTilePos.X && (int)diamond_->TilePositionTopLeft.Y == menuTilePos.Y) {
-                                underCursor = true;
-                            }
-                        }
+                    int buildMenuTriangleMapping[10][9] = {
+                        {        -1,        -1,        -1,  DC_WHITE,  DC_WHITE,  DC_WHITE,       -1,       -1,       -1 },
+                        {        -1,        -1,        -1,  DC_WHITE,  DC_WHITE,  DC_WHITE,       -1,       -1,       -1 },
+                        {        -1,        -1,        -1, DC_YELLOW, DC_YELLOW, DC_YELLOW,       -1,       -1,       -1 },
+                        {    DC_RED,    DC_RED,    DC_RED, DC_YELLOW, DC_YELLOW, DC_YELLOW, DC_GREEN, DC_GREEN, DC_GREEN },
+                        {    DC_RED,    DC_RED,    DC_RED,        -1,        -1,        -1, DC_GREEN, DC_GREEN, DC_GREEN },
+                        { DC_PURPLE, DC_PURPLE, DC_PURPLE,        -1,        -1,        -1,  DC_AQUA,  DC_AQUA,  DC_AQUA },
+                        { DC_PURPLE, DC_PURPLE, DC_PURPLE,   DC_BLUE,   DC_BLUE,   DC_BLUE,  DC_AQUA,  DC_AQUA,  DC_AQUA },
+                        {        -1,        -1,        -1,   DC_BLUE,   DC_BLUE,   DC_BLUE,       -1,       -1,       -1 },
+                        {        -1,        -1,        -1,  DC_BLACK,  DC_BLACK,  DC_BLACK,       -1,       -1,       -1 },
+                        {        -1,        -1,        -1,  DC_BLACK,  DC_BLACK,  DC_BLACK,       -1,       -1,       -1 },
+                    };
 
-                        if (underCursor) {
-                            if (Menu.ShallLevelUp) {
-                                Menu.ShallLevelUp = false;
-                                // Double all the color counts
-                                int count = 0;
-                                inc0 (color_i,   DIAMOND_COLORS) {
-                                    diamond_->ColorsCount[color_i] *= 2;
-                                    count += diamond_->ColorsCount[color_i];
+                    if (buildMenuTilePos.X >= 0  && buildMenuTilePos.X < 9 && buildMenuTilePos.Y >= 0  && buildMenuTilePos.Y < 10) {
+                        int buildColorIndex = buildMenuTriangleMapping[buildMenuTilePos.Y][buildMenuTilePos.X];
+                        if (buildColorIndex != -1) {
+
+                            // TODO(Tobi): Wouldn't it be easier to just store them by index
+                            vec2i freeSlot = { -1, -1 };
+                            inc0 (y_i,   4) {
+                                inc0 (x_i,   3) {
+                                    if (!Menu.Diamonds[y_i][x_i]) {
+                                        freeSlot = { x_i, y_i };
+                                        goto _afterMenuSlot;
+                                    }
                                 }
-                                DiamondSetValues(diamond_, count);
-
-                                if (diamond_->IsInField) {
-                                    diamond_->CooldownFrames = SOCKETING_COOLDOWN;
-                                }
-                            } else {
-                                /// Pick up
-
-                                Menu.DragDrop.Diamond = diamond_;
-                                Menu.DragDrop.Origin = diamond_->IsInField ? mouseTilePos : menuTilePos;
-                                Menu.DragDrop.WasInField = diamond_->IsInField;
-
-                                diamond_->TilePositionTopLeft = DRAG_DROP_POSITION;
-                                diamond_->IsInField = false;
                             }
+                            _afterMenuSlot:
 
-                            didSomething = true;
-                            break;
+                            if (freeSlot.X != -1) {
+                                diamond* newDiamond = &DiamondList[DiamondCount++];
+                                *newDiamond = {};
+
+                                int levelCount = 1 << Menu.SelecedBuyingLevel;
+                                newDiamond->ColorsCount[buildColorIndex] = levelCount;
+                                DiamondSetValues(newDiamond, levelCount);
+                                newDiamond->MixedColor = DiamondColors[buildColorIndex];
+
+                                // NOTE(Tobi): Well, this is the positon relative to the menu
+                                newDiamond->TilePositionTopLeft = freeSlot;
+                                newDiamond->ActualPosition = HexToActualPos(freeSlot);
+
+                                Menu.Diamonds[freeSlot.Y][freeSlot.X] = newDiamond;
+
+                                // TODO(Tobi): Reduce mana (I can put the check before this maybe)
+                            }
                         }
                     }
-
-                    if (!didSomething && Menu.ShallBuy) {
-                        // TODO(Tobi): This is wrong
-                        bool isInGame = mouseTilePos.X < TILES_X && mouseTilePos.Y < TILES_Y;
-                        bool isInMenu = menuTilePos.X >= 0 && menuTilePos.X < MENU_DIAMONDS_X && menuTilePos.Y >= 0 && menuTilePos.Y < MENU_DIAMONDS_Y;
-
-                        if (isInMenu || (isInGame && Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER)) {
-                            diamond* newDiamond = &DiamondList[DiamondCount++];
-                            *newDiamond = {};
-                            newDiamond->TilePositionTopLeft = isInGame ? mouseTilePos : menuTilePos;
-
-                            vec2f midPointOfTopleftTriangle = HexToActualPos(newDiamond->TilePositionTopLeft);
-                            midPointOfTopleftTriangle.X += 0.5f;
-                            midPointOfTopleftTriangle.Y += 1 / 3.0f * HEXAGON_H;
-                            newDiamond->ActualPosition = midPointOfTopleftTriangle;
-
-                            newDiamond->Damage = DIAMOND_LEVEL_1_DAMAGE;
-                            newDiamond->RangeRadius = DIAMOND_LEVEL_1_RANGE;
-                            newDiamond->MaxCooldown = DIAMOND_LEVEL_1_COOLDOWN;
-
-                            int randomColor = rand() % DIAMOND_COLORS;
-                            newDiamond->ColorsCount[randomColor] = 1;
-                            newDiamond->MixedColor = DiamondColors[randomColor];
-
-                            newDiamond->IsInField = isInGame;
-                        }
-                    }
-
-                    Menu.ShallBuy = false;
                 }
-            } else {
-                // true if Released
-                shallDrop = ins->Mouse.Left.Toggled;
+
+                /// Drag-Drop
+                {
+                    // TODO(Tobi): Assert that I don't hold something
+                    if (BoxContains(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
+                        vec2i topLeftTower = TranslateToTopLeftPosition(mouseTilePos, T_TOWER);
+                        if (topLeftTower != TRANSLATE_NOTHING_FOUND) {
+                            inc0 (diamond_i,   DiamondCount) {
+                                diamond* diamond_ = &DiamondList[diamond_i];
+                                if (diamond_->Inactive) { continue; }
+                                if (diamond_->TilePositionTopLeft == topLeftTower) {
+                                    Menu.DragDrop.Diamond = diamond_;
+                                    Menu.DragDrop.WasInField = true;
+                                    Menu.DragDrop.OriginTopLeft = Menu.DragDrop.Diamond->TilePositionTopLeft;
+
+                                    // TODO(Tobi): If I comment out this line, diamonds will continue shooting, since they are still kind of in their slot (do I want that)
+                                    Menu.DragDrop.Diamond->IsInField = false;
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (overValidDiamondMenuSlot && Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X]) {
+                        Menu.DragDrop.Diamond = Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X];
+                        Menu.DragDrop.WasInField = false;
+                        Menu.DragDrop.OriginTopLeft = Menu.DragDrop.Diamond->TilePositionTopLeft;
+
+                        Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X] = nullptr;
+                    }
+                }
             }
 
-            if (shallDrop) {
-                if (Menu.DragDrop.Diamond) {
+            if (IS_MOUSE_RELEASED(Left) && Menu.DragDrop.Diamond) {
 
-                    // Game and Menu are almost identical
-                    bool canDropHere = false;
-                    bool dropInField = false;
-                    if (mouseTilePos.X < TILES_X && mouseTilePos.Y < TILES_Y) {
-                        /// Game
-                        if (Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER) {
-                            canDropHere = true;
-                            dropInField = true;
-                        }
-                    } else {
-                        /// Menu
-                        if (menuTilePos.X >= 0 && menuTilePos.X < MENU_DIAMONDS_X && menuTilePos.Y >= 0 && menuTilePos.Y < MENU_DIAMONDS_Y) {
-                            canDropHere = true;
-                        }
-                    }
-
-                    // NOTE(Tobi): I only check that for inGame, because it doesn't matter for the menu
-                    bool sameTileAsGrabbed = Menu.DragDrop.Origin.X == mouseTilePos.X && (int) Menu.DragDrop.Origin.Y == mouseTilePos.Y;
-                    if (sameTileAsGrabbed) {
-                        canDropHere = false;
-                    }
-
-                    if (canDropHere) {
-                        diamond* exchangeDiamond = nullptr;
-                        inc0(diamond_i,   DiamondCount) {
+                /// Check if something underneath where I can actually put my diamond
+                diamond* exchangeDiamond = nullptr;
+                bool canPut = false;
+                if (BoxContains(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
+                    vec2i topLeftTower = TranslateToTopLeftPosition(mouseTilePos, T_TOWER);
+                    if (topLeftTower != TRANSLATE_NOTHING_FOUND) {
+                        // TODO(Tobi): I migth improve on that in the future
+                        inc0 (diamond_i,   DiamondCount) {
                             diamond* diamond_ = &DiamondList[diamond_i];
                             if (diamond_->Inactive) { continue; }
-
-                            if (diamond_->IsInField) {
-                                if (diamond_->TilePositionTopLeft == diamond_->TilePositionTopLeft) {
-                                    exchangeDiamond = diamond_;
-                                    break;
-                                }
-                            } else {
-                                if (diamond_->TilePositionTopLeft == menuTilePos) {
-                                    exchangeDiamond = diamond_;
-                                    break;
-                                }
+                            if (diamond_->TilePositionTopLeft == topLeftTower) {
+                                exchangeDiamond = diamond_;
+                                break;
                             }
                         }
 
-                        if (exchangeDiamond) {
-                            if (Menu.ShallMerge) {
-                                /// Merge diamonds
-
-                                /// Merge colors
-                                int red = 0;
-                                int green = 0;
-                                int blue = 0;
-                                int count = 0;
-                                inc0 (color_i,   DIAMOND_COLORS) {
-                                    exchangeDiamond->ColorsCount[color_i] += Menu.DragDrop.Diamond->ColorsCount[color_i];
-                                    red += exchangeDiamond->ColorsCount[color_i] * DiamondColors[color_i].Red;
-                                    green += exchangeDiamond->ColorsCount[color_i] * DiamondColors[color_i].Green;
-                                    blue += exchangeDiamond->ColorsCount[color_i] * DiamondColors[color_i].Blue;
-                                    count += exchangeDiamond->ColorsCount[color_i];
-                                }
-                                exchangeDiamond->MixedColor = COL32_RGB(red / count, green / count, blue / count);
-
-                                DiamondSetValues(exchangeDiamond, count);
-
-                                Menu.DragDrop.Diamond->Inactive = true;
-                            } else {
-                                /// Actually exchange
-                                exchangeDiamond->TilePositionTopLeft = Menu.DragDrop.Origin;
-                                exchangeDiamond->IsInField = Menu.DragDrop.WasInField;
-                                if (exchangeDiamond->IsInField) {
-                                    exchangeDiamond->CooldownFrames = SOCKETING_COOLDOWN;
-                                }
-                            }
-                        }
-
-                        Menu.DragDrop.Diamond->TilePositionTopLeft = dropInField ? mouseTilePos : menuTilePos;
+                        canPut = true;
                         Menu.DragDrop.Diamond->CooldownFrames = SOCKETING_COOLDOWN;
-                        Menu.DragDrop.Diamond->IsInField = dropInField;
+                        Menu.DragDrop.Diamond->TilePositionTopLeft = topLeftTower;
+                        Menu.DragDrop.Diamond->ActualPosition = TriToActualPos(topLeftTower) + TOP_LEFT_TO_CENTRE_OFFSET;
+                        Menu.DragDrop.Diamond->IsInField = true;
                     }
+                } else if (overValidDiamondMenuSlot) {
+                    exchangeDiamond = Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X];
+                    canPut = true;
 
-                    if (!canDropHere) {
-                        /// Move back to where it was
-                        Menu.DragDrop.Diamond->TilePositionTopLeft = Menu.DragDrop.Origin;
-                        Menu.DragDrop.Diamond->IsInField = Menu.DragDrop.WasInField;
-                    }
+                    Menu.DragDrop.Diamond->TilePositionTopLeft = diamondMenuHexPos;
+                    Menu.DragDrop.Diamond->ActualPosition = HexToActualPos(diamondMenuHexPos);
+                    Menu.DragDrop.Diamond->IsInField = false;
 
-                    Menu.DragDrop.Diamond = nullptr;
-
-                    Menu.ShallBuy = false;
-                    Menu.ShallMerge = false;
-                    Menu.ShallLevelUp = false;
+                    Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X] = Menu.DragDrop.Diamond;
                 }
+
+                if (exchangeDiamond) {
+                    exchangeDiamond->IsInField = Menu.DragDrop.WasInField;
+                    exchangeDiamond->TilePositionTopLeft = Menu.DragDrop.OriginTopLeft;
+                    if (exchangeDiamond->IsInField) {
+                        exchangeDiamond->CooldownFrames = SOCKETING_COOLDOWN;
+                        exchangeDiamond->ActualPosition = TriToActualPos(exchangeDiamond->TilePositionTopLeft) + TOP_LEFT_TO_CENTRE_OFFSET;
+                    } else {                
+                        exchangeDiamond->ActualPosition = HexToActualPos(exchangeDiamond->TilePositionTopLeft);
+                        Menu.Diamonds[exchangeDiamond->TilePositionTopLeft.Y][exchangeDiamond->TilePositionTopLeft.X] = exchangeDiamond;
+                    }
+                }
+
+                // TODO(Tobi): Check if same as origin
+
+                if (canPut) {
+                } else {
+                    // Put back to where it came from
+
+                    Menu.DragDrop.Diamond->IsInField = Menu.DragDrop.WasInField;
+                    Menu.DragDrop.Diamond->TilePositionTopLeft = Menu.DragDrop.OriginTopLeft;
+
+                    if (Menu.DragDrop.Diamond->IsInField) {
+                        Menu.DragDrop.Diamond->ActualPosition = TriToActualPos(Menu.DragDrop.Diamond->TilePositionTopLeft) + TOP_LEFT_TO_CENTRE_OFFSET;
+                    } else {
+                        Menu.DragDrop.Diamond->ActualPosition = HexToActualPos(Menu.DragDrop.Diamond->TilePositionTopLeft);
+                        Menu.Diamonds[Menu.DragDrop.Diamond->TilePositionTopLeft.Y][Menu.DragDrop.Diamond->TilePositionTopLeft.X] = Menu.DragDrop.Diamond;
+                    }
+                }
+
+                Menu.DragDrop.Diamond = nullptr;
             }
         }
     }
-
+    
     /// Rendering
     {
         /// Clear screen
@@ -1045,8 +1063,11 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Render Diamonds
         inc0 (diamond_i,   DiamondCount) {
+            // NOTE(Tobi): Will I really kep it like that?
+
             diamond* diamond_ = &DiamondList[diamond_i];
             if (diamond_->Inactive) { continue; }
+            if (Menu.DragDrop.Diamond == diamond_) { continue; }
 
             int frame;
             draw_rect* drawRect;
@@ -1115,7 +1136,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
             TextRenderScreen(&drawRectWaveStones, &DummyFontInfo, 8, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, numbers[wave_i], BLACK);
         }
 
-        /// Render Menu
+        /// Render Top Menu
+        #if 0
         {
             DrawWorldBitmap(&drawRectRightMenu, 0.5f, 2, Sprites.IconBuy, WHITE);
             DrawWorldBitmap(&drawRectRightMenu, 2.5f, 2, Sprites.IconLevelUp, WHITE);
@@ -1134,6 +1156,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 DrawWorldCircle(&drawRectRightMenu, 4.5f, 2, 1, YELLOW);
             }
         }
+        #endif
 
         /// Render drag-drop diamond
         if (Menu.DragDrop.Diamond) {
@@ -1151,8 +1174,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
             TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + HALF_HEXAGON_PIXEL_HEIGHT, ins->Mouse.PosY - bitmap.Height / 2 + HALF_HEXAGON_PIXEL_HEIGHT, dummy, BLACK);
         }
 
+        /// Draw testing lines
         #if 0
-
         #define SQRT_3 1.73205080757f
         #define HEXAGON_HEIGHT 54.0f
         #define HALF_HEXAGON_HEIGHT (HEXAGON_HEIGHT / 2)

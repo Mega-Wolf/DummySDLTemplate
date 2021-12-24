@@ -40,13 +40,13 @@ int DistanceToGoal[TILES_Y][TILES_X];
 #define DRAG_DROP_POSITION vec2i { 99999, 99999 }
 
 struct menu_data {
-    bool ShallMerge;
-    bool ShallLevelUp;
-    bool ShallBuy;
+    int SelecedBuyingLevel;
+
+    diamond* Diamonds[(MENU_DIAMONDS_Y + 1) / 2][MENU_DIAMONDS_X];
 
     struct {
         diamond* Diamond;
-        vec2i Origin;
+        vec2i OriginTopLeft;
         bool WasInField;
     } DragDrop;
 };
@@ -144,3 +144,5 @@ bool ShowPathfinding;
 
 int ShakeFrames;
 
+#define SQRT_3 1.73205080757f
+#define HEXAGON_H (SQRT_3 / 2)

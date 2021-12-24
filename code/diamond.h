@@ -7,12 +7,14 @@
 #include "maths.h"
 
 enum diamond_color {
-    DC_RED,
+    DC_WHITE,
+    DC_YELLOW,
     DC_GREEN,
     DC_AQUA,
+    DC_BLUE,
     DC_PURPLE,
-    DC_ORANGE,
-    DC_YELLOW
+    DC_RED,
+    DC_BLACK,
 };
 
 #define DIAMOND_COLORS 8
