@@ -366,28 +366,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        /// Buy / Level up / Merge etc.
-        // if (IS_KEY_PRESSED(KEY_BUY)) {
-        //     Menu.ShallBuy = !Menu.ShallBuy;
-        //     if (Menu.ShallBuy) {
-        //         Menu.ShallLevelUp = false;
-        //         Menu.ShallMerge = false;
-        //     }
-        // }
-        // if (IS_KEY_PRESSED(KEY_LEVEL_UP)) {
-        //     Menu.ShallLevelUp = !Menu.ShallLevelUp;
-        //     if (Menu.ShallLevelUp) {
-        //         Menu.ShallBuy = false;
-        //         Menu.ShallMerge = false;
-        //     }
-        // }
-        // if (IS_KEY_PRESSED(KEY_MERGE)) {
-        //     Menu.ShallMerge = !Menu.ShallMerge;
-        //     if (Menu.ShallMerge) {
-        //         Menu.ShallBuy = false;
-        //         Menu.ShallLevelUp = false;
-        //     }
-        // }
+        if (IS_KEY_PRESSED(KEY_MERGE)) {
+            Menu.ShallMerge = !Menu.ShallMerge;
+        }
 
         /// Wave Stone Speed
         if (IS_KEY_PRESSED(KEY_SPEED_WAVE)) {
@@ -789,41 +770,79 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             if (IS_MOUSE_RELEASED(Left) && Menu.DragDrop.Diamond) {
 
-                // NOTE(Tobi): These things would be equal if dropping on top of itself again
-                bool canPut = false;
-                if (Menu.DragDrop.Diamond != diamondUnderCursor) {
+                bool canPutOrMerge = false;
 
-                    /// Place down
-                    if (buildingHexTile != TRANSLATE_NOTHING_FOUND) {
-                        Menu.DragDrop.Diamond->CooldownFrames = SOCKETING_COOLDOWN;
-                        Menu.DragDrop.Diamond->TilePositionTopLeft = buildingHexTile;
-                        Menu.DragDrop.Diamond->ActualPosition = TriToActualPos(buildingHexTile) + TOP_LEFT_TO_CENTRE_OFFSET;
-                        Menu.DragDrop.Diamond->IsInField = true;
-                        canPut = true;
-                    } else if (overValidDiamondMenuSlot) {
-                        Menu.DragDrop.Diamond->TilePositionTopLeft = diamondMenuHexPos;
-                        Menu.DragDrop.Diamond->ActualPosition = HexToActualPos(diamondMenuHexPos);
-                        Menu.DragDrop.Diamond->IsInField = false;
+                // TODO(Tobi): If I say merge and there is nothing to merge; I can't put it down at the moment; is that what I want?
 
-                        Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X] = Menu.DragDrop.Diamond;
-                        canPut = true;
+                if (Menu.ShallMerge) {
+                    /// Merge diamonds
+
+                    // TODO(Tobi): Check for mana here as well
+                    if (diamondUnderCursor) {
+                        canPutOrMerge = true;
+
+                        // NOTE(Tobi): diamondUnderCursor is the one surviving
+                        // With other words; the Drag-Drop diamond is the one that vanishes, since this one is not listed anywhere anymore anyway (well ,maybe still in the field, but not in the menu and in the field I care about the inactive thing) 
+                        
+                        int count = 0;
+                        int r = 0;
+                        int g = 0;
+                        int b = 0;
+                        inc0 (color_i,   DC_AMOUNT) {
+                            diamondUnderCursor->ColorsCount[color_i] += Menu.DragDrop.Diamond->ColorsCount[color_i];
+                            count += diamondUnderCursor->ColorsCount[color_i];
+                            r += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Red;
+                            g += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Green;
+                            b += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Blue;
+                        }
+                        diamondUnderCursor->MixedColor = COL32_RGB(r / count, g / count, b / count );
+                        DiamondSetValues(diamondUnderCursor, count);
+
+                        diamondUnderCursor->CooldownFrames = SOCKETING_COOLDOWN;
+
+                        BucketListRemove(&Diamonds, Menu.DragDrop.Diamond);
                     }
 
-                    /// Put the thing under cursor to where I came from
-                    if (diamondUnderCursor) {
-                        diamondUnderCursor->IsInField = Menu.DragDrop.WasInField;
-                        diamondUnderCursor->TilePositionTopLeft = Menu.DragDrop.OriginTopLeft;
-                        if (diamondUnderCursor->IsInField) {
-                            diamondUnderCursor->CooldownFrames = SOCKETING_COOLDOWN;
-                            diamondUnderCursor->ActualPosition = TriToActualPos(diamondUnderCursor->TilePositionTopLeft) + TOP_LEFT_TO_CENTRE_OFFSET;
-                        } else {                
-                            diamondUnderCursor->ActualPosition = HexToActualPos(diamondUnderCursor->TilePositionTopLeft);
-                            Menu.Diamonds[diamondUnderCursor->TilePositionTopLeft.Y][diamondUnderCursor->TilePositionTopLeft.X] = diamondUnderCursor;
+                    Menu.ShallMerge = false;
+                } else {
+                    /// Place Down
+
+                    // NOTE(Tobi): These things would be equal if dropping on top of itself again
+                    if (Menu.DragDrop.Diamond != diamondUnderCursor) {
+
+                        /// Place down
+                        if (buildingHexTile != TRANSLATE_NOTHING_FOUND) {
+                            Menu.DragDrop.Diamond->CooldownFrames = SOCKETING_COOLDOWN;
+                            Menu.DragDrop.Diamond->TilePositionTopLeft = buildingHexTile;
+                            Menu.DragDrop.Diamond->ActualPosition = TriToActualPos(buildingHexTile) + TOP_LEFT_TO_CENTRE_OFFSET;
+                            Menu.DragDrop.Diamond->IsInField = true;
+                            canPutOrMerge = true;
+                        } else if (overValidDiamondMenuSlot) {
+                            Menu.DragDrop.Diamond->TilePositionTopLeft = diamondMenuHexPos;
+                            Menu.DragDrop.Diamond->ActualPosition = HexToActualPos(diamondMenuHexPos);
+                            Menu.DragDrop.Diamond->IsInField = false;
+
+                            Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X] = Menu.DragDrop.Diamond;
+                            canPutOrMerge = true;
+                        }
+
+                        /// Put the thing under cursor to where I came from
+                        if (diamondUnderCursor) {
+                            diamondUnderCursor->IsInField = Menu.DragDrop.WasInField;
+                            diamondUnderCursor->TilePositionTopLeft = Menu.DragDrop.OriginTopLeft;
+                            if (diamondUnderCursor->IsInField) {
+                                diamondUnderCursor->CooldownFrames = SOCKETING_COOLDOWN;
+                                diamondUnderCursor->ActualPosition = TriToActualPos(diamondUnderCursor->TilePositionTopLeft) + TOP_LEFT_TO_CENTRE_OFFSET;
+                            } else {                
+                                diamondUnderCursor->ActualPosition = HexToActualPos(diamondUnderCursor->TilePositionTopLeft);
+                                Menu.Diamonds[diamondUnderCursor->TilePositionTopLeft.Y][diamondUnderCursor->TilePositionTopLeft.X] = diamondUnderCursor;
+                            }
                         }
                     }
+
                 }
 
-                if (!canPut) {
+                if (!canPutOrMerge) {
                     Assert(!diamondUnderCursor || diamondUnderCursor == Menu.DragDrop.Diamond, "How can there be a diamond under cursor, if I can't place something down");
                     // Put back to where it came from
 
@@ -845,20 +864,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 if (diamondUnderCursor) {
                     // TODO(Tobi): Check for mana
 
+                    // NOTE(Tobi): When I double everything; I don't have to change the colors
                     int count = 0;
-                    int r = 0;
-                    int g = 0;
-                    int b = 0;
                     inc0 (color_i,   DC_AMOUNT) {
                         diamondUnderCursor->ColorsCount[color_i] *= 2;
                         count += diamondUnderCursor->ColorsCount[color_i];
-                        r += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Red;
-                        g += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Green;
-                        b += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Blue;
-                    }
-
-                    diamondUnderCursor->MixedColor = COL32_RGB(r / count, g / count, b / count );
-                    
+                    }                    
                     DiamondSetValues(diamondUnderCursor, count);
                 }
             }
@@ -1136,26 +1147,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Render Top Menu
-        #if 0
         {
-            DrawWorldBitmap(&drawRectRightMenu, 0.5f, 2, Sprites.IconBuy, WHITE);
-            DrawWorldBitmap(&drawRectRightMenu, 2.5f, 2, Sprites.IconLevelUp, WHITE);
             DrawWorldBitmap(&drawRectRightMenu, 4.5f, 2, Sprites.IconMerge, WHITE);
-
-            if (Menu.ShallBuy) {
-                //DrawWorldBorder(&drawRectRightMenu, 0.5f - 1.0f, 2 - 1.0f, 2.0f, 2.0f, -2.0f / GRID_SIZE, -2.0f / GRID_SIZE, YELLOW);
-                DrawWorldCircle(&drawRectRightMenu, 0.5f, 2, 1, YELLOW);
-            }
-
-            if (Menu.ShallLevelUp) {
-                DrawWorldCircle(&drawRectRightMenu, 2.5f, 2, 1, YELLOW);
-            }
 
             if (Menu.ShallMerge) {
                 DrawWorldCircle(&drawRectRightMenu, 4.5f, 2, 1, YELLOW);
             }
         }
-        #endif
 
         /// Render drag-drop diamond
         if (Menu.DragDrop.Diamond) {

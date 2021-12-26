@@ -44,6 +44,8 @@ int DistanceToGoal[TILES_Y][TILES_X];
 struct menu_data {
     int SelecedBuyingLevel;
 
+    bool ShallMerge;
+
     diamond* Diamonds[(MENU_DIAMONDS_Y + 1) / 2][MENU_DIAMONDS_X];
 
     struct {
