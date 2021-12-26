@@ -805,7 +805,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                     Menu.ShallMerge = false;
                 } else {
-                    /// Place Down
+                    /// Place Down and replace if necessary
 
                     // NOTE(Tobi): These things would be equal if dropping on top of itself again
                     if (Menu.DragDrop.Diamond != diamondUnderCursor) {
@@ -1098,7 +1098,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderWorld(drawRect, &DummyFontInfo, diamond_->ActualPosition.X + 0.2f, diamond_->ActualPosition.Y + 0.2f, dummy, BLACK);
+            TextRenderWorld(drawRect, &DummyFontInfo, diamond_->ActualPosition.X + 0.475f, diamond_->ActualPosition.Y + 0.225f, dummy, WHITE);
 
             if (diamond_->IsInField) {
                 /// Render Diamond Range
@@ -1168,7 +1168,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + HALF_HEXAGON_PIXEL_HEIGHT, ins->Mouse.PosY - bitmap.Height / 2 + HALF_HEXAGON_PIXEL_HEIGHT, dummy, BLACK);
+            TextRenderScreen(&drawRectAll, &DummyFontInfo,RoundFloat32ToInt32(ins->Mouse.PosX + 0.475f * HEXAGON_A), RoundFloat32ToInt32(ins->Mouse.PosY + 0.225f * HEXAGON_A), dummy, WHITE);
         }
 
         /// Render mouse-over highlight

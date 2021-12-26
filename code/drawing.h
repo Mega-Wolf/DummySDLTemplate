@@ -14,6 +14,8 @@ struct draw_rect {
     int ArrayWidth;
 };
 
+// TODO(Tobi): Something is off with my y positions
+
 int Index2d(int x, int y, draw_rect* drawRect) {
     return Index2D(x + drawRect->StartX, y + drawRect->StartY, drawRect->ArrayWidth);
 }

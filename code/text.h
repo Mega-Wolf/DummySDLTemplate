@@ -301,5 +301,5 @@ int TextRenderScreen(draw_rect* drawRect, font_info* fontInfo, int left, int top
 }
 
 int TextRenderWorld(draw_rect* drawRect, font_info* fontInfo, float left, float top, char* text, color32 color/*, color32 backgroundColor*/) {
-    return TextRenderScreen(drawRect, fontInfo, (int) (GRID_SIZE * left) + GRID_SIZE / 2, (int) (GRID_SIZE * top) + GRID_SIZE / 2, text, color/*, backgroundColor*/);
+    return TextRenderScreen(drawRect, fontInfo, RoundFloatToInt(HEXAGON_A * left), RoundFloatToInt(HEXAGON_A * top), text, color/*, backgroundColor*/);
 }
