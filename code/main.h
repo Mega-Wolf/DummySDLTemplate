@@ -68,6 +68,7 @@ struct monster_wave {
         float Speed;
         float MaxHealth;
         color32 Color;
+        float Mana;
 
         //newMonster->Radius = (rand() % 6 + 5) / (float)GRID_SIZE;
         //newMonster->Speed = 1 / (float) (rand() % 11 + 10);
@@ -90,6 +91,7 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
             1 / 16.0f,
             50.0f,
             RED,
+            25.0f,
         },
     },
     {
@@ -102,6 +104,7 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
             1 / 10.0f,
             10.0f,
             GREEN,
+            30.0f,
         },
     },
     {
@@ -114,6 +117,7 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
             1 / 16.0f,
             50.0f,
             BLUE,
+            35.0f,
         },
     },
     {
@@ -126,6 +130,7 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
             1 / 10.0f,
             10.0f,
             YELLOW,
+            40.0f,
         },
     }
 };

@@ -65,6 +65,8 @@ struct monster {
 
     float MovementT;
     vec2f ActualPosition;
+
+    float Mana;
 };
 
 struct projectile {
@@ -102,10 +104,26 @@ projectile Projectiles[TILES_Y * TILES_X];
 
 #define PROJECTILE_SPEED 0.4f
 
+float Mana; // NOTE(Tobi): I have this as float at the moment, so that I can have fractions of mana (do I want that?)
+float ManaMergeCost = 240.0f; // TODO(Tobi): This will probably be set once at the start of the level
+float ManaDiamondLevel1Cost = 60.0f;
+float ManaStartValue = 400.0f;
+float ManaGainPerSecond = 3.6f;
+
 void DiamondSetValues(diamond* dim, int count) {
     dim->Damage = count * DIAMOND_LEVEL_1_DAMAGE;
     dim->RangeRadius = sqrtf(1.0f + (count - 1) /100.0f) * DIAMOND_LEVEL_1_RANGE;
     dim->MaxCooldown = (int) (powf(0.975f, (float) (count - 1)) * DIAMOND_LEVEL_1_COOLDOWN);
     dim->CooldownFrames = SOCKETING_COOLDOWN;
+}
+
+float ManaCalcBuyCost(int buyingLevel) {
+    int numberOfMerges = buyingLevel;
+    float manaMerging = numberOfMerges * ManaMergeCost;
+    int numberOfLevel1s = 1 << buyingLevel;
+    float manaDiamondCost = numberOfLevel1s * ManaDiamondLevel1Cost;
+
+    float totalCost = manaMerging + manaDiamondCost;
+    return totalCost;
 }
 

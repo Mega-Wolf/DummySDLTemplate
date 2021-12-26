@@ -8,6 +8,7 @@
 #include "../helpers/sdl_layer.h"
 
 #include "main.h"
+#include "intrinsics.h"
 
 //#include "macros.h"
 //#include "maths.h"
@@ -116,6 +117,8 @@ void InitDistanceArray() {
 
 void Init() {
     AssetsInit();
+
+    Mana = ManaStartValue;
 
     // TODO(Tobi): Not sure if that is needed at the moment
     Menu.Diamonds[MENU_DIAMONDS_Y / 2][1] = (diamond*) -1;
@@ -316,13 +319,17 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
     draw_rect drawRectMenuDiamonds = drawRectRightMenu;
     drawRectMenuDiamonds.StartY = MENU_OFFSET_Y;
-    drawRectMenuDiamonds.Height = MENU_DIAMONDS_Y * HEXAGON_PIXEL_HEIGHT;
+    drawRectMenuDiamonds.Height = (MENU_DIAMONDS_Y + 1) / 2 * HEXAGON_PIXEL_HEIGHT;
     vec2i menuDiamondsMousePosition = TranslateMousePosition(&drawRectMenuDiamonds, ins);
 
     draw_rect drawRectMenuBuild = drawRectRightMenu;
     drawRectMenuBuild.StartY = height - 10 * HALF_HEXAGON_PIXEL_HEIGHT;
     drawRectMenuBuild.Height = 10 * HALF_HEXAGON_PIXEL_HEIGHT;
     vec2i menuBuildMousePosition = TranslateMousePosition(&drawRectMenuBuild, ins);
+
+    draw_rect drawRectManaBar = drawRectRightMenu;
+    drawRectManaBar.StartY = drawRectMenuDiamonds.StartY + drawRectMenuDiamonds.Height;
+    drawRectManaBar.Height = drawRectMenuBuild.StartY - drawRectManaBar.StartY;
 
     vec2i mouseTilePos = MouseToTilePos(mainMousePosition);
 
@@ -371,7 +378,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         if (ins->Mouse.WheelDelta > 0) {
-            // TODO(Tobi): Consider mana
+            // TODO(Tobi): Consider mana (maybe)
             ++Menu.SelectedBuyingLevel;
         } else if (ins->Mouse.WheelDelta < 0) {
             Menu.SelectedBuyingLevel = AtLeast(0, Menu.SelectedBuyingLevel - 1);
@@ -389,6 +396,11 @@ void Update(color32* array, int width, int height, inputs* ins) {
     if (!IsLevelEditorActive) {
         ++FrameCount;
 
+        /// Update Mana
+        if (FrameCount % 60 == 0) {
+            Mana += ManaGainPerSecond;
+        }
+
         /// Update Monsters
         {
             inc_bucket (monster_i, monster_, &Monsters) {
@@ -399,6 +411,11 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     if (monster_->PoisonSpeed) {
                         monster_->Health -= monster_->PoisonSpeed;
                         monster_->PoisonSpeed = AtLeast(monster_->PoisonSpeed - MONSTER_POISON_DECREASE_PER_FRAME, 0.0f);
+
+                        if (monster_->Health <= 0) {
+                            monster_->Health = 0; // TODO(Tobi): Do I need that?
+                            BucketListRemove(&Monsters, monster_);
+                        }
                     }
                 }
 
@@ -526,6 +543,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     newMonster->Color = monster_wave_->Prototype.Color;
                     newMonster->MaxHealth = monster_wave_->Prototype.MaxHealth;
                     newMonster->Health = newMonster->MaxHealth;
+                    newMonster->Mana = monster_wave_->Prototype.Mana;
 
                     MonsterSetToStartingPosition(newMonster);
                 }
@@ -632,6 +650,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 if (distanceSq < speedSq) {
                     target->Health -= projectile_->Damage;
                     if (target->Health <= 0) {
+                        Mana += target->Mana;
                         target->Health = 0;
                         BucketListRemove(&Monsters, target);
                         AudioClipStart(Sounds.Death, false, 0.7f);
@@ -704,7 +723,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             if (IS_MOUSE_PRESSED(Left)) {
                 /// Buying
-                {
+                float manaBuyCost = ManaCalcBuyCost(Menu.SelectedBuyingLevel);
+                if (Mana >= manaBuyCost) {
                     vec2i buildMenuTilePos = MouseToTilePos(menuBuildMousePosition, true);
 
                     int buildMenuTriangleMapping[10][9] = {
@@ -755,7 +775,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                                 Menu.Diamonds[freeSlot.Y][freeSlot.X] = newDiamond;
 
-                                // TODO(Tobi): Reduce mana (I can put the check before this maybe)
+                                Mana -= manaBuyCost;
                             }
                         }
                     }
@@ -789,8 +809,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 if (Menu.ShallMerge) {
                     /// Merge diamonds
 
-                    // TODO(Tobi): Check for mana here as well
-                    if (diamondUnderCursor) {
+                    if (diamondUnderCursor && Mana > ManaMergeCost) {
+                        Mana -= ManaMergeCost;
                         canPutOrMerge = true;
 
                         // NOTE(Tobi): diamondUnderCursor is the one surviving
@@ -855,8 +875,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
 
                 if (!canPutOrMerge) {
-                    Assert(!diamondUnderCursor || diamondUnderCursor == Menu.DragDrop.Diamond, "How can there be a diamond under cursor, if I can't place something down");
                     // Put back to where it came from
+
+                    // NOTE(Tobi): I have to take out that assertion since it will also happen when I cannot afford merging
+                    // Assert(!diamondUnderCursor || diamondUnderCursor == Menu.DragDrop.Diamond, "How can there be a diamond under cursor, if I can't place something down");
 
                     Menu.DragDrop.Diamond->IsInField = Menu.DragDrop.WasInField;
                     Menu.DragDrop.Diamond->TilePositionTopLeft = Menu.DragDrop.OriginTopLeft;
@@ -872,16 +894,29 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 Menu.DragDrop.Diamond = nullptr;
             }
 
-            if (IS_KEY_PRESSED(KEY_LEVEL_UP)) {
-                if (diamondUnderCursor) {
-                    // TODO(Tobi): Check for mana
+            if (IS_KEY_PRESSED(KEY_LEVEL_UP) && diamondUnderCursor) {
+
+                int countBefore = 0;
+                inc0 (color_i,   DC_AMOUNT) {
+                    countBefore += diamondUnderCursor->ColorsCount[color_i];
+                }
+                // TODO(Tobi): This works only if I don't have mixed things
+                // However, for other stuff, I will need a new formula
+                // (oh I would just have to store how much mana a diamond is worth at the moment and then act on that)
+                int levelBefore = FindFirstSet(countBefore);
+                float manaBuyCost = ManaCalcBuyCost(levelBefore);
+                float manaUpgradeCost = manaBuyCost + ManaMergeCost;
+
+                if (diamondUnderCursor && Mana >= manaUpgradeCost) {
+                    Mana -= manaUpgradeCost;
 
                     // NOTE(Tobi): When I double everything; I don't have to change the colors
                     int count = 0;
                     inc0 (color_i,   DC_AMOUNT) {
                         diamondUnderCursor->ColorsCount[color_i] *= 2;
                         count += diamondUnderCursor->ColorsCount[color_i];
-                    }                    
+                    }
+
                     DiamondSetValues(diamondUnderCursor, count);
                 }
             }
@@ -891,6 +926,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
     /// Rendering
     {
         /// Clear screen
+        // TODO(Tobi): The camera shake should not affect this
         if (IsLevelEditorActive) {
             DrawScreenRectangle(&drawRectAll, 0, 0, width, height, COL32_RGB(0, 0, 192));
         } else {
@@ -1056,6 +1092,20 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawScreenDisc(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT, 20, DARK_GREY);
             TextRenderScreen(&drawRectMenuBuild, &DummyFontInfo, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH - textWidth) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT - DummyFontInfo.FontSize / 2, dummy, WHITE);
         }
+
+        /// Render Mana Bar
+        {
+
+            float manaPercentage = Mana / 1000.0f;
+            DrawScreenRectangle(&drawRectManaBar, 0, 0, 5 * HALF_HEXAGON_PIXEL_WIDTH, drawRectManaBar.Height, COL32_RGB(64, 32,   0));
+            DrawScreenRectangle(&drawRectManaBar, 0, RoundFloat32ToInt32((1.0f - manaPercentage) * drawRectManaBar.Height), 5 * HALF_HEXAGON_PIXEL_WIDTH, RoundFloat32ToInt32(manaPercentage * drawRectManaBar.Height), ORANGE);
+
+            char dummy[128];
+            snprintf(dummy, ArrayCount(dummy), "%d", (int) Mana);
+            int textWidth = TextGetRenderSize(&DummyFontInfo, dummy);
+            TextRenderScreen(&drawRectManaBar, &DummyFontInfo, (5 * HALF_HEXAGON_PIXEL_WIDTH - textWidth) / 2, (drawRectManaBar.Height - DummyFontInfo.FontSize) / 2, dummy, WHITE);
+        }
+
 
         /// Render Monsters
         inc_bucket (monster_i, monster_, &Monsters) {
