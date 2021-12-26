@@ -370,6 +370,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
             Menu.ShallMerge = !Menu.ShallMerge;
         }
 
+        if (ins->Mouse.WheelDelta > 0) {
+            // TODO(Tobi): Consider mana
+            ++Menu.SelectedBuyingLevel;
+        } else if (ins->Mouse.WheelDelta < 0) {
+            Menu.SelectedBuyingLevel = AtLeast(0, Menu.SelectedBuyingLevel - 1);
+        }
+
         /// Wave Stone Speed
         if (IS_KEY_PRESSED(KEY_SPEED_WAVE)) {
             ++MonsterWaveSpeedEnd;
@@ -721,6 +728,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             vec2i freeSlot = { -1, -1 };
                             inc0 (y_i,   4) {
                                 inc0 (x_i,   3) {
+                                    // TODO(Tobi): Do I like the filling order proposed here better?
+                                    //int xs[] = { 0, 2, 1 };
+                                    //int x = xs[x_i];
+
                                     if (!Menu.Diamonds[y_i][x_i]) {
                                         freeSlot = { x_i, y_i };
                                         goto _afterMenuSlot;
@@ -732,7 +743,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             if (freeSlot.X != -1) {
                                 diamond* newDiamond = BucketGetCleared(&Diamonds);
 
-                                int levelCount = 1 << Menu.SelecedBuyingLevel;
+                                // TODO(Tobi): This has to be changed, otherwise I can't have more than 32 levels
+                                int levelCount = 1 << Menu.SelectedBuyingLevel;
                                 newDiamond->ColorsCount[buildColorIndex] = levelCount;
                                 DiamondSetValues(newDiamond, levelCount);
                                 newDiamond->MixedColor = DiamondColors[buildColorIndex];
@@ -1037,7 +1049,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], GREEN);
             DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], AQUA);
 
-            //DrawScreenBitmap(&drawRectMenuDiamonds, 1 * (HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH), y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Trap, DARK_GREY);
+            // Level buy number in the middle
+            char dummy[10];
+            snprintf(dummy, ArrayCount(dummy), "%d", Menu.SelectedBuyingLevel + 1);
+            int textWidth = TextGetRenderSize(&DummyFontInfo, dummy);
+            DrawScreenDisc(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT, 20, DARK_GREY);
+            TextRenderScreen(&drawRectMenuBuild, &DummyFontInfo, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH - textWidth) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT - DummyFontInfo.FontSize / 2, dummy, WHITE);
         }
 
         /// Render Monsters

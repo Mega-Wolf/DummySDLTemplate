@@ -42,7 +42,7 @@ int DistanceToGoal[TILES_Y][TILES_X];
 #define DRAG_DROP_POSITION vec2i { 99999, 99999 }
 
 struct menu_data {
-    int SelecedBuyingLevel;
+    int SelectedBuyingLevel;
 
     bool ShallMerge;
 
