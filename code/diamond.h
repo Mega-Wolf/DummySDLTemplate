@@ -15,10 +15,11 @@ enum diamond_color {
     DC_PURPLE,
     DC_RED,
     DC_BLACK,
+
+    DC_AMOUNT
 };
 
-#define DIAMOND_COLORS 8
-color32 DiamondColors[DIAMOND_COLORS] = {
+color32 DiamondColors[DC_AMOUNT] = {
     WHITE,
     YELLOW,
     GREEN,
@@ -30,7 +31,9 @@ color32 DiamondColors[DIAMOND_COLORS] = {
 };
 
 struct diamond {
-    bool Inactive;
+    unsigned int Generation;
+    unsigned int LastGeneration;
+    
     bool IsInField;
 
     vec2f ActualPosition;
@@ -41,13 +44,14 @@ struct diamond {
     int MaxCooldown; // Make these float?
     float Damage;
 
-    int ColorsCount[DIAMOND_COLORS];
+    int ColorsCount[DC_AMOUNT];
 
     color32 MixedColor; // NOTE(Tobi): This is only used so I don't have to calculalte it every frame; it is completely redundant though
 };
 
 struct monster {
     unsigned int Generation;
+    unsigned int LastGeneration;
 
     vec2i GoalPosition;
     vec2i OldPosition;
@@ -65,12 +69,13 @@ struct monster {
 
 struct projectile {
     vec2f Position;
-    monster* Target;
-    unsigned int TargetGeneration;
+    
+    generation_link<monster> Target;
+
     float Speed;
     float Damage;
 
-    int ColorsCount[DIAMOND_COLORS];
+    int ColorsCount[DC_AMOUNT];
     color32 Color;
 
     vec2f Direction;
@@ -79,8 +84,9 @@ struct projectile {
     int BuildupFrames;
 };
 
-int DiamondCount;
-diamond DiamondList[TILES_Y * TILES_X];
+diamond _DiamondList[TILES_Y * TILES_X];
+bucket_list<diamond> Diamonds = BucketListInit(ArrayCount(_DiamondList), _DiamondList);
+
 
 int ProjectileCount;
 projectile Projectiles[TILES_Y * TILES_X];

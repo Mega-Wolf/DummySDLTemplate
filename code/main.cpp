@@ -395,15 +395,16 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
     }
 
+    diamond* diamondUnderCursor = nullptr;
+
     /// Logic Update
     if (!IsLevelEditorActive) {
         ++FrameCount;
 
         /// Update Monsters
         {
-            inc0 (monster_i,   MonsterListEnd) {
-                monster* monster_ = &Monsters[monster_i];
-                if (!monster_->Health) { continue; }
+            inc_bucket (monster_i, monster_, &Monsters) {
+                Assert(monster_->Health, "Monster should be dead");
 
                 /// React to effects
                 {
@@ -529,43 +530,22 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     int timeOffsetFromStart = FrameCount - monster_wave_->ActualStartFrame;
                     if (timeOffsetFromStart % monster_wave_->DelayFrames != 0) {continue; }
                     
-                    monster* newMonster = nullptr;
-                    inc0 (monster_i,   MonsterListEnd) {
-                        monster* monster_ = &Monsters[monster_i];
-                        if (!monster_->Health) {
-                            newMonster = monster_;
-                            break;
-                        }
-                    }
+                    ++monster_wave_->AlreadyReleased;
 
-                    if (!newMonster) {
-                        if (MonsterListEnd < MONSTER_COUNT_MAX) {
-                            newMonster = &Monsters[MonsterListEnd++];
-                        }
-                    }
+                    monster* newMonster = BucketGetCleared(&Monsters);
+                    newMonster->Radius = monster_wave_->Prototype.Radius;
+                    newMonster->Speed = monster_wave_->Prototype.Speed;
+                    newMonster->Color = monster_wave_->Prototype.Color;
+                    newMonster->MaxHealth = monster_wave_->Prototype.MaxHealth;
+                    newMonster->Health = newMonster->MaxHealth;
 
-                    if (newMonster) {
-                        ++monster_wave_->AlreadyReleased;
-                        unsigned int lastGeneration = newMonster->Generation;
-                        *newMonster = {};
-                        newMonster->Generation = lastGeneration + 1;
-                        newMonster->Radius = monster_wave_->Prototype.Radius;
-                        newMonster->Speed = monster_wave_->Prototype.Speed;
-                        newMonster->Color = monster_wave_->Prototype.Color;
-                        newMonster->MaxHealth = monster_wave_->Prototype.MaxHealth;
-                        newMonster->Health = newMonster->MaxHealth;
-
-                        MonsterSetToStartingPosition(newMonster);
-                    }
+                    MonsterSetToStartingPosition(newMonster);
                 }
             }
         }
 
         /// Update Diamonds
-        inc0 (diamond_i,   DiamondCount) {
-            diamond* diamond_ = &DiamondList[diamond_i];
-            if (diamond_->Inactive) { continue; }
-
+        inc_bucket(diamond_i, diamond_, &Diamonds) {
             if (diamond_->CooldownFrames > 0) {
                 --diamond_->CooldownFrames;
                 continue;
@@ -576,11 +556,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             /// Find target monster
             // TODO(Tobi): This will target monsters outside the level since there is no DistanceToGoal set there
-            int targetIndex = -1;
+            monster* target = nullptr;
             float closestDistanceToGoal = 999999999.0f;
-            inc0 (monster_i,   MonsterListEnd) {
-                monster* monster_ = &Monsters[monster_i];
-                if (!monster_->Health) { continue; }
+            inc_bucket(monster_i, monster_, &Monsters) {
+                Assert(monster_->Health > 0, "Monster should be inactive");
 
                 float deltaX = monster_->ActualPosition.X - (float) diamond_->ActualPosition.X;
                 float deltaY = monster_->ActualPosition.Y - (float) diamond_->ActualPosition.Y;
@@ -603,13 +582,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                     if (distanceToGoal < closestDistanceToGoal) {
                         closestDistanceToGoal = distanceToGoal;
-                        targetIndex = monster_i;
+                        target = monster_;
                     }
                 }
             }
 
             /// Create projectile if target monster
-            if (targetIndex != -1) {
+            if (target) {
                 diamond_->CooldownFrames = diamond_->MaxCooldown;
 
                 projectile* newProjectile = &Projectiles[ProjectileCount++];
@@ -618,9 +597,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 newProjectile->Position = diamond_->ActualPosition;
                 newProjectile->Damage = diamond_->Damage;
                 newProjectile->Speed = PROJECTILE_SPEED;
-                newProjectile->Target = &Monsters[targetIndex];
-                newProjectile->TargetGeneration = newProjectile->Target->Generation;
-                inc0 (color_i,   DIAMOND_COLORS) {
+                newProjectile->Target = GenerationLinkCreate(target);
+                inc0 (color_i,   DC_AMOUNT) {
                     newProjectile->ColorsCount[color_i] = diamond_->ColorsCount[color_i];
                 }
 
@@ -639,8 +617,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
         inc0 (projectile_i,   ProjectileCount) {
             projectile* projectile_ = &Projectiles[projectile_i];
 
-            monster* target = projectile_->Target;
-            if (!target->Health || target->Generation != projectile_->TargetGeneration) {
+            monster* target = GenerationLinkResolve(projectile_->Target);
+            if (!target) {
                 Projectiles[projectile_i] = Projectiles[--ProjectileCount];
                 --projectile_i;
                 continue;
@@ -667,6 +645,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     target->Health -= projectile_->Damage;
                     if (target->Health <= 0) {
                         target->Health = 0;
+                        BucketListRemove(&Monsters, target);
                         AudioClipStart(Sounds.Death, false, 0.7f);
                         ParticleEffectStartWorld(&drawRectMain, 16, Particles.Smoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGBA(100, 80, 80, 160));
                         // TODO(Tobi): The monster has been killed; do something
@@ -698,6 +677,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
         /// Menu logic
         // TODO(Tobi): I kind of ignore all the invalid stuff, so I have to come back after doing the generation thing
         {
+            // TODO(Tobi): I'm changing this now, so that I will always check what diamond is currently selected
+            // For the context menu, this is something I will need anyway
+
             vec2i menuTilePos = MouseToTilePos(menuDiamondsMousePosition);
             if (!BoxContainsInEx(0, 0, drawRectMenuDiamonds.Width, drawRectMenuDiamonds.Height, menuDiamondsMousePosition.X, menuDiamondsMousePosition.Y)) {
                 menuTilePos = { -1000, -1000 };
@@ -714,6 +696,23 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             vec2i diamondMenuHexPos = { diamondMenuHexX, menuTilePos.Y / 2 };
             bool overValidDiamondMenuSlot = BoxContainsInEx(0, 0, 3, 4, diamondMenuHexPos.X, diamondMenuHexPos.Y) && !(diamondMenuHexPos.X == 1 && diamondMenuHexPos.Y == 3);
+
+            vec2i buildingHexTile = TRANSLATE_NOTHING_FOUND;
+
+            /// Find the diamond underneath the cursor
+            if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
+                buildingHexTile = TranslateToTopLeftPosition(mouseTilePos, T_TOWER);
+                if (buildingHexTile != TRANSLATE_NOTHING_FOUND) {
+                    inc_bucket(dimaond_i, diamond_, &Diamonds) {
+                        if (diamond_->TilePositionTopLeft == buildingHexTile) {
+                            diamondUnderCursor = diamond_;
+                            break;
+                        }
+                    }
+                }
+            } else if (overValidDiamondMenuSlot && Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X]) {
+                diamondUnderCursor = Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X];
+            }
 
             if (IS_MOUSE_PRESSED(Left)) {
                 /// Buying
@@ -750,8 +749,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             _afterMenuSlot:
 
                             if (freeSlot.X != -1) {
-                                diamond* newDiamond = &DiamondList[DiamondCount++];
-                                *newDiamond = {};
+                                diamond* newDiamond = BucketGetCleared(&Diamonds);
 
                                 int levelCount = 1 << Menu.SelecedBuyingLevel;
                                 newDiamond->ColorsCount[buildColorIndex] = levelCount;
@@ -771,86 +769,62 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
 
                 /// Drag-Drop
-                {
+                if (diamondUnderCursor) {
                     // TODO(Tobi): Assert that I don't hold something
-                    if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
-                        vec2i topLeftTower = TranslateToTopLeftPosition(mouseTilePos, T_TOWER);
-                        if (topLeftTower != TRANSLATE_NOTHING_FOUND) {
-                            inc0 (diamond_i,   DiamondCount) {
-                                diamond* diamond_ = &DiamondList[diamond_i];
-                                if (diamond_->Inactive) { continue; }
-                                if (diamond_->TilePositionTopLeft == topLeftTower) {
-                                    Menu.DragDrop.Diamond = diamond_;
-                                    Menu.DragDrop.WasInField = true;
-                                    Menu.DragDrop.OriginTopLeft = Menu.DragDrop.Diamond->TilePositionTopLeft;
 
-                                    // TODO(Tobi): If I comment out this line, diamonds will continue shooting, since they are still kind of in their slot (do I want that)
-                                    Menu.DragDrop.Diamond->IsInField = false;
-                                    break;
-                                }
-                            }
-                        }
-                    } else if (overValidDiamondMenuSlot && Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X]) {
-                        Menu.DragDrop.Diamond = Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X];
-                        Menu.DragDrop.WasInField = false;
-                        Menu.DragDrop.OriginTopLeft = Menu.DragDrop.Diamond->TilePositionTopLeft;
-
+                    Menu.DragDrop.Diamond = diamondUnderCursor;
+                    Menu.DragDrop.WasInField = diamondUnderCursor->IsInField;
+                    Menu.DragDrop.OriginTopLeft = diamondUnderCursor->TilePositionTopLeft;
+                    if (diamondUnderCursor->IsInField) {
+                        // TODO(Tobi): If I comment out this line, diamonds will continue shooting, since they are still kind of in their slot (do I want that)
+                        Menu.DragDrop.Diamond->IsInField = false;
+                    } else {
                         Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X] = nullptr;
                     }
+
+                    // TODO(Tobi): At the moment this would actually not matter
+                    diamondUnderCursor = nullptr;
                 }
             }
 
             if (IS_MOUSE_RELEASED(Left) && Menu.DragDrop.Diamond) {
 
-                /// Check if something underneath where I can actually put my diamond
-                diamond* exchangeDiamond = nullptr;
+                // NOTE(Tobi): These things would be equal if dropping on top of itself again
                 bool canPut = false;
-                if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
-                    vec2i topLeftTower = TranslateToTopLeftPosition(mouseTilePos, T_TOWER);
-                    if (topLeftTower != TRANSLATE_NOTHING_FOUND) {
-                        // TODO(Tobi): I migth improve on that in the future
-                        inc0 (diamond_i,   DiamondCount) {
-                            diamond* diamond_ = &DiamondList[diamond_i];
-                            if (diamond_->Inactive) { continue; }
-                            if (diamond_->TilePositionTopLeft == topLeftTower) {
-                                exchangeDiamond = diamond_;
-                                break;
-                            }
-                        }
+                if (Menu.DragDrop.Diamond != diamondUnderCursor) {
 
-                        canPut = true;
+                    /// Place down
+                    if (buildingHexTile != TRANSLATE_NOTHING_FOUND) {
                         Menu.DragDrop.Diamond->CooldownFrames = SOCKETING_COOLDOWN;
-                        Menu.DragDrop.Diamond->TilePositionTopLeft = topLeftTower;
-                        Menu.DragDrop.Diamond->ActualPosition = TriToActualPos(topLeftTower) + TOP_LEFT_TO_CENTRE_OFFSET;
+                        Menu.DragDrop.Diamond->TilePositionTopLeft = buildingHexTile;
+                        Menu.DragDrop.Diamond->ActualPosition = TriToActualPos(buildingHexTile) + TOP_LEFT_TO_CENTRE_OFFSET;
                         Menu.DragDrop.Diamond->IsInField = true;
+                        canPut = true;
+                    } else if (overValidDiamondMenuSlot) {
+                        Menu.DragDrop.Diamond->TilePositionTopLeft = diamondMenuHexPos;
+                        Menu.DragDrop.Diamond->ActualPosition = HexToActualPos(diamondMenuHexPos);
+                        Menu.DragDrop.Diamond->IsInField = false;
+
+                        Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X] = Menu.DragDrop.Diamond;
+                        canPut = true;
                     }
-                } else if (overValidDiamondMenuSlot) {
-                    exchangeDiamond = Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X];
-                    canPut = true;
 
-                    Menu.DragDrop.Diamond->TilePositionTopLeft = diamondMenuHexPos;
-                    Menu.DragDrop.Diamond->ActualPosition = HexToActualPos(diamondMenuHexPos);
-                    Menu.DragDrop.Diamond->IsInField = false;
-
-                    Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X] = Menu.DragDrop.Diamond;
+                    /// Put the thing under cursor to where I came from
+                    if (diamondUnderCursor) {
+                        diamondUnderCursor->IsInField = Menu.DragDrop.WasInField;
+                        diamondUnderCursor->TilePositionTopLeft = Menu.DragDrop.OriginTopLeft;
+                        if (diamondUnderCursor->IsInField) {
+                            diamondUnderCursor->CooldownFrames = SOCKETING_COOLDOWN;
+                            diamondUnderCursor->ActualPosition = TriToActualPos(diamondUnderCursor->TilePositionTopLeft) + TOP_LEFT_TO_CENTRE_OFFSET;
+                        } else {                
+                            diamondUnderCursor->ActualPosition = HexToActualPos(diamondUnderCursor->TilePositionTopLeft);
+                            Menu.Diamonds[diamondUnderCursor->TilePositionTopLeft.Y][diamondUnderCursor->TilePositionTopLeft.X] = diamondUnderCursor;
+                        }
+                    }
                 }
 
-                if (exchangeDiamond) {
-                    exchangeDiamond->IsInField = Menu.DragDrop.WasInField;
-                    exchangeDiamond->TilePositionTopLeft = Menu.DragDrop.OriginTopLeft;
-                    if (exchangeDiamond->IsInField) {
-                        exchangeDiamond->CooldownFrames = SOCKETING_COOLDOWN;
-                        exchangeDiamond->ActualPosition = TriToActualPos(exchangeDiamond->TilePositionTopLeft) + TOP_LEFT_TO_CENTRE_OFFSET;
-                    } else {                
-                        exchangeDiamond->ActualPosition = HexToActualPos(exchangeDiamond->TilePositionTopLeft);
-                        Menu.Diamonds[exchangeDiamond->TilePositionTopLeft.Y][exchangeDiamond->TilePositionTopLeft.X] = exchangeDiamond;
-                    }
-                }
-
-                // TODO(Tobi): Check if same as origin
-
-                if (canPut) {
-                } else {
+                if (!canPut) {
+                    Assert(!diamondUnderCursor || diamondUnderCursor == Menu.DragDrop.Diamond, "How can there be a diamond under cursor, if I can't place something down");
                     // Put back to where it came from
 
                     Menu.DragDrop.Diamond->IsInField = Menu.DragDrop.WasInField;
@@ -865,6 +839,28 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
 
                 Menu.DragDrop.Diamond = nullptr;
+            }
+
+            if (IS_KEY_PRESSED(KEY_LEVEL_UP)) {
+                if (diamondUnderCursor) {
+                    // TODO(Tobi): Check for mana
+
+                    int count = 0;
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+                    inc0 (color_i,   DC_AMOUNT) {
+                        diamondUnderCursor->ColorsCount[color_i] *= 2;
+                        count += diamondUnderCursor->ColorsCount[color_i];
+                        r += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Red;
+                        g += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Green;
+                        b += diamondUnderCursor->ColorsCount[color_i] * DiamondColors[color_i].Blue;
+                    }
+
+                    diamondUnderCursor->MixedColor = COL32_RGB(r / count, g / count, b / count );
+                    
+                    DiamondSetValues(diamondUnderCursor, count);
+                }
             }
         }
     }
@@ -1034,9 +1030,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Render Monsters
-        inc0 (monster_i,   MonsterListEnd) {
-            monster* monster_ = &Monsters[monster_i];
-            if (!monster_->Health) { continue; }
+        inc_bucket (monster_i, monster_, &Monsters) {
 
             #if 1
                 // TODO(Tobi): I need new sprites otherwise
@@ -1070,12 +1064,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Render Diamonds
-        inc0 (diamond_i,   DiamondCount) {
+        inc_bucket (diamond_i, diamond_, &Diamonds) {
             // NOTE(Tobi): Will I really kep it like that?
 
-            diamond* diamond_ = &DiamondList[diamond_i];
-            if (diamond_->Inactive) { continue; }
-            if (Menu.DragDrop.Diamond == diamond_) { continue; }
+            if (diamond_ == Menu.DragDrop.Diamond) { continue; }
 
             int frame;
             draw_rect* drawRect;
@@ -1090,7 +1082,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             //  COL32_RGB(40, 20, 170)
             
             int count = 0;
-            inc0 (color_i,   DIAMOND_COLORS) {
+            inc0 (color_i,   DC_AMOUNT) {
                 count += diamond_->ColorsCount[color_i];
             }
             char dummy[5];
@@ -1105,7 +1097,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 if (diamond_->CooldownFrames) {
                     DrawWorldRectangle(&drawRectMain, diamond_->ActualPosition.X - 0.5f, diamond_->ActualPosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
                 }
-
             }
         }
 
@@ -1173,13 +1164,23 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawScreenBitmap(&drawRectAll, ins->Mouse.PosX - bitmap.Width / 2, ins->Mouse.PosY - bitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
 
             int count = 0;
-            inc0 (color_i,   DIAMOND_COLORS) {
+            inc0 (color_i,   DC_AMOUNT) {
                 count += Menu.DragDrop.Diamond->ColorsCount[color_i];
             }
 
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
             TextRenderScreen(&drawRectAll, &DummyFontInfo, ins->Mouse.PosX - bitmap.Width / 2 + HALF_HEXAGON_PIXEL_HEIGHT, ins->Mouse.PosY - bitmap.Height / 2 + HALF_HEXAGON_PIXEL_HEIGHT, dummy, BLACK);
+        }
+
+        /// Render mouse-over highlight
+        // TODO(Tobi): Replace with context menu
+        if (diamondUnderCursor && Menu.DragDrop.Diamond != diamondUnderCursor) {
+            if (diamondUnderCursor->IsInField) {
+                DrawWorldCircle(&drawRectMain, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, RED);
+            } else {
+                DrawWorldCircle(&drawRectMenuDiamonds, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, BLUE);
+            }
         }
 
         /// Draw testing lines
