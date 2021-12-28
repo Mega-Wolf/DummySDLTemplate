@@ -442,7 +442,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                         int distanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
                         if (distanceToGoal == 1) {
-                            // TODO(Tobi): Cause damage to the orb
+                            // TODO(Tobi): Cause damage to the orb (banishment cost)
                             ShakeFrames = 15;
 
                             // NOTE(Tobi): I do that, so that projectiles etc. will not move towards it
@@ -586,7 +586,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
 
             /// Find target monster
-            // TODO(Tobi): This will target monsters outside the level since there is no DistanceToGoal set there
             monster* target = nullptr;
             float closestDistanceToGoal = 999999999.0f;
             inc_bucket(monster_i, monster_, &Monsters) {
@@ -711,11 +710,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         /// Menu logic
-        // TODO(Tobi): I kind of ignore all the invalid stuff, so I have to come back after doing the generation thing
         {
-            // TODO(Tobi): I'm changing this now, so that I will always check what diamond is currently selected
-            // For the context menu, this is something I will need anyway
-
             vec2i menuTilePos = MouseToTilePos(menuDiamondsMousePosition);
             if (!BoxContainsInEx(0, 0, drawRectMenuDiamonds.Width, drawRectMenuDiamonds.Height, menuDiamondsMousePosition.X, menuDiamondsMousePosition.Y)) {
                 menuTilePos = { -1000, -1000 };
@@ -954,12 +949,19 @@ void Update(color32* array, int width, int height, inputs* ins) {
     
     /// Rendering
     {
+        // TODO(Tobi): The screen shake in combination with the right draw rects is still kind of off
+
         /// Clear screen
-        // TODO(Tobi): The camera shake should not affect this
-        if (IsLevelEditorActive) {
-            DrawScreenRectangle(&drawRectAll, 0, 0, width, height, COL32_RGB(0, 0, 192));
-        } else {
-            DrawScreenRectangle(&drawRectAll, 0, 0, width, height, BLACK);
+        {
+            color32 clearColor;
+            if (IsLevelEditorActive) {
+                clearColor = COL32_RGB(0, 0, 192);
+            } else {
+                clearColor = BLACK;
+            }
+            inc0 (i,   height * width) {
+                array[i] = clearColor;
+            }
         }
 
         /// Render Grass / Path

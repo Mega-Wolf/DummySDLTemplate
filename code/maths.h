@@ -324,8 +324,9 @@ inline float LengthSq(vec2f vec) {
 
 #pragma endregion
 
+// value != 0
 vec2f Normalised(vec2f value) {
-    // TODO(Tobi): Assert not zero
+    Assert(value.X != 0 && value.Y, "Normalised assumes that the vector is != 0");
     vec2f ret = {};
     float length = sqrtf(value.X * value.X + value.Y * value.Y);
     ret.X = value.X / length;

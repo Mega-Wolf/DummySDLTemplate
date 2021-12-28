@@ -48,7 +48,7 @@ loaded_bitmap BitmapLoad(char* filename) {
 
     if (file) {
         fread(&bh, sizeof(bitmap_header), 1, file);
-        //Assert(bh.BitsPerPixel == 32 && bh.Compression == 3, "Wrong bitmap encoding: %s", filename);
+        Assert(bh.BitsPerPixel == 32 && bh.Compression == 3, "Wrong bitmap encoding: %s", filename);
 
         // TODO(Tobi): Seek set?
         fseek(file, bh.BitmapOffset - sizeof(bitmap_header), SEEK_CUR);

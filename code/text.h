@@ -252,7 +252,8 @@ int TextGetRenderSizeWithCount(font_info* fontInfo, char* text, int amount) {
     int width = 0;
     inc0 (i,   amount) {
         char c = text[i];
-        //Assert(c, "'TextGetRenderSizeWithCount' wanted to check the null character");
+        Assert(c, "'TextGetRenderSizeWithCount' wanted to check the null character");
+        Assert(BetweenInEx(c - ' ', 0, (int) ArrayCount(font_info::LetterInfo)), "Wanted to print character %c(%d)", c, (int) c);
         width += fontInfo->LetterInfo[c - ' '].XAdvance;
     }
     return width;
