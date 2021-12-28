@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "assets.h"
-
 #include "settings.h"
 #include "../helpers/sdl_layer.h"
+
+#include "assets.h"
 
 #include "main.h"
 #include "intrinsics.h"
@@ -25,13 +25,13 @@ void InitDistanceArray() {
     /// Find start positions
     StartPositionsCount = 0;
     inc0 (x_i,   TILES_X) {
-        if (Ground[0][x_i] == T_PATH) {
+        if (Ground[0][x_i] & T_PATH) {
             StartPositions[StartPositionsCount].X = x_i;
             StartPositions[StartPositionsCount].Y = 0;
             ++StartPositionsCount;
         }
 
-        if (Ground[TILES_Y - 1][x_i] == T_PATH) {
+        if (Ground[TILES_Y - 1][x_i] & T_PATH) {
             StartPositions[StartPositionsCount].X = x_i;
             StartPositions[StartPositionsCount].Y = TILES_Y - 1;
             ++StartPositionsCount;
@@ -39,13 +39,13 @@ void InitDistanceArray() {
     }
 
     inc (y_i,   1,    TILES_Y - 1) {
-        if (Ground[y_i][0] == T_PATH) {
+        if (Ground[y_i][0] & T_PATH) {
             StartPositions[StartPositionsCount].X = 0;
             StartPositions[StartPositionsCount].Y = y_i;
             ++StartPositionsCount;
         }
 
-        if (Ground[y_i][TILES_X - 1] == T_PATH) {
+        if (Ground[y_i][TILES_X - 1] & T_PATH) {
             StartPositions[StartPositionsCount].X = TILES_X - 1;
             StartPositions[StartPositionsCount].Y = y_i;
             ++StartPositionsCount;
@@ -65,7 +65,7 @@ void InitDistanceArray() {
             bool triangleIsDown = (x_i + y_i) % 2;
             if (triangleIsDown) { continue; }
 
-            if (Ground[y_i][x_i] == T_GOAL) {
+            if (Ground[y_i][x_i] & T_GOAL) {
                 DistanceToGoal[y_i    ][x_i    ] = 1;
                 DistanceToGoal[y_i    ][x_i + 1] = 1;
                 DistanceToGoal[y_i    ][x_i + 2] = 1;
@@ -89,23 +89,23 @@ void InitDistanceArray() {
 
                 if (DistanceToGoal[y_i][x_i] == currentDistance) {
                     if (triangleIsDown) {
-                        if (y_i > 0 && !DistanceToGoal[y_i - 1][x_i] && Ground[y_i - 1][x_i] == T_PATH) {
+                        if (y_i > 0 && !DistanceToGoal[y_i - 1][x_i] && (Ground[y_i - 1][x_i] & T_PATH)) {
                             DistanceToGoal[y_i - 1][x_i] = currentDistance + 1;
                             changedSomething = true;
                         }
                     } else {
-                        if (y_i < TILES_Y - 1 && !DistanceToGoal[y_i + 1][x_i] && Ground[y_i + 1][x_i] == T_PATH) {
+                        if (y_i < TILES_Y - 1 && !DistanceToGoal[y_i + 1][x_i] && (Ground[y_i + 1][x_i] & T_PATH)) {
                             DistanceToGoal[y_i + 1][x_i] = currentDistance + 1;
                             changedSomething = true;
                         }
                     }
 
-                    if (x_i > 0 && !DistanceToGoal[y_i][x_i - 1] && Ground[y_i][x_i - 1] == T_PATH) {
+                    if (x_i > 0 && !DistanceToGoal[y_i][x_i - 1] && (Ground[y_i][x_i - 1] & T_PATH)) {
                         DistanceToGoal[y_i][x_i - 1] = currentDistance + 1;
                         changedSomething = true;
                     }
 
-                    if (x_i < TILES_X - 1 && !DistanceToGoal[y_i][x_i + 1] && Ground[y_i][x_i + 1] == T_PATH) {
+                    if (x_i < TILES_X - 1 && !DistanceToGoal[y_i][x_i + 1] && (Ground[y_i][x_i + 1] & T_PATH)) {
                         DistanceToGoal[y_i][x_i + 1] = currentDistance + 1;
                         changedSomething = true;
                     }
@@ -363,11 +363,27 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             if (ins->Mouse.Right.Down && ins->Mouse.Right.Toggled) {
                 bool triangleIsDown = (mouseTilePos.X + mouseTilePos.Y) % 2;
-                if (!triangleIsDown && mouseTilePos.X >= 0 && mouseTilePos.X < TILES_X && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y) {
+                if (!triangleIsDown && mouseTilePos.X >= 0 && mouseTilePos.X < TILES_X - 2 && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y - 1) {
                     if (Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER) {
-                        Ground[mouseTilePos.Y][mouseTilePos.X] = T_GOAL;
+                        Ground[mouseTilePos.Y][mouseTilePos.X] = T_TRAP | T_PATH;
+
+                        inc0 (y_i,   2) {
+                            inc0 (x_i,   3) {
+                                if (x_i == 0 && y_i == 0) { continue; }
+                                Ground[mouseTilePos.Y + y_i][mouseTilePos.X + x_i] = T_PATH;
+                            }
+                        }
+                    } else if (Ground[mouseTilePos.Y][mouseTilePos.X] & T_TRAP) {
+                        Ground[mouseTilePos.Y][mouseTilePos.X] = T_GOAL | T_PATH;
                     } else {
                         Ground[mouseTilePos.Y][mouseTilePos.X] = T_TOWER;
+
+                        inc0 (y_i,   2) {
+                            inc0 (x_i,   3) {
+                                if (x_i == 0 && y_i == 0) { continue; }
+                                Ground[mouseTilePos.Y + y_i][mouseTilePos.X + x_i] = T_GRASS;
+                            }
+                        }
                     }
                 }
             }
@@ -378,7 +394,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
         if (ins->Mouse.WheelDelta > 0) {
-            // TODO(Tobi): Consider mana (maybe)
+            // TODO(Tobi): Consider mana (maybe) (The thing is that if I do that, I whould also have "0 - Don't buy" extra, because otherwise it's weird I feel)
             ++Menu.SelectedBuyingLevel;
         } else if (ins->Mouse.WheelDelta < 0) {
             Menu.SelectedBuyingLevel = AtLeast(0, Menu.SelectedBuyingLevel - 1);
@@ -552,6 +568,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Update Diamonds
         inc_bucket(diamond_i, diamond_, &Diamonds) {
+            // TODO(Tobi): Cooldown frames has to work differently for the traps
+
             if (diamond_->CooldownFrames > 0) {
                 --diamond_->CooldownFrames;
                 continue;
@@ -559,6 +577,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             // Right menu or being dragged
             if (!diamond_->IsInField) { continue; }
+
+            float diamondRange = diamond_->RangeRadius;
+
+            // TODO(Tobi): Check several different buildings here
+            if (Ground[diamond_->TilePositionTopLeft.Y][diamond_->TilePositionTopLeft.X] & T_TRAP) {
+                diamondRange = 1.0f;
+            }
 
             /// Find target monster
             // TODO(Tobi): This will target monsters outside the level since there is no DistanceToGoal set there
@@ -572,7 +597,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                 float distanceSq = deltaX * deltaX + deltaY * deltaY;
 
-                float effectiveShootingRange = diamond_->RangeRadius + monster_->Radius;
+                float effectiveShootingRange = diamondRange + monster_->Radius;
                 float effectiveShootingRangeSq = effectiveShootingRange * effectiveShootingRange;
                 if (distanceSq <= effectiveShootingRangeSq) {
                     int newDistanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
@@ -601,9 +626,11 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 *newProjectile = {};
                 newProjectile->Color = diamond_->MixedColor;
                 newProjectile->Position = diamond_->ActualPosition;
-                newProjectile->Damage = diamond_->Damage;
+                newProjectile->Damage = diamond_->Damage; // TODO(Tobi): Adjust in trap
                 newProjectile->Speed = PROJECTILE_SPEED;
                 newProjectile->Target = GenerationLinkCreate(target);
+
+                // TODO(Tobi): Are the colours even important for projectiles if I give them their damage and their effect anyway?
                 inc0 (color_i,   DC_AMOUNT) {
                     newProjectile->ColorsCount[color_i] = diamond_->ColorsCount[color_i];
                 }
@@ -660,7 +687,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         AudioClipStart(Sounds.Hit, false, 0.2f);
 
                         /// Assign effects
-                        target->PoisonSpeed = sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
+                        if (projectile_->ColorsCount[DC_GREEN] != 0) {
+                            target->PoisonSpeed = sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
+                        }
                     }
 
                     Projectiles[projectile_i] = Projectiles[--ProjectileCount];
@@ -708,7 +737,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             /// Find the diamond underneath the cursor
             if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
-                buildingHexTile = TranslateToTopLeftPosition(mouseTilePos, T_TOWER);
+                buildingHexTile = TranslateToTopLeftPosition(mouseTilePos, T_TOWER | T_TRAP);
                 if (buildingHexTile != TRANSLATE_NOTHING_FOUND) {
                     inc_bucket(dimaond_i, diamond_, &Diamonds) {
                         if (diamond_->TilePositionTopLeft == buildingHexTile) {
@@ -1008,7 +1037,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 int x = x_i / 2 * HALF_HEXAGON_PIXEL_WIDTH + oddLineOffset * (HALF_HEXAGON_PIXEL_WIDTH / 2);
                 loaded_bitmap* buildingBitmap = nullptr;
                 color32 buildingColor = WHITE;
-                switch (Ground[y_i][x_i]) {
+                switch (Ground[y_i][x_i] & ~T_PATH) {
                     case T_TOWER: {
                         buildingBitmap = &Sprites.Tower;
                     } break;
@@ -1106,6 +1135,36 @@ void Update(color32* array, int width, int height, inputs* ins) {
             TextRenderScreen(&drawRectManaBar, &DummyFontInfo, (5 * HALF_HEXAGON_PIXEL_WIDTH - textWidth) / 2, (drawRectManaBar.Height - DummyFontInfo.FontSize) / 2, dummy, WHITE);
         }
 
+        /// Render Diamonds in Traps
+        inc_bucket (diamond_i, diamond_, &Diamonds) {
+            // NOTE(Tobi): I will definitely not have that separated in the future
+
+            if (diamond_ == Menu.DragDrop.Diamond) { continue; }
+            if (!diamond_->IsInField) { continue; }
+            if (!(Ground[diamond_->TilePositionTopLeft.Y][diamond_->TilePositionTopLeft.X] & T_TRAP)) { continue; }
+
+            int frame = FrameCount % 30 / 10;
+            color32 trapRenderColor = diamond_->MixedColor;
+            trapRenderColor.Alpha = 128; // TODO(Tobi): Maybe change their brightness instead; that way, the darker ones aren't effected that intensly
+            DrawWorldBitmap(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, Sprites.Cogwheels[frame], trapRenderColor);
+            
+            int count = 0;
+            inc0 (color_i,   DC_AMOUNT) {
+                count += diamond_->ColorsCount[color_i];
+            }
+            char dummy[5];
+            snprintf(dummy, 5, "%d", count);
+            TextRenderWorld(&drawRectMain, &DummyFontInfo, diamond_->ActualPosition.X + 0.475f, diamond_->ActualPosition.Y + 0.225f, dummy, WHITE);
+
+            /// Render Diamond Range
+            // (Which is 1 now in a trap; TODO(Tobi): Make constant)
+            DrawWorldCircle(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, 1.0f, YELLOW);
+
+            /// Render Diamond Cooldown
+            if (diamond_->CooldownFrames) {
+                DrawWorldRectangle(&drawRectMain, diamond_->ActualPosition.X - 0.5f, diamond_->ActualPosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
+            }
+        }
 
         /// Render Monsters
         inc_bucket (monster_i, monster_, &Monsters) {
@@ -1141,11 +1200,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        /// Render Diamonds
+        /// Render Diamonds in Towers
         inc_bucket (diamond_i, diamond_, &Diamonds) {
             // NOTE(Tobi): Will I really kep it like that?
 
             if (diamond_ == Menu.DragDrop.Diamond) { continue; }
+
+            if (diamond_->IsInField && Ground[diamond_->TilePositionTopLeft.Y][diamond_->TilePositionTopLeft.X] & T_TRAP) { continue; }
 
             int frame;
             draw_rect* drawRect;

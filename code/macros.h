@@ -6,7 +6,7 @@
 // #include <signal.h>
 #include <string.h>
 // #include <cstdint>
-// #include <type_traits>
+#include <type_traits>
 
 #define inc(varname, start, max) for (int varname = start; varname < max; ++varname)
 #define inc0(varname, max) for (int varname = 0; varname < max; ++varname)
@@ -62,3 +62,91 @@ inline void Assert(bool condition, char* errorMsg, ...) {
     for (int counterVariable = 0; counterVariable < (count); ++counterVariable) \
         if (auto* typeVariable = &array[counterVariable])
 
+#pragma region [Enum magic]
+
+template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+constexpr T operator~(T lhs) {
+    return static_cast<T>(
+        ~static_cast<typename std::underlying_type<T>::type>(lhs)
+    );
+}
+
+template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+constexpr T operator|(T lhs, T rhs) {
+    return static_cast<T>(
+        static_cast<typename std::underlying_type<T>::type>(lhs) |
+        static_cast<typename std::underlying_type<T>::type>(rhs)
+    );
+}
+
+template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+constexpr T operator&(T lhs, T rhs) {
+    return static_cast<T>(
+        static_cast<typename std::underlying_type<T>::type>(lhs) &
+        static_cast<typename std::underlying_type<T>::type>(rhs)
+    );
+}
+
+template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+constexpr T operator^(T lhs, T rhs) {
+    return static_cast<T>(
+        static_cast<typename std::underlying_type<T>::type>(lhs) ^
+        static_cast<typename std::underlying_type<T>::type>(rhs)
+    );
+}
+
+template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+void operator|=(T& lhs, T rhs) {
+    lhs = static_cast<T>(
+        static_cast<typename std::underlying_type<T>::type>(lhs) |
+        static_cast<typename std::underlying_type<T>::type>(rhs)
+    );
+}
+
+template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+void operator&=(T& lhs, T rhs) {
+    lhs = static_cast<T>(
+        static_cast<typename std::underlying_type<T>::type>(lhs) &
+        static_cast<typename std::underlying_type<T>::type>(rhs)
+    );
+}
+
+template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+void operator^=(T& lhs, T rhs) {
+    lhs = static_cast<T>(
+        static_cast<typename std::underlying_type<T>::type>(lhs) ^
+        static_cast<typename std::underlying_type<T>::type>(rhs)
+    );
+}
+
+// template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+// T& operator++(T& lhs) {
+//     lhs = static_cast<T>(
+//         ++static_cast<typename std::underlying_type<T>::type>(lhs)
+//     );
+//     return lhs;
+// }
+
+// template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+// T& operator--(T& lhs) {
+//     lhs = static_cast<T>(
+//         --static_cast<typename std::underlying_type<T>::type>(lhs)
+//     );
+//     return lhs;
+// }
+
+// template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+// T operator++(T& lhs, int) {
+//     lhs = static_cast<T>(
+//         ++static_cast<typename std::underlying_type<T>::type>(lhs)
+//     );
+// }
+
+// template <typename T = typename std::enable_if<std::is_enum<T>::value, T>::type>
+// T operator--(T& lhs, int) {
+//     lhs = static_cast<T>(
+//         --static_cast<typename std::underlying_type<T>::type>(lhs)
+//     );
+// }
+
+#pragma endregion
