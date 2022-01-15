@@ -1,0 +1,135 @@
+Color Wheel
+
+            WHITE
+
+            YELLOW
+
+    RED               GREEN
+--------------------------------- White/Black line
+    PURPLE            CYAN
+
+            BLUE
+
+            BLACK
+
+I could also rotate that, so that white is yellow, green, cyan and black is red, purple, blue (that would seem more evil)
+However, poison = green is still quite evil
+
+If I want to have poison, then it should be Green
+Red sounds like blood, so it should mean cause more damage
+
+This would mean that green and red are just like in GemCraft
+
+They also sound not at all like "white" stuff
+
+Cyan might be ice
+
+Effect ideas:
+Poison
+Slow Down (Ice)
+Mana Steel      ()
+Armor reduce
+Damage +
+Critical Damage (I love the combination ideas with the other things)
+
+Splash Damage (This sounds like a powerup)
+
+White       + Critical Damge (like yellow)
+---------------------
+Yellow      Mana Steel (like orange) (NOTE: Alternatively something with electricity)
+Green       Damage + (like red); 
+Cyan        
+---------------------    
+Blue        Speed - (like blue)
+Purple      Armor - (like purple)
+Red         Poison(call it bleeding now though) (like green)
+---------------------
+Black       + Critical Effect
+
+ALTERNATIVE?
+
+Just having critical damage doesn't make for nice combinations
+
+White       + Crits (like yellow, but also critical effect)
+---------------------
+Yellow      Speed (CONTINUOS) - (like blue) (paralysed)
+
+Green       Armor (ONCE) - (like purple)
+
+Cyan        (ONCE)
+
+---------------------    
+Blue        Mana Steal (ONCE) (like orange) (NOTE: Alternatively something with electricity)
+                MANA STEAL WHILE TOXIN
+Purple      Poison (CONTINUOS) (call it toxic now though) (like green)
+                POISON DOES MORE DAMAGE (SINCE WOUNDED)
+Red         wounded (CONTINUOS) (like red)
+                wounded and slow
+---------------------
+Black       + Damage + Effects (no this doesn't make a good thing on its own)
+
+
+
+
+
+Just having critical damage doesn't make for nice combinations
+
+White       + Crits (like yellow, but also critical effect)
+---------------------
+Yellow      Mana Steal (ONCE) (like orange) (NOTE: Alternatively something with electricity)
+                MANA STEAL THE POISON DAMAGE
+Green       Poison (CONTINUOS) (like green)
+                magic decreases over time (that's quite boring though; alternatively: the magic is "poisoned")
+Cyan        Magic (attack etc.) reduction(ONCE) ()
+                Also slows down the time magic can be done
+---------------------    
+Blue        Speed (CONTINUOS) - (like blue) (paralysed)
+                Extra Armor reduction during slow
+Purple      Armor (ONCE) - (like purple)
+                Extra Armor reduction during wounded
+Red         wounded (CONTINUOS) (like red)
+                wounded steal (super powerfull?)
+---------------------
+Black       + Damage + Effects (no this doesn't make a good thing on its own)
+
+Ideas for another ONCE effect:
+- Effect neutraliser? (But that would make monster effects kind of pointless)
+- banishment reducting (also pointless)
+- worse pathfinding? (meh)
+- crit like in original (meh)
+
+a continuos thing was to attract shot from further away
+
+
+Color Combinations (only wheel; I think this doesn't make too much sense):
+
+                (O)steal        (O)armor-       (C)speed-                       (C)poison               (C)damage+      
+(O)steal        X               x               ?                               steal poison            steal from extra hits
+(O)armor-                       X               reduce armor while slow         reduce while poison?    reduce armor a bit while wounded                NOTE(Tobi): the combination with speed- and damage+ are equal
+(C)speed-                                       X                               x                       x
+(C)poison                                                                       X                       x
+(C)damage+                                                                                              X
+
+
+
+When I say boost, do I mean damage or effect (but what about 2 symmetric and 3 symmetric then)
+
+2:
+- 2 next to each other (-> Boost to both of them)
+- 2 with one between (-> That one in the middle gets a little addition?)
+- 2 opposite (= 2 between) (-> slight + to damage and effects)
+- 2 symmetric (this might overlap with point 1 or three from above)
+
+3:
+- 3 next to each other (-> Heavy boost to middle one, slight/normal boost to the outer ones)
+- 3 with one apart (point-symmetric, + to damage and effects?)
+
+Additional:
+- Only on one site of the black-white line (-> Damage + / Effect +) (But isn't that the bonus of adding white or black already) (I mean, why not both :D)
+
+
+Note: Opposing colours sounds like -effect/+damage or -damage/+effect but that's kind of weird
+-effect/+damage, then the effect combination gets useless
++effect/-damage, then some of the effects don't make that much sense anymore I feel
+
+,also, isn't +effect/-damage already the idea of traps (and you could even make -effect/+damage another building)

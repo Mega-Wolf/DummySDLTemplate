@@ -58,7 +58,8 @@ struct monster {
     float Radius;
     float Speed;
     float Health;
-    float MaxHealth;
+    float Armor;
+    float Magic;
     color32 Color;
 
     float PoisonSpeed;
@@ -66,7 +67,11 @@ struct monster {
     float MovementT;
     vec2f ActualPosition;
 
-    float Mana;
+    float Mana; // TODO(Tobi): Do I really need that
+
+    float MaxHealth; // TODO(Tobi): Isn't that given in the MonsterWave
+    // MaxArmor; MaxMagic?
+
 };
 
 struct projectile {
@@ -100,9 +105,11 @@ projectile Projectiles[TILES_Y * TILES_X];
 #define DIAMOND_LEVEL_1_DAMAGE 10.0f
 
 #define DIAMOND_LEVEL_1_POISON 5.0f
-#define MONSTER_POISON_DECREASE_PER_FRAME 1.0f
+#define POISON_UPDATE_FRAMES 10 // TODO(Tobi): Get rid of that again, that will mean all the posion is updated equally, which is not quite what I want
+#define MONSTER_POISON_DECREASE_PER_UPDATE 1.0f
 
 #define PROJECTILE_SPEED 0.4f
+
 
 float Mana; // NOTE(Tobi): I have this as float at the moment, so that I can have fractions of mana (do I want that?)
 float ManaMergeCost = 240.0f; // TODO(Tobi): This will probably be set once at the start of the level

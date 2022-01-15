@@ -272,6 +272,8 @@ vec2i MouseToTilePos(vec2i mousePos, bool invert = false) {
     return tilePos;
 }
 
+generation_link<monster> SelectedMonster;
+
 void Update(color32* array, int width, int height, inputs* ins) {
 
     if (ShakeFrames > 0) {
@@ -412,303 +414,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
     if (!IsLevelEditorActive) {
         ++FrameCount;
 
-        /// Update Mana
-        if (FrameCount % 60 == 0) {
-            Mana += ManaGainPerSecond;
-        }
-
-        /// Update Monsters
-        {
-            inc_bucket (monster_i, monster_, &Monsters) {
-                Assert(monster_->Health, "Monster should be dead");
-
-                /// React to effects
-                {
-                    if (monster_->PoisonSpeed) {
-                        monster_->Health -= monster_->PoisonSpeed;
-                        monster_->PoisonSpeed = AtLeast(monster_->PoisonSpeed - MONSTER_POISON_DECREASE_PER_FRAME, 0.0f);
-
-                        if (monster_->Health <= 0) {
-                            monster_->Health = 0; // TODO(Tobi): Do I need that?
-                            BucketListRemove(&Monsters, monster_);
-                        }
-                    }
-                }
-
-                /// Pathfinding and Movement
-                {
-                    if (monster_->MovementT >= 1.0f) {
-                        monster_->MovementT -= 1.0f;
-
-                        int distanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
-                        if (distanceToGoal == 1) {
-                            // TODO(Tobi): Cause damage to the orb (banishment cost)
-                            ShakeFrames = 15;
-
-                            // NOTE(Tobi): I do that, so that projectiles etc. will not move towards it
-                            ++monster_->Generation;
-                            MonsterSetToStartingPosition(monster_);
-
-                            // NOTE(Tobi): This is just what has been in the else-path
-                            monster_->MovementT += monster_->Speed;
-                        }
-
-                        bool triangleIsDown = (monster_->GoalPosition.X + monster_->GoalPosition.Y) % 2;
-                        int closestDistance = 9999999;
-                        vec2i deltaPos = { 0, 0 };
-
-                        if (triangleIsDown) {
-                            if (monster_->GoalPosition.Y > 0 && DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X]) {
-                                int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X];
-                                closestDistance = proposedDistance;
-                                deltaPos = vec2i { 0, -1 };
-                            }
-                        } else {
-                            if (monster_->GoalPosition.Y < TILES_Y - 1 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
-                                int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X];
-                                closestDistance = proposedDistance;
-                                deltaPos = vec2i { 0, +1 };
-                            }
-                        }
-
-                        int sameAmount = 1;
-                        
-                        if (monster_->GoalPosition.X > 0 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X - 1]) {
-                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X - 1];
-                            if (proposedDistance < closestDistance) {
-                                closestDistance = proposedDistance;
-                                deltaPos = vec2i { -1, 0 };
-                                sameAmount = 1;
-                            } else if (proposedDistance == closestDistance) {
-                                ++sameAmount;
-                                if (rand() < RAND_MAX / sameAmount) {
-                                    deltaPos = vec2i { -1, 0 };
-                                }
-                            }
-                        }
-                        
-                        if (monster_->GoalPosition.X < TILES_X - 1 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1]) {
-                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1];
-                            if (proposedDistance < closestDistance) {
-                                closestDistance = proposedDistance;
-                                deltaPos = vec2i { +1, 0 };
-                                sameAmount = 1;
-                            } else if (proposedDistance == closestDistance) {
-                                ++sameAmount;
-                                if (rand() < RAND_MAX / sameAmount) {
-                                    deltaPos = vec2i { +1, 0 };
-                                }
-                            }
-                        }
-
-                        monster_->OldPosition.X = monster_->GoalPosition.X;
-                        monster_->OldPosition.Y = monster_->GoalPosition.Y;
-                        monster_->GoalPosition.X += deltaPos.X;
-                        monster_->GoalPosition.Y += deltaPos.Y;
-                    } else {
-                        monster_->MovementT += monster_->Speed;
-                    }
-
-                    // TODO(Tobi): That whole thing will probably move away from lerping movement anyway at one point
-
-                    vec2f actualOldPos = TriToActualPos(monster_->OldPosition);
-                    vec2f actualNewPos = TriToActualPos(monster_->GoalPosition);
-
-                    monster_->ActualPosition.X = (1 - monster_->MovementT) * actualOldPos.X + monster_->MovementT * actualNewPos.X;
-                    monster_->ActualPosition.Y = (1 - monster_->MovementT) * actualOldPos.Y + monster_->MovementT * actualNewPos.Y;
-                }
-            }
-
-            /// Update Monster Waves
-            {
-                int nextWave = MonsterWaveFrames / WAVE_FRAME_LENGTH + 1;
-
-                if (MonsterWaveSpeedEnd >= nextWave) {
-                    MonsterWaveFrames += MONSTER_WAVE_FAST_SPEED;
-                } else {
-                    ++MonsterWaveFrames;
-                }
-
-                inc0 (wave_i,   WAVE_COUNT) {
-                    monster_wave* monster_wave_ = &MonsterWaves[wave_i];
-
-                    int startWaveFrame = WAVE_FRAME_LENGTH * wave_i;
-                    if (startWaveFrame > MonsterWaveFrames) { continue; }
-
-                    if (!monster_wave_->ActualStartFrame) {
-                        // This is now the last started wave
-                        monster_wave_->ActualStartFrame = FrameCount;
-
-                        // NOTE(Tobi): By this, I keep the MonsterWaveSpeedEnd always at a known value, so I can later just increase it
-                        if (MonsterWaveSpeedEnd < wave_i) {
-                            MonsterWaveSpeedEnd = wave_i;
-                        }
-                    }
-
-                    if (monster_wave_->AlreadyReleased == monster_wave_->FullCount) { continue; }
-
-                    // TODO(Tobi): When the timeline runs faster, monsters spawn with the same speed; is that what I want?
-                    int timeOffsetFromStart = FrameCount - monster_wave_->ActualStartFrame;
-                    if (timeOffsetFromStart % monster_wave_->DelayFrames != 0) {continue; }
-                    
-                    ++monster_wave_->AlreadyReleased;
-
-                    monster* newMonster = BucketGetCleared(&Monsters);
-                    newMonster->Radius = monster_wave_->Prototype.Radius;
-                    newMonster->Speed = monster_wave_->Prototype.Speed;
-                    newMonster->Color = monster_wave_->Prototype.Color;
-                    newMonster->MaxHealth = monster_wave_->Prototype.MaxHealth;
-                    newMonster->Health = newMonster->MaxHealth;
-                    newMonster->Mana = monster_wave_->Prototype.Mana;
-
-                    MonsterSetToStartingPosition(newMonster);
-                }
-            }
-        }
-
-        /// Update Diamonds
-        inc_bucket(diamond_i, diamond_, &Diamonds) {
-            // TODO(Tobi): Cooldown frames has to work differently for the traps
-
-            if (diamond_->CooldownFrames > 0) {
-                --diamond_->CooldownFrames;
-                continue;
-            }
-
-            // Right menu or being dragged
-            if (!diamond_->IsInField) { continue; }
-
-            float diamondRange = diamond_->RangeRadius;
-
-            // TODO(Tobi): Check several different buildings here
-            if (Ground[diamond_->TilePositionTopLeft.Y][diamond_->TilePositionTopLeft.X] & T_TRAP) {
-                diamondRange = 1.0f;
-            }
-
-            /// Find target monster
-            monster* target = nullptr;
-            float closestDistanceToGoal = 999999999.0f;
-            inc_bucket(monster_i, monster_, &Monsters) {
-                Assert(monster_->Health > 0, "Monster should be inactive");
-
-                float deltaX = monster_->ActualPosition.X - (float) diamond_->ActualPosition.X;
-                float deltaY = monster_->ActualPosition.Y - (float) diamond_->ActualPosition.Y;
-
-                float distanceSq = deltaX * deltaX + deltaY * deltaY;
-
-                float effectiveShootingRange = diamondRange + monster_->Radius;
-                float effectiveShootingRangeSq = effectiveShootingRange * effectiveShootingRange;
-                if (distanceSq <= effectiveShootingRangeSq) {
-                    int newDistanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
-                    int oldDistanceToGoal;
-                    if (monster_->OldPosition.X == -1 || monster_->OldPosition.X == TILES_X || monster_->OldPosition.Y == -1 || monster_->OldPosition.Y == TILES_Y) {
-                        oldDistanceToGoal = newDistanceToGoal + 1;
-                    } else {
-                        oldDistanceToGoal = DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X];
-                    }
-
-                    float t = monster_->MovementT;
-                    float distanceToGoal = t * newDistanceToGoal + (1 - t) *  oldDistanceToGoal;
-
-                    if (distanceToGoal < closestDistanceToGoal) {
-                        closestDistanceToGoal = distanceToGoal;
-                        target = monster_;
-                    }
-                }
-            }
-
-            /// Create projectile if target monster
-            if (target) {
-                diamond_->CooldownFrames = diamond_->MaxCooldown;
-
-                projectile* newProjectile = &Projectiles[ProjectileCount++];
-                *newProjectile = {};
-                newProjectile->Color = diamond_->MixedColor;
-                newProjectile->Position = diamond_->ActualPosition;
-                newProjectile->Damage = diamond_->Damage; // TODO(Tobi): Adjust in trap
-                newProjectile->Speed = PROJECTILE_SPEED;
-                newProjectile->Target = GenerationLinkCreate(target);
-
-                // TODO(Tobi): Are the colours even important for projectiles if I give them their damage and their effect anyway?
-                inc0 (color_i,   DC_AMOUNT) {
-                    newProjectile->ColorsCount[color_i] = diamond_->ColorsCount[color_i];
-                }
-
-                float randomAngle = (rand() / (float)(RAND_MAX + 1)) * 2 * PI;
-                vec2f delta;
-                delta.X = sinf(randomAngle);
-                delta.Y = cosf(randomAngle);
-
-                newProjectile->BuildupDelta.X = delta.X * (newProjectile->Speed / 8);
-                newProjectile->BuildupDelta.Y = delta.Y * (newProjectile->Speed / 8);
-                newProjectile->BuildupFrames = 15;
-            }
-        }
-
-        /// Update Projectiles
-        inc0 (projectile_i,   ProjectileCount) {
-            projectile* projectile_ = &Projectiles[projectile_i];
-
-            monster* target = GenerationLinkResolve(projectile_->Target);
-            if (!target) {
-                Projectiles[projectile_i] = Projectiles[--ProjectileCount];
-                --projectile_i;
-                continue;
-            }
-
-            if (projectile_->BuildupFrames > 0) {
-                --projectile_->BuildupFrames;
-
-                projectile_->Position.X += projectile_->BuildupDelta.X;
-                projectile_->Position.Y += projectile_->BuildupDelta.Y;
-
-                projectile_->Direction = projectile_->BuildupDelta;
-            } else {
-                vec2f delta;
-                delta.X = target->ActualPosition.X - projectile_->Position.X;
-                delta.Y = target->ActualPosition.Y - projectile_->Position.Y;
-
-                float distanceSq = delta.X * delta.X + delta.Y * delta.Y;
-
-                float speedSq = projectile_->Speed * projectile_->Speed;
-
-                // TODO(Tobi): This only checks midpoint-midpoint; not edge-edge
-                if (distanceSq < speedSq) {
-                    target->Health -= projectile_->Damage;
-                    if (target->Health <= 0) {
-                        Mana += target->Mana;
-                        target->Health = 0;
-                        BucketListRemove(&Monsters, target);
-                        AudioClipStart(Sounds.Death, false, 0.7f);
-                        ParticleEffectStartWorld(&drawRectMain, 16, Particles.Smoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGBA(100, 80, 80, 160));
-                        // TODO(Tobi): The monster has been killed; do something
-                    } else {
-                        AudioClipStart(Sounds.Hit, false, 0.2f);
-
-                        /// Assign effects
-                        if (projectile_->ColorsCount[DC_GREEN] != 0) {
-                            target->PoisonSpeed = sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
-                        }
-                    }
-
-                    Projectiles[projectile_i] = Projectiles[--ProjectileCount];
-                    --projectile_i;
-                    continue;
-                } else {
-                    float distance = sqrtf(distanceSq);
-                    delta.X /= distance;
-                    delta.Y /= distance;
-                    delta.X *= projectile_->Speed;
-                    delta.Y *= projectile_->Speed;
-
-                    projectile_->Position.X += delta.X;
-                    projectile_->Position.Y += delta.Y;
-
-                    projectile_->Direction = delta;
-                }
-            }
-        }
-
         /// Menu logic
         {
             vec2i menuTilePos = MouseToTilePos(menuDiamondsMousePosition);
@@ -734,7 +439,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
                 buildingHexTile = TranslateToTopLeftPosition(mouseTilePos, T_TOWER | T_TRAP);
                 if (buildingHexTile != TRANSLATE_NOTHING_FOUND) {
-                    inc_bucket(dimaond_i, diamond_, &Diamonds) {
+                    inc_bucket (dimaond_i, diamond_, &Diamonds) {
                         if (diamond_->TilePositionTopLeft == buildingHexTile) {
                             diamondUnderCursor = diamond_;
                             break;
@@ -945,6 +650,308 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }
         }
+
+        /// Click on Monster
+        if (IS_MOUSE_PRESSED(Left)){
+            SelectedMonster = {};
+            if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
+                inc_bucket (monster_i, monster_, &Monsters) {
+                    // TODO(Tobi): Possibility to cycle through monsters or other pressed stuff
+                    if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, mainMousePosition / (float) HEXAGON_A, 0)) {
+                        SelectedMonster = GenerationLinkCreate(monster_);
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// Update Mana
+        if (FrameCount % 60 == 0) {
+            Mana += ManaGainPerSecond;
+        }
+
+        /// Update Monsters
+        {
+            inc_bucket (monster_i, monster_, &Monsters) {
+                Assert(monster_->Health, "Monster should be dead");
+
+                /// React to effects
+                {
+                    if (monster_->PoisonSpeed && FrameCount % POISON_UPDATE_FRAMES == 0) {
+                        monster_->Health -= monster_->PoisonSpeed;
+                        monster_->PoisonSpeed = AtLeast(monster_->PoisonSpeed - MONSTER_POISON_DECREASE_PER_UPDATE, 0.0f);
+
+                        if (monster_->Health <= 0) {
+                            monster_->Health = 0; // TODO(Tobi): Do I need that?
+                            BucketListRemove(&Monsters, monster_);
+                        }
+                    }
+                }
+
+                /// Pathfinding and Movement
+                {
+                    if (monster_->MovementT >= 1.0f) {
+                        monster_->MovementT -= 1.0f;
+
+                        int distanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
+                        if (distanceToGoal == 1) {
+                            // TODO(Tobi): Cause damage to the orb (banishment cost)
+                            ShakeFrames = 15;
+
+                            // NOTE(Tobi): I do that, so that projectiles etc. will not move towards it
+                            ++monster_->Generation;
+                            MonsterSetToStartingPosition(monster_);
+
+                            // NOTE(Tobi): This is just what has been in the else-path
+                            monster_->MovementT += monster_->Speed;
+                        }
+
+                        bool triangleIsDown = (monster_->GoalPosition.X + monster_->GoalPosition.Y) % 2;
+                        int closestDistance = 9999999;
+                        vec2i deltaPos = { 0, 0 };
+
+                        if (triangleIsDown) {
+                            if (monster_->GoalPosition.Y > 0 && DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X]) {
+                                int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y - 1][monster_->GoalPosition.X];
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { 0, -1 };
+                            }
+                        } else {
+                            if (monster_->GoalPosition.Y < TILES_Y - 1 && DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X]) {
+                                int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y + 1][monster_->GoalPosition.X];
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { 0, +1 };
+                            }
+                        }
+
+                        int sameAmount = 1;
+                        
+                        if (monster_->GoalPosition.X > 0 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X - 1]) {
+                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X - 1];
+                            if (proposedDistance < closestDistance) {
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { -1, 0 };
+                                sameAmount = 1;
+                            } else if (proposedDistance == closestDistance) {
+                                ++sameAmount;
+                                if (rand() < RAND_MAX / sameAmount) {
+                                    deltaPos = vec2i { -1, 0 };
+                                }
+                            }
+                        }
+                        
+                        if (monster_->GoalPosition.X < TILES_X - 1 && DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1]) {
+                            int proposedDistance = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X + 1];
+                            if (proposedDistance < closestDistance) {
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { +1, 0 };
+                                sameAmount = 1;
+                            } else if (proposedDistance == closestDistance) {
+                                ++sameAmount;
+                                if (rand() < RAND_MAX / sameAmount) {
+                                    deltaPos = vec2i { +1, 0 };
+                                }
+                            }
+                        }
+
+                        monster_->OldPosition.X = monster_->GoalPosition.X;
+                        monster_->OldPosition.Y = monster_->GoalPosition.Y;
+                        monster_->GoalPosition.X += deltaPos.X;
+                        monster_->GoalPosition.Y += deltaPos.Y;
+                    } else {
+                        monster_->MovementT += monster_->Speed;
+                    }
+
+                    // TODO(Tobi): That whole thing will probably move away from lerping movement anyway at one point
+
+                    vec2f actualOldPos = TriToActualPos(monster_->OldPosition);
+                    vec2f actualNewPos = TriToActualPos(monster_->GoalPosition);
+
+                    monster_->ActualPosition.X = (1 - monster_->MovementT) * actualOldPos.X + monster_->MovementT * actualNewPos.X;
+                    monster_->ActualPosition.Y = (1 - monster_->MovementT) * actualOldPos.Y + monster_->MovementT * actualNewPos.Y;
+                }
+            }
+
+            /// Update Monster Waves
+            {
+                int nextWave = MonsterWaveFrames / WAVE_FRAME_LENGTH + 1;
+
+                if (MonsterWaveSpeedEnd >= nextWave) {
+                    MonsterWaveFrames += MONSTER_WAVE_FAST_SPEED;
+                } else {
+                    ++MonsterWaveFrames;
+                }
+
+                inc0 (wave_i,   WAVE_COUNT) {
+                    monster_wave* monster_wave_ = &MonsterWaves[wave_i];
+
+                    int startWaveFrame = WAVE_FRAME_LENGTH * wave_i;
+                    if (startWaveFrame > MonsterWaveFrames) { continue; }
+
+                    if (!monster_wave_->ActualStartFrame) {
+                        // This is now the last started wave
+                        monster_wave_->ActualStartFrame = FrameCount;
+
+                        // NOTE(Tobi): By this, I keep the MonsterWaveSpeedEnd always at a known value, so I can later just increase it
+                        if (MonsterWaveSpeedEnd < wave_i) {
+                            MonsterWaveSpeedEnd = wave_i;
+                        }
+                    }
+
+                    if (monster_wave_->AlreadyReleased == monster_wave_->FullCount) { continue; }
+
+                    // TODO(Tobi): When the timeline runs faster, monsters spawn with the same speed; is that what I want?
+                    int timeOffsetFromStart = FrameCount - monster_wave_->ActualStartFrame;
+                    if (timeOffsetFromStart % monster_wave_->DelayFrames != 0) {continue; }
+                    
+                    ++monster_wave_->AlreadyReleased;
+
+                    monster* newMonster = BucketGetCleared(&Monsters);
+                    newMonster->Radius = monster_wave_->Prototype.Radius;
+                    newMonster->Speed = monster_wave_->Prototype.Speed;
+                    newMonster->Color = monster_wave_->Prototype.Color;
+                    newMonster->MaxHealth = monster_wave_->Prototype.MaxHealth;
+                    newMonster->Health = newMonster->MaxHealth;
+                    newMonster->Armor = monster_wave_->Prototype.MaxArmor;
+                    newMonster->Magic = monster_wave_->Prototype.MaxMagic;
+                    newMonster->Mana = monster_wave_->Prototype.Mana;
+
+                    MonsterSetToStartingPosition(newMonster);
+                }
+            }
+        }
+
+        /// Update Diamonds
+        inc_bucket (diamond_i, diamond_, &Diamonds) {
+            // TODO(Tobi): Cooldown frames has to work differently for the traps
+
+            if (diamond_->CooldownFrames > 0) {
+                --diamond_->CooldownFrames;
+                continue;
+            }
+
+            // Right menu or being dragged
+            if (!diamond_->IsInField) { continue; }
+
+            float diamondRange = diamond_->RangeRadius;
+
+            // TODO(Tobi): Check several different buildings here
+            if (Ground[diamond_->TilePositionTopLeft.Y][diamond_->TilePositionTopLeft.X] & T_TRAP) {
+                diamondRange = 1.0f;
+            }
+
+            /// Find target monster
+            monster* target = nullptr;
+            float closestDistanceToGoal = 999999999.0f;
+            inc_bucket (monster_i, monster_, &Monsters) {
+                Assert(monster_->Health > 0, "Monster should be inactive");
+
+                if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
+                    int newDistanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
+                    int oldDistanceToGoal;
+                    if (monster_->OldPosition.X == -1 || monster_->OldPosition.X == TILES_X || monster_->OldPosition.Y == -1 || monster_->OldPosition.Y == TILES_Y) {
+                        oldDistanceToGoal = newDistanceToGoal + 1;
+                    } else {
+                        oldDistanceToGoal = DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X];
+                    }
+
+                    float t = monster_->MovementT;
+                    float distanceToGoal = t * newDistanceToGoal + (1 - t) *  oldDistanceToGoal;
+
+                    if (distanceToGoal < closestDistanceToGoal) {
+                        closestDistanceToGoal = distanceToGoal;
+                        target = monster_;
+                    }
+                }
+            }
+
+            /// Create projectile if target monster
+            if (target) {
+                diamond_->CooldownFrames = diamond_->MaxCooldown;
+
+                projectile* newProjectile = &Projectiles[ProjectileCount++];
+                *newProjectile = {};
+                newProjectile->Color = diamond_->MixedColor;
+                newProjectile->Position = diamond_->ActualPosition;
+                newProjectile->Damage = diamond_->Damage; // TODO(Tobi): Adjust in trap
+                newProjectile->Speed = PROJECTILE_SPEED;
+                newProjectile->Target = GenerationLinkCreate(target);
+
+                // TODO(Tobi): Are the colours even important for projectiles if I give them their damage and their effect anyway?
+                inc0 (color_i,   DC_AMOUNT) {
+                    newProjectile->ColorsCount[color_i] = diamond_->ColorsCount[color_i];
+                }
+
+                float randomAngle = (rand() / (float)(RAND_MAX + 1)) * 2 * PI;
+                vec2f delta;
+                delta.X = sinf(randomAngle);
+                delta.Y = cosf(randomAngle);
+
+                newProjectile->BuildupDelta.X = delta.X * (newProjectile->Speed / 8);
+                newProjectile->BuildupDelta.Y = delta.Y * (newProjectile->Speed / 8);
+                newProjectile->BuildupFrames = 15;
+            }
+        }
+
+        /// Update Projectiles
+        inc0 (projectile_i,   ProjectileCount) {
+            projectile* projectile_ = &Projectiles[projectile_i];
+
+            monster* target = GenerationLinkResolve(projectile_->Target);
+            if (!target) {
+                Projectiles[projectile_i] = Projectiles[--ProjectileCount];
+                --projectile_i;
+                continue;
+            }
+
+            if (projectile_->BuildupFrames > 0) {
+                --projectile_->BuildupFrames;
+
+                projectile_->Position.X += projectile_->BuildupDelta.X;
+                projectile_->Position.Y += projectile_->BuildupDelta.Y;
+
+                projectile_->Direction = projectile_->BuildupDelta;
+            } else {
+                vec2f delta = target->ActualPosition - projectile_->Position;
+                float distanceSq = delta.X * delta.X + delta.Y * delta.Y;
+
+                // TODO(Tobi): This only checks midpoint-midpoint; not edge-edge
+                if (CirclesDoIntersect(target->ActualPosition, target->Radius, projectile_->Position, projectile_->Speed)) {
+                    target->Health -= projectile_->Damage;
+                    if (target->Health <= 0) {
+                        Mana += target->Mana;
+                        target->Health = 0;
+                        BucketListRemove(&Monsters, target);
+                        AudioClipStart(Sounds.Death, false, 0.7f);
+                        ParticleEffectStartWorld(&drawRectMain, 16, Particles.Smoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGBA(100, 80, 80, 160));
+                        // TODO(Tobi): The monster has been killed; do something
+                    } else {
+                        AudioClipStart(Sounds.Hit, false, 0.2f);
+
+                        /// Assign effects
+                        if (projectile_->ColorsCount[DC_GREEN] != 0) {
+                            target->PoisonSpeed = sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
+                        }
+                    }
+
+                    Projectiles[projectile_i] = Projectiles[--ProjectileCount];
+                    --projectile_i;
+                    continue;
+                } else {
+                    float distance = sqrtf(distanceSq);
+                    delta.X /= distance;
+                    delta.Y /= distance;
+                    delta.X *= projectile_->Speed;
+                    delta.Y *= projectile_->Speed;
+
+                    projectile_->Position.X += delta.X;
+                    projectile_->Position.Y += delta.Y;
+
+                    projectile_->Direction = delta;
+                }
+            }
+        }
+
     }
     
     /// Rendering
@@ -1301,9 +1308,82 @@ void Update(color32* array, int width, int height, inputs* ins) {
             TextRenderScreen(&drawRectAll, &DummyFontInfo,RoundFloat32ToInt32(ins->Mouse.PosX + 0.475f * HEXAGON_A), RoundFloat32ToInt32(ins->Mouse.PosY + 0.225f * HEXAGON_A), dummy, WHITE);
         }
 
+        /// Render selected Monster popup
+        {
+            monster* selectedMonster = GenerationLinkResolve(SelectedMonster);
+            if (selectedMonster) {
+                float monsterContextMenuLeft = selectedMonster->ActualPosition.X + drawRectMain.StartX / (float) HEXAGON_A;
+                float monsterContextMenuTop = selectedMonster->ActualPosition.Y + drawRectMain.StartY / (float) HEXAGON_A;
+
+                int lines = 3;
+                if (selectedMonster->PoisonSpeed > 0) {
+                    ++lines;
+                }
+                if (selectedMonster->Armor > 0) {
+                    ++lines;
+                }
+                if (selectedMonster->Magic > 0) {
+                    ++lines;
+                }
+
+                DrawWorldRectangleAlpha(&drawRectAll, monsterContextMenuLeft, monsterContextMenuTop, 4.5f, lines * DummyFontInfo.FontSize / (float) HEXAGON_A, COL32_RGBA(0, 0, 0, 160));
+
+                char dummy[32];
+                snprintf(dummy, ArrayCount(dummy), "Health: %.2f / %.2f", selectedMonster->Health, selectedMonster->MaxHealth);
+                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop, dummy, WHITE);
+
+                snprintf(dummy, ArrayCount(dummy), "Speed: %.2f", selectedMonster->Speed);
+                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE);
+
+                snprintf(dummy, ArrayCount(dummy), "Mana: %.2f", selectedMonster->Mana);
+                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + 2 * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE);
+
+                int linesAsOfYet = 3;
+                if (selectedMonster->Armor > 0) {
+                    snprintf(dummy, ArrayCount(dummy), "Armor: %.2f", selectedMonster->Armor);
+                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, PURPLE);
+                    ++linesAsOfYet;
+                }
+                if (selectedMonster->Magic > 0) {
+                    snprintf(dummy, ArrayCount(dummy), "Magic: %.2f", selectedMonster->Magic);
+                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, AQUA);
+                    ++linesAsOfYet;
+                }
+                if (selectedMonster->PoisonSpeed > 0) {
+                    snprintf(dummy, ArrayCount(dummy), "PoisonSpeed: %.2f", selectedMonster->PoisonSpeed);
+                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, GREEN);
+                    ++linesAsOfYet;
+                }
+            }
+        }
+
         /// Render mouse-over highlight
-        // TODO(Tobi): Replace with context menu
         if (diamondUnderCursor && Menu.DragDrop.Diamond != diamondUnderCursor) {
+
+            float diamondContextMenuLeft;
+            float diamondContextMenuTop;
+            if (!diamondUnderCursor->IsInField) {
+                // TODO(Tobi): Quite a bit difficult to position it right, when I don't know how much space is needed
+                vec2f diamondPosition = HexToActualPos(diamondUnderCursor->TilePositionTopLeft);
+                diamondContextMenuLeft = diamondPosition.X + drawRectMenuDiamonds.StartX / (float) HEXAGON_A - 4.5f;
+                diamondContextMenuTop = diamondPosition.Y + drawRectMenuDiamonds.StartY / (float) HEXAGON_A;
+            } else {
+                vec2f diamondPosition = TriToActualPos(diamondUnderCursor->TilePositionTopLeft) + TOP_LEFT_TO_CENTRE_OFFSET;
+                diamondContextMenuLeft = diamondPosition.X + drawRectMain.StartX / (float) HEXAGON_A;
+                diamondContextMenuTop = diamondPosition.Y + drawRectMain.StartY / (float) HEXAGON_A;
+            }
+
+            DrawWorldRectangleAlpha(&drawRectAll, diamondContextMenuLeft, diamondContextMenuTop, 4.5f, 2 * DummyFontInfo.FontSize / (float) HEXAGON_A, COL32_RGBA(0, 0, 0, 160));
+
+            char dummy[32];
+            snprintf(dummy, ArrayCount(dummy), "Damage: %.2f", diamondUnderCursor->Damage);
+            TextRenderWorld(&drawRectAll, &DummyFontInfo, diamondContextMenuLeft, diamondContextMenuTop, dummy, WHITE);
+
+            snprintf(dummy, ArrayCount(dummy), "Cooldown Frames: %d", diamondUnderCursor->MaxCooldown);
+            TextRenderWorld(&drawRectAll, &DummyFontInfo, diamondContextMenuLeft, diamondContextMenuTop + DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE);
+
+            // TODO(Tobi): Print the effects stuff
+
             if (diamondUnderCursor->IsInField) {
                 DrawWorldCircle(&drawRectMain, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, RED);
             } else {
@@ -1313,41 +1393,41 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Draw testing lines
         #if 0
-        #define SQRT_3 1.73205080757f
-        #define HEXAGON_HEIGHT 54.0f
-        #define HALF_HEXAGON_HEIGHT (HEXAGON_HEIGHT / 2)
-        #define HEXAGON_A (HALF_HEXAGON_HEIGHT * 2 / SQRT_3)
+            #define SQRT_3 1.73205080757f
+            #define HEXAGON_HEIGHT 54.0f
+            #define HALF_HEXAGON_HEIGHT (HEXAGON_HEIGHT / 2)
+            #define HEXAGON_A (HALF_HEXAGON_HEIGHT * 2 / SQRT_3)
 
-        inc0 (y_i,   TRIANGLE_LINES_Y) {
-            DrawScreenLine(&drawRectMain, 0, HALF_HEXAGON_HEIGHT * y_i, drawRectMain.Width, HALF_HEXAGON_HEIGHT * y_i, RED);
-        }
+            inc0 (y_i,   TRIANGLE_LINES_Y) {
+                DrawScreenLine(&drawRectMain, 0, HALF_HEXAGON_HEIGHT * y_i, drawRectMain.Width, HALF_HEXAGON_HEIGHT * y_i, RED);
+            }
 
-        // Top Right -> Bottom Left
-        inc0 (x_i,   TRIANGLE_PAIRS_X + 1 + TRIANGLE_LINE_PAIRS_Y) {
-            DrawScreenLine(&drawRectMain, HEXAGON_A / 2 + HEXAGON_A * x_i, 0, -(TRIANGLE_LINES_Y - 1) * HEXAGON_A / 2 + HEXAGON_A * x_i, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT /*drawRectMain.Height*/, RED);
-        }
+            // Top Right -> Bottom Left
+            inc0 (x_i,   TRIANGLE_PAIRS_X + 1 + TRIANGLE_LINE_PAIRS_Y) {
+                DrawScreenLine(&drawRectMain, HEXAGON_A / 2 + HEXAGON_A * x_i, 0, -(TRIANGLE_LINES_Y - 1) * HEXAGON_A / 2 + HEXAGON_A * x_i, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT /*drawRectMain.Height*/, RED);
+            }
 
-        // Top Left -> Bottom Right
-        inc (x_i,   -TRIANGLE_LINE_PAIRS_Y,   TRIANGLE_PAIRS_X + 1) {
-            DrawScreenLine(&drawRectMain, HEXAGON_A / 2 + HEXAGON_A * x_i, 0, (TRIANGLE_LINES_Y + 1) * HEXAGON_A / 2 + HEXAGON_A * x_i, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT /*drawRectMain.Height*/, RED);
-        }
+            // Top Left -> Bottom Right
+            inc (x_i,   -TRIANGLE_LINE_PAIRS_Y,   TRIANGLE_PAIRS_X + 1) {
+                DrawScreenLine(&drawRectMain, HEXAGON_A / 2 + HEXAGON_A * x_i, 0, (TRIANGLE_LINES_Y + 1) * HEXAGON_A / 2 + HEXAGON_A * x_i, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT /*drawRectMain.Height*/, RED);
+            }
 
-        DrawScreenLine(&drawRectMain, 0, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, BLACK);
-        DrawScreenLine(&drawRectMain, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, 0, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, BLACK);
+            DrawScreenLine(&drawRectMain, 0, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, BLACK);
+            DrawScreenLine(&drawRectMain, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, 0, (1 + TRIANGLE_PAIRS_X) * HEXAGON_A, TRIANGLE_LINES_Y * HALF_HEXAGON_HEIGHT, BLACK);
 
-        DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[TRI_UP_RIGHT + TRI_UP_BOTTOM], WHITE);
-        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_RIGHT], WHITE);
-        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[TRI_UP_LEFT + TRI_UP_BOTTOM], WHITE);
+            DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[0], WHITE);
+            //DrawScreenBitmap(&drawRectMain, 100, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[TRI_UP_RIGHT + TRI_UP_BOTTOM], WHITE);
+            DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[0], WHITE);
+            //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2 + 1, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_RIGHT], WHITE);
+            DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[0], WHITE);
+            //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100 - HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[TRI_UP_LEFT + TRI_UP_BOTTOM], WHITE);
 
-        DrawScreenBitmap(&drawRectMain, 100, 100, Sprites.PathDown[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100, 100, Sprites.PathDown[TRI_DOWN_RIGHT + TRI_DOWN_TOP], WHITE);
-        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, Sprites.PathUp[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, Sprites.PathUp[TRI_UP_LEFT + TRI_UP_RIGHT], WHITE);
-        DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[0], WHITE);
-        //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_TOP], WHITE);
+            DrawScreenBitmap(&drawRectMain, 100, 100, Sprites.PathDown[0], WHITE);
+            //DrawScreenBitmap(&drawRectMain, 100, 100, Sprites.PathDown[TRI_DOWN_RIGHT + TRI_DOWN_TOP], WHITE);
+            DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, Sprites.PathUp[0], WHITE);
+            //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH / 2, 100, Sprites.PathUp[TRI_UP_LEFT + TRI_UP_RIGHT], WHITE);
+            DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[0], WHITE);
+            //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_TOP], WHITE);
         #endif
 
     }

@@ -67,6 +67,8 @@ struct monster_wave {
         float Radius; // TODO(Tobi): This is not used anymore
         float Speed;
         float MaxHealth;
+        float MaxArmor;
+        float MaxMagic;
         color32 Color;
         float Mana;
 
@@ -87,8 +89,10 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
         40,
         0,
         {
-            7 / (float)GRID_SIZE,
+            18 / (float)GRID_SIZE,
             1 / 16.0f,
+            50.0f,
+            50.0f,
             50.0f,
             RED,
             25.0f,
@@ -100,9 +104,11 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
         25,
         0,
         {
-            4 / (float)GRID_SIZE,
+            8 / (float)GRID_SIZE,
             1 / 10.0f,
             10.0f,
+            50.0f,
+            50.0f,
             GREEN,
             30.0f,
         },
@@ -113,9 +119,11 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
         35,
         0,
         {
-            7 / (float)GRID_SIZE,
+            21 / (float)GRID_SIZE,
             1 / 16.0f,
             50.0f,
+            500.0f,
+            0,
             BLUE,
             35.0f,
         },
@@ -126,9 +134,11 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
         20,
         0,
         {
-            4 / (float)GRID_SIZE,
+            9 / (float)GRID_SIZE,
             1 / 10.0f,
             10.0f,
+            0,
+            2000.0f,
             YELLOW,
             40.0f,
         },

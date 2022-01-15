@@ -374,3 +374,17 @@ T RemapLinear(T inputMin, T inputMax, T outputMin, T outputMax, T value) {
     T t = InvLerp(inputMin, inputMax, value);
     return Lerp(outputMin, outputMax, t);
 }
+
+bool CirclesDoIntersect(vec2f pos1, float radius1, vec2f pos2, float radius2) {
+    float totalRadius = radius1 + radius2;
+    float radiusSquared = totalRadius * totalRadius;
+
+    vec2f delta = pos2 - pos1;
+    float deltaSquared = LengthSq(delta);
+
+    return radiusSquared >= deltaSquared;
+}
+
+bool CirclesDoIntersect(float x1, float y1, float radius1, float x2, float y2, float radius2) {
+    return CirclesDoIntersect(vec2f { x1, y1 } , radius1, vec2f { x2, y2 }, radius2);
+}

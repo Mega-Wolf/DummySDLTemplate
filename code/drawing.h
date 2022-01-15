@@ -189,6 +189,25 @@ void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int heigh
     }
 }
 
+void DrawScreenRectangleAlpha(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
+    x += Camera.X;
+    y += Camera.Y;
+
+    inc (y_i,   AtLeast(y, 0),    AtMost(y + height, drawRect->Height)) {
+        inc (x_i,   AtLeast(x, 0),    AtMost(x + width, drawRect->Width)) {
+            color32 original = drawRect->ArrayData[Index2d(x_i, y_i, drawRect)];
+
+            float alpha = col.Alpha / 255.0f;
+
+            int red   = (int) LERP(col.Red,   original.Red,   alpha);
+            int green = (int) LERP(col.Green, original.Green, alpha);
+            int blue  = (int) LERP(col.Blue,  original.Blue,  alpha);
+
+            drawRect->ArrayData[Index2d(x_i, y_i, drawRect)] = COL32_RGB(red, green, blue);
+        }
+    }
+}
+
 // Negative border width/height means border goes inside
 void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col) {
     // NOTE(Tobi): I don't have to offset that, since it will call DrawScreenRectangle later on, however, it kind of looks cool
@@ -352,6 +371,10 @@ void DrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float e
 
 void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
     DrawScreenRectangle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
+}
+
+void DrawWorldRectangleAlpha(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
+    DrawScreenRectangleAlpha(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
 }
 
 void DrawWorldBorder(draw_rect* drawRect, float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
