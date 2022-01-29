@@ -15,6 +15,7 @@ enum terrain {
     T_TOWER = 2,
     T_GOAL = 4,
     T_TRAP = 8,
+    T_WALL = 16,
 };
 
 int FrameCount;
@@ -45,6 +46,10 @@ struct menu_data {
     int SelectedBuyingLevel;
 
     bool ShallMerge;
+
+    bool WallBuildMode;
+    bool TowerBuildMode;
+    bool TrapBuildMode;
 
     diamond* Diamonds[(MENU_DIAMONDS_Y + 1) / 2][MENU_DIAMONDS_X];
 
@@ -151,13 +156,14 @@ int MonsterWaveSpeedEnd;
 #define MONSTER_WAVE_FAST_SPEED 7
 
 #define KEY_TOGGLE_EDITOR F1
-#define KEY_TOGGLE_SHOW_PATHFINDING F6
-
-#define KEY_MERGE F4
-#define KEY_LEVEL_UP F3
 #define KEY_BUY F2
-
+#define KEY_LEVEL_UP F3
+#define KEY_MERGE F4
 #define KEY_SPEED_WAVE F5
+#define KEY_TOGGLE_SHOW_PATHFINDING F6
+#define KEY_WALL F7
+#define KEY_TOWER F8
+#define KEY_TRAP F9
 
 bool ShowPathfinding;
 

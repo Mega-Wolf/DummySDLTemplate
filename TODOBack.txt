@@ -1,0 +1,329 @@
+{
+	"RunningNumber": 37,
+	"Versions": [
+		{
+			"Version": "0.0.1",
+			"Description": "Super basic workings"
+		},
+		{
+			"Version": "0.0.2",
+			"Description": "Graphical update"
+		},
+		{
+			"Version": "0.0.3",
+			"Description": "Editors"
+		},
+		{
+			"Version": "0.0.4",
+			"Description": "World Overview etc."
+		},
+		{
+			"Version": "0.0.5",
+			"Description": "First deep dive into numbers"
+		},
+		{
+			"Version": "0.0.0",
+			"Description": ""
+		}
+	],
+	"Tasks": [
+		{
+			"ID": "00000000",
+			"Description": "Sprites for diamond effects (on the monsters)",
+			"Date": "0000-00-00",
+			"Version": "0.0.1",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000001",
+			"Description": "Swarmling dummy sprites (6 directions)",
+			"Date": "0000-00-00",
+			"Version": "0.0.2",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000002",
+			"Description": "Reaver dummy sprites (6 directions)",
+			"Date": "0000-00-00",
+			"Version": "0.0.2",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000003",
+			"Description": "Correctly implement traps (stronger effects, less power)",
+			"Date": "0000-00-00",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": ">"
+		},
+		{
+			"ID": "00000004",
+			"Description": "Focus a monster (make it top priority)",
+			"Date": "0000-00-00",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000005",
+			"Description": "Choose tower priority",
+			"Date": "0000-00-00",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000007",
+			"Description": "Cogwheel sprites (5 different levels for now)",
+			"Date": "0000-00-00",
+			"Version": "0.0.1",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000008",
+			"Description": "Cogwheel sprites (support 2 or even three different colours)",
+			"Date": "0000-00-00",
+			"Version": "0.0.1",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000009",
+			"Description": "OpenGL port",
+			"Date": "0000-00-00",
+			"Version": "0.0.2",
+			"Group": "Backend",
+			"Type": "+"
+		},
+		{
+			"ID": "00000010",
+			"Description": "2 more buildings",
+			"Date": "0000-00-00",
+			"Version": "0.0.4",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000011",
+			"Description": "Wiggle movement of monsters",
+			"Date": "0000-00-00",
+			"Version": "0.0.4",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000012",
+			"Description": "Better background sprites",
+			"Date": "0000-00-00",
+			"Version": "0.0.3",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000013",
+			"Description": "Level editor (that lets you select deco sprites etc.)",
+			"Date": "0000-00-00",
+			"Version": "0.0.3",
+			"Group": "Editor",
+			"Type": "+"
+		},
+		{
+			"ID": "00000014",
+			"Description": "Monster wave editor",
+			"Date": "0000-00-00",
+			"Version": "0.0.3",
+			"Group": "Editor",
+			"Type": "+"
+		},
+		{
+			"ID": "00000015",
+			"Description": "World map with level selection",
+			"Date": "0000-00-00",
+			"Version": "0.0.4",
+			"Group": "Backend",
+			"Type": "+"
+		},
+		{
+			"ID": "00000016",
+			"Description": "Actual save games",
+			"Date": "0000-00-00",
+			"Version": "0.0.4",
+			"Group": "Backend",
+			"Type": "+"
+		},
+		{
+			"ID": "00000017",
+			"Description": "2 boss monsters",
+			"Date": "0000-00-00",
+			"Version": "0.0.3",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000018",
+			"Description": "Design the first level (visually + waves etc.)",
+			"Date": "0000-00-00",
+			"Version": "0.0.3",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000019",
+			"Description": "Design the second level (visually + waves etc.)",
+			"Date": "0000-00-00",
+			"Version": "0.0.4",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000020",
+			"Description": "General Damage output of diamonds + range (+ levelling)",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000021",
+			"Description": "Balance Green",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000022",
+			"Description": "Balance Red",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000023",
+			"Description": "Balance Yellow",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000024",
+			"Description": "Balance Blue",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000025",
+			"Description": "Balance Aqua",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000026",
+			"Description": "Balance Purple",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000027",
+			"Description": "Balance White",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000028",
+			"Description": "Balance Black",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000029",
+			"Description": "Balance Combinations",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000030",
+			"Description": "Graph System",
+			"Date": "0000-00-00",
+			"Version": "0.0.5",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000031",
+			"Description": "New visual version of wave stones (are these cogwheels?)",
+			"Date": "0000-00-00",
+			"Version": "0.0.3",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000034",
+			"Description": "Wall Sprites (at least up and down, bugt more will be needed in the future for 3d effect)",
+			"Date": "0000-00-00",
+			"Version": "0.0.2",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000035",
+			"Description": "In-game building; overlays are a bit off",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		},
+		{
+			"ID": "00000036",
+			"Description": "Separate in-game building fromeditor stuff",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		}
+	],
+	"Finished": [
+		{
+			"ID": "00000006",
+			"Description": "In-game building - walls",
+			"Date": "2022-01-28",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000032",
+			"Description": "In-game building - towers",
+			"Date": "2022-01-28",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000033",
+			"Description": "In-game building - traps",
+			"Date": "2022-01-28",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		}
+	]
+}

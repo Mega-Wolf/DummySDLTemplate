@@ -62,7 +62,12 @@ struct monster {
     float Magic;
     color32 Color;
 
-    float PoisonSpeed;
+    float PoisonAmount;
+    int PoisonFrames;
+
+    int SlowFrames;
+
+    int WoundedFrames;
 
     float MovementT;
     vec2f ActualPosition;
@@ -103,10 +108,13 @@ projectile Projectiles[TILES_Y * TILES_X];
 #define DIAMOND_LEVEL_1_RANGE 4.0f
 #define DIAMOND_LEVEL_1_COOLDOWN 60
 #define DIAMOND_LEVEL_1_DAMAGE 10.0f
+#define DIAMOND_LEVEL_1_MAGIC_REDUCE 10.0f
+#define DIAMOND_LEVEL_1_ARMOR_REDUCE 10.0f
+#define DIAMOND_LEVEL_1_MANA_STEAL 10.0f
+
+#define DIAMOND_EFFECT_LENGTH (3 * FPS) // NOTE(Tobi): At the moment, poison, slow and wounded all last the same amount of time
 
 #define DIAMOND_LEVEL_1_POISON 5.0f
-#define POISON_UPDATE_FRAMES 10 // TODO(Tobi): Get rid of that again, that will mean all the posion is updated equally, which is not quite what I want
-#define MONSTER_POISON_DECREASE_PER_UPDATE 1.0f
 
 #define PROJECTILE_SPEED 0.4f
 
@@ -116,6 +124,10 @@ float ManaMergeCost = 240.0f; // TODO(Tobi): This will probably be set once at t
 float ManaDiamondLevel1Cost = 60.0f;
 float ManaStartValue = 400.0f;
 float ManaGainPerSecond = 3.6f;
+
+float CurrentWallCost = 0.06f; //60; // TODO(Tobi): Correct wall cost
+float CurrentTowerCost = 0.10f; //100; // TODO(Tobi): Correct tower cost
+float CurrentTrapCost = 0.10f; //100; // TODO(Tobi): Correct trap cost
 
 void DiamondSetValues(diamond* dim, int count) {
     dim->Damage = count * DIAMOND_LEVEL_1_DAMAGE;

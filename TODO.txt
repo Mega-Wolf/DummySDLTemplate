@@ -1,0 +1,46 @@
+_____________________ 0.0.0: "" _____________________
+00000035: + 0000-00-00 0.0.0 " xxx "     In-game building; overlays are a bit off
+00000036: + 0000-00-00 0.0.0 " xxx "     Separate in-game building fromeditor stuff
+
+_____________________ 0.0.1: "Super basic workings" _____________________
+00000000: + 0000-00-00 0.0.1 "Sprites"     Sprites for diamond effects (on the monsters)
+00000003: > 0000-00-00 0.0.1 "Game"     Correctly implement traps (stronger effects, less power)
+00000004: + 0000-00-00 0.0.1 "Game"     Focus a monster (make it top priority)
+00000005: + 0000-00-00 0.0.1 "Game"     Choose tower priority
+00000007: + 0000-00-00 0.0.1 "Sprites"     Cogwheel sprites (5 different levels for now)
+00000008: + 0000-00-00 0.0.1 "Sprites"     Cogwheel sprites (support 2 or even three different colours)
+
+_____________________ 0.0.2: "Graphical update" _____________________
+00000001: + 0000-00-00 0.0.2 "Sprites"     Swarmling dummy sprites (6 directions)
+00000002: + 0000-00-00 0.0.2 "Sprites"     Reaver dummy sprites (6 directions)
+00000009: + 0000-00-00 0.0.2 "Backend"     OpenGL port
+00000034: + 0000-00-00 0.0.2 "Sprites"     Wall Sprites (at least up and down, bugt more will be needed in the future for 3d effect)
+
+_____________________ 0.0.3: "Editors" _____________________
+00000012: + 0000-00-00 0.0.3 "Sprites"     Better background sprites
+00000013: + 0000-00-00 0.0.3 "Editor"     Level editor (that lets you select deco sprites etc.)
+00000014: + 0000-00-00 0.0.3 "Editor"     Monster wave editor
+00000017: + 0000-00-00 0.0.3 "Design"     2 boss monsters
+00000018: + 0000-00-00 0.0.3 "Design"     Design the first level (visually + waves etc.)
+00000031: + 0000-00-00 0.0.3 "Sprites"     New visual version of wave stones (are these cogwheels?)
+
+_____________________ 0.0.4: "World Overview etc." _____________________
+00000010: + 0000-00-00 0.0.4 "Design"     2 more buildings
+00000011: + 0000-00-00 0.0.4 "Game"     Wiggle movement of monsters
+00000015: + 0000-00-00 0.0.4 "Backend"     World map with level selection
+00000016: + 0000-00-00 0.0.4 "Backend"     Actual save games
+00000019: + 0000-00-00 0.0.4 "Design"     Design the second level (visually + waves etc.)
+
+_____________________ 0.0.5: "First deep dive into numbers" _____________________
+00000020: + 0000-00-00 0.0.5 "Design"     General Damage output of diamonds + range (+ levelling)
+00000021: + 0000-00-00 0.0.5 "Design"     Balance Green
+00000022: + 0000-00-00 0.0.5 "Design"     Balance Red
+00000023: + 0000-00-00 0.0.5 "Design"     Balance Yellow
+00000024: + 0000-00-00 0.0.5 "Design"     Balance Blue
+00000025: + 0000-00-00 0.0.5 "Design"     Balance Aqua
+00000026: + 0000-00-00 0.0.5 "Design"     Balance Purple
+00000027: + 0000-00-00 0.0.5 "Design"     Balance White
+00000028: + 0000-00-00 0.0.5 "Design"     Balance Black
+00000029: + 0000-00-00 0.0.5 "Design"     Balance Combinations
+00000030: + 0000-00-00 0.0.5 "Design"     Graph System
+

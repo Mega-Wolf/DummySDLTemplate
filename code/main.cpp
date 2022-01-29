@@ -20,10 +20,9 @@
 
 font_info DummyFontInfo;
 
-void InitDistanceArray() {
-
-    /// Find start positions
+void CollectStartPositions() {
     StartPositionsCount = 0;
+
     inc0 (x_i,   TILES_X) {
         if (Ground[0][x_i] & T_PATH) {
             StartPositions[StartPositionsCount].X = x_i;
@@ -51,7 +50,9 @@ void InitDistanceArray() {
             ++StartPositionsCount;
         }
     }
+}
 
+void InitDistanceArray() {
     /// Reset DistanceToGoal
     inc0 (y_i,   TILES_Y) {
         inc0 (x_i,   TILES_X) {
@@ -89,23 +90,27 @@ void InitDistanceArray() {
 
                 if (DistanceToGoal[y_i][x_i] == currentDistance) {
                     if (triangleIsDown) {
-                        if (y_i > 0 && !DistanceToGoal[y_i - 1][x_i] && (Ground[y_i - 1][x_i] & T_PATH)) {
+                        terrain ground = Ground[y_i - 1][x_i];
+                        if (y_i > 0 && !DistanceToGoal[y_i - 1][x_i] && ((ground & T_PATH) && !(ground & T_WALL))) {
                             DistanceToGoal[y_i - 1][x_i] = currentDistance + 1;
                             changedSomething = true;
                         }
                     } else {
-                        if (y_i < TILES_Y - 1 && !DistanceToGoal[y_i + 1][x_i] && (Ground[y_i + 1][x_i] & T_PATH)) {
+                        terrain ground = Ground[y_i + 1][x_i];
+                        if (y_i < TILES_Y - 1 && !DistanceToGoal[y_i + 1][x_i] && ((ground & T_PATH) && !(ground & T_WALL))) {
                             DistanceToGoal[y_i + 1][x_i] = currentDistance + 1;
                             changedSomething = true;
                         }
                     }
 
-                    if (x_i > 0 && !DistanceToGoal[y_i][x_i - 1] && (Ground[y_i][x_i - 1] & T_PATH)) {
+                    terrain groundLeft = Ground[y_i][x_i - 1];
+                    if (x_i > 0 && !DistanceToGoal[y_i][x_i - 1] && ((groundLeft & T_PATH) && !(groundLeft & T_WALL))) {
                         DistanceToGoal[y_i][x_i - 1] = currentDistance + 1;
                         changedSomething = true;
                     }
 
-                    if (x_i < TILES_X - 1 && !DistanceToGoal[y_i][x_i + 1] && (Ground[y_i][x_i + 1] & T_PATH)) {
+                    terrain groundRight = Ground[y_i][x_i + 1];
+                    if (x_i < TILES_X - 1 && !DistanceToGoal[y_i][x_i + 1] && ((groundRight & T_PATH) && !(groundRight & T_WALL))) {
                         DistanceToGoal[y_i][x_i + 1] = currentDistance + 1;
                         changedSomething = true;
                     }
@@ -133,6 +138,7 @@ void Init() {
         fclose(file);
     }
 
+    CollectStartPositions();
     InitDistanceArray();
 }
 
@@ -165,6 +171,20 @@ vec2f HexToActualPos(vec2i hexPosition) {
 
 #define TRANSLATE_NOTHING_FOUND vec2i { -1, -1 }
 #define TOP_LEFT_TO_CENTRE_OFFSET vec2f { 0.5f, 1 / 3.0f * HEXAGON_H };
+
+vec2i TranslateToTopLeftPositionWithoutAnythig(vec2i triPosition) {
+    bool downTriangle = (triPosition.X + triPosition.Y) % 2;
+
+    if (downTriangle) {
+        if (triPosition.X > 0) {
+            return triPosition - vec2i { 0, 1 };
+        } else {
+            return TRANSLATE_NOTHING_FOUND;
+        }
+    } else {
+        return triPosition;
+    }
+}
 
 vec2i TranslateToTopLeftPosition(vec2i triPosition, terrain compareThing) {
     bool downTriangle = (triPosition.X + triPosition.Y) % 2;
@@ -272,6 +292,65 @@ vec2i MouseToTilePos(vec2i mousePos, bool invert = false) {
     return tilePos;
 }
 
+float SignLinePoint(vec2f lineA, vec2f lineB, float x, float y) {
+    return (x - lineA.X) * (lineB.Y - lineA.Y) - (y - lineA.Y) * (lineB.X - lineA.X);
+}
+
+bool IsInTriangle(vec2f triPointA, vec2f triPointB, vec2f triPointC, vec2f pos) {
+    float sA = SignLinePoint(triPointA, triPointB, pos.X, pos.Y);
+    float sB = SignLinePoint(triPointB, triPointC, pos.X, pos.Y);
+    float sC = SignLinePoint(triPointC, triPointA, pos.X, pos.Y);
+
+    if (sA == 0) {
+        if (
+            triPointB.Y - triPointA.Y > 0 ||
+            (triPointB.Y - triPointA.Y == 0 && triPointB.X - triPointA.X < 0)
+        ) {
+            sA = 1;
+        }
+    }
+
+    if (sB == 0) {
+        if (
+            triPointC.Y - triPointB.Y > 0 ||
+            (triPointC.Y - triPointB.Y == 0 && triPointC.X - triPointB.X < 0)
+        ) {
+            sB = 1;
+        }
+    }
+
+    if (sC == 0) {
+        if (
+            triPointA.Y - triPointC.Y > 0 ||
+            (triPointA.Y - triPointC.Y == 0 && triPointA.X - triPointC.X < 0)
+        ) {
+            sC = 1;
+        }
+    }
+
+    // *pSA = sA;
+    // *pSB = sB;
+    // *pSC = sC;
+
+    return (sA > 0) && (sB > 0) && (sC > 0);
+}
+
+bool IsInLogicalTriangle(vec2i triLogicalPosition, vec2f pos) {
+    vec2f middle = TriToActualPos(triLogicalPosition);
+    bool triangleIsDown = (triLogicalPosition.X + triLogicalPosition.Y) % 2;
+    if (triangleIsDown) {
+        vec2f topLeft  = middle + vec2f { -0.5f, - HEXAGON_H / 2 };
+        vec2f topRight = middle + vec2f { +0.5f, - HEXAGON_H / 2 };
+        vec2f down     = middle + vec2f {     0, + HEXAGON_H / 2 };
+        return IsInTriangle(topLeft, down, topRight, pos);
+    } else {
+        vec2f bottomLeft  = middle + vec2f { -0.5f, + HEXAGON_H / 2 };
+        vec2f bottomRight = middle + vec2f { +0.5f, + HEXAGON_H / 2 };
+        vec2f up          = middle + vec2f {     0, - HEXAGON_H / 2 };
+        return IsInTriangle(bottomLeft, bottomRight, up, pos);
+    }
+}
+
 generation_link<monster> SelectedMonster;
 
 void Update(color32* array, int width, int height, inputs* ins) {
@@ -341,6 +420,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             IsLevelEditorActive = !IsLevelEditorActive;
 
             if (!IsLevelEditorActive) {
+                CollectStartPositions();
                 InitDistanceArray();
             }
         }
@@ -393,6 +473,24 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         if (IS_KEY_PRESSED(KEY_MERGE)) {
             Menu.ShallMerge = !Menu.ShallMerge;
+        }
+
+        if (IS_KEY_PRESSED(KEY_WALL)) {
+            Menu.WallBuildMode = !Menu.WallBuildMode;
+            Menu.TowerBuildMode = false;
+            Menu.TrapBuildMode = false;
+        }
+
+        if (IS_KEY_PRESSED(KEY_TOWER)) {
+            Menu.TowerBuildMode = !Menu.TowerBuildMode;
+            Menu.WallBuildMode = false;
+            Menu.TrapBuildMode = false;
+        }
+
+        if (IS_KEY_PRESSED(KEY_TRAP)) {
+            Menu.TrapBuildMode = !Menu.TrapBuildMode;
+            Menu.WallBuildMode = false;
+            Menu.TowerBuildMode = false;
         }
 
         if (ins->Mouse.WheelDelta > 0) {
@@ -448,6 +546,147 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             } else if (overValidDiamondMenuSlot && Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X]) {
                 diamondUnderCursor = Menu.Diamonds[diamondMenuHexPos.Y][diamondMenuHexPos.X];
+            }
+
+            // TODO(Tobi): Probably the Wall Build has to happen differently; or I have to decide which of the things have priority and disable other things
+            if (IS_MOUSE_PRESSED(Left) && Menu.WallBuildMode && BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y) && Mana >= CurrentWallCost) {
+                vec2i topLeftBuildingPos = TranslateToTopLeftPosition(mouseTilePos, T_GOAL | T_TOWER | T_TRAP);
+                bool alreadyBuilding = (Ground[mouseTilePos.Y][mouseTilePos.X] & T_WALL) || topLeftBuildingPos != TRANSLATE_NOTHING_FOUND;
+
+                if (!alreadyBuilding) {
+                    
+                    /// Checking for monsters under that position
+                    bool blockedByMonster = false;
+                    inc_bucket(monster_i, monster_, &Monsters) {
+                        if (IsInLogicalTriangle(mouseTilePos, monster_->ActualPosition)) {
+                            blockedByMonster = true;
+                            break;
+                        }
+                    }
+
+                    /// Check if wall blocks path; clear wall again if necessary
+                    if (!blockedByMonster) {
+                        Ground[mouseTilePos.Y][mouseTilePos.X] |= T_WALL;
+                        InitDistanceArray();
+                        bool pathNowBlocked = false;
+                        inc0 (startPos_i,   StartPositionsCount) {
+                            vec2i startPos = StartPositions[startPos_i];
+                            if (!DistanceToGoal[startPos.Y][startPos.X]) {
+                                pathNowBlocked = true;
+                                break;
+                            }
+                        }
+
+                        if (pathNowBlocked) {
+                            // TODO(Tobi): Show info
+                            Ground[mouseTilePos.Y][mouseTilePos.X] &= ~T_WALL;
+                            InitDistanceArray(); // Reset the distance array; TODO(Tobi): Maybe dont overwirte in the first place
+                        } else {
+                            // Actually got build
+                            Mana -= CurrentWallCost;
+                            CurrentWallCost = CurrentWallCost * 1.3f; // TODO(Tobi): Wall cost formula
+
+                            // I have to find a new path for all monsters now I feel;
+                            // TODO(Tobi): I actually can ignore the monsters where the numbers stayed the same
+                        }
+                    }
+                }
+            }
+
+            if (IS_MOUSE_PRESSED(Left) && Menu.TowerBuildMode && BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y) && Mana >= CurrentTowerCost) {
+                vec2i topLeft = TranslateToTopLeftPositionWithoutAnythig(mouseTilePos);
+
+                /// Checking if there already is something there
+                // NOTE(Tobi): It is enough to check all up or down triangles only
+                bool alreadyBuildingHere = 
+                    TranslateToTopLeftPosition(topLeft + vec2i { 0, 0 }, T_GOAL | T_TOWER | T_TRAP) != TRANSLATE_NOTHING_FOUND ||
+                    TranslateToTopLeftPosition(topLeft + vec2i { 2, 0 }, T_GOAL | T_TOWER | T_TRAP) != TRANSLATE_NOTHING_FOUND ||
+                    TranslateToTopLeftPosition(topLeft + vec2i { 1, 1 }, T_GOAL | T_TOWER | T_TRAP) != TRANSLATE_NOTHING_FOUND;
+
+                if (!alreadyBuildingHere) {
+                    /// Checking for monsters under that position
+                    bool blockedByMonster = false;
+                    inc_bucket(monster_i, monster_, &Monsters) {
+                        if (
+                            IsInLogicalTriangle(topLeft + vec2i { 0, 0}, monster_->ActualPosition) ||
+                            IsInLogicalTriangle(topLeft + vec2i { 1, 0}, monster_->ActualPosition) ||
+                            IsInLogicalTriangle(topLeft + vec2i { 2, 0}, monster_->ActualPosition) ||
+                            IsInLogicalTriangle(topLeft + vec2i { 0, 1}, monster_->ActualPosition) ||
+                            IsInLogicalTriangle(topLeft + vec2i { 1, 1}, monster_->ActualPosition) ||
+                            IsInLogicalTriangle(topLeft + vec2i { 2, 1}, monster_->ActualPosition)
+                        ) {
+                            blockedByMonster = true;
+                            break;
+                        }
+                    }
+
+                    /// Check if tower blocks path; clear tower again if necessary
+                    terrain originalTerrain[2][3];
+                    if (!blockedByMonster) {
+                        inc0 (y_i,   2) {
+                            inc0 (x_i,   3) {
+                                originalTerrain[y_i][x_i] = Ground[topLeft.Y + y_i][topLeft.X + x_i];
+                                Ground[topLeft.Y + y_i][topLeft.X + x_i] |= T_WALL;
+                            }
+                        }
+
+                        InitDistanceArray();
+                        bool pathNowBlocked = false;
+                        inc0 (startPos_i,   StartPositionsCount) {
+                            vec2i startPos = StartPositions[startPos_i];
+                            if (!DistanceToGoal[startPos.Y][startPos.X]) {
+                                pathNowBlocked = true;
+                                break;
+                            }
+                        }
+
+                        inc0 (y_i,   2) {
+                            inc0 (x_i,   3) {
+                                Ground[topLeft.Y + y_i][topLeft.X + x_i] = originalTerrain[y_i][x_i];
+                            }
+                        }
+
+                        if (pathNowBlocked) {
+                            // TODO(Tobi): Show info
+                            Ground[mouseTilePos.Y][mouseTilePos.X] &= ~T_WALL;
+                            InitDistanceArray(); // Reset the distance array; TODO(Tobi): Maybe dont overwrite in the first place
+                        } else {
+                            // Actually got build
+                            Ground[topLeft.Y][topLeft.X] |= T_TOWER;
+
+                            Mana -= CurrentTowerCost;
+                            CurrentTowerCost = CurrentTowerCost * 1.3f; // TODO(Tobi): Tower cost formula
+
+                            // I have to find a new path for all monsters now I feel;
+                            // TODO(Tobi): I actually can ignore the monsters where the numbers stayed the same
+                        }
+                    }
+                }
+            }
+
+            if (IS_MOUSE_PRESSED(Left) && Menu.TrapBuildMode && BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y) && Mana >= CurrentTrapCost) {
+                vec2i topLeft = TranslateToTopLeftPositionWithoutAnythig(mouseTilePos);
+
+                /// Checking if there already is something there
+                // NOTE(Tobi): It is enough to check all up or down triangles only
+                bool canBuildHere = 
+                    Ground[topLeft.Y + 0][topLeft.X + 0] == T_PATH &&
+                    Ground[topLeft.Y + 0][topLeft.X + 1] == T_PATH &&
+                    Ground[topLeft.Y + 0][topLeft.X + 2] == T_PATH &&
+                    Ground[topLeft.Y + 1][topLeft.X + 0] == T_PATH &&
+                    Ground[topLeft.Y + 1][topLeft.X + 1] == T_PATH &&
+                    Ground[topLeft.Y + 1][topLeft.X + 2] == T_PATH;
+
+
+                if (canBuildHere) {
+                    Ground[topLeft.Y][topLeft.X] |= T_TRAP;
+
+                    Mana -= CurrentTrapCost;
+                    CurrentTrapCost = CurrentTrapCost * 1.3f; // TODO(Tobi): Tower cost formula
+
+                    // I have to find a new path for all monsters now I feel;
+                    // TODO(Tobi): I actually can ignore the monsters where the numbers stayed the same
+                }
             }
 
             if (IS_MOUSE_PRESSED(Left)) {
@@ -676,20 +915,77 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 Assert(monster_->Health, "Monster should be dead");
 
                 /// React to effects
-                {
-                    if (monster_->PoisonSpeed && FrameCount % POISON_UPDATE_FRAMES == 0) {
-                        monster_->Health -= monster_->PoisonSpeed;
-                        monster_->PoisonSpeed = AtLeast(monster_->PoisonSpeed - MONSTER_POISON_DECREASE_PER_UPDATE, 0.0f);
+                if (monster_->PoisonFrames > 0) {
+                    float reduceAmount = monster_->PoisonAmount / monster_->PoisonFrames;
+                    monster_->Health -= reduceAmount;
+                    monster_->PoisonAmount -= reduceAmount;
 
-                        if (monster_->Health <= 0) {
-                            monster_->Health = 0; // TODO(Tobi): Do I need that?
-                            BucketListRemove(&Monsters, monster_);
-                        }
+                    if (monster_->Health <= 0) {
+                        monster_->Health = 0; // TODO(Tobi): Do I need that?
+                        BucketListRemove(&Monsters, monster_);
                     }
+
+                    --monster_->PoisonFrames;
                 }
 
                 /// Pathfinding and Movement
                 {
+                    // TODO(Tobi): In the future I might update this directly when settign a new wal/tower etc.
+                    // NOTE(Tobi): This is kind of  a fix at the moment; since this will be made again after the wiggle movement
+                    // If the goal is not walkable anymore; I have to set a new goal
+                    // The code here is almost like below, but it uses OldPosition everywhere instead of GoalPosition
+                    if (!DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X]) {
+                        bool triangleIsDown = (monster_->OldPosition.X + monster_->OldPosition.Y) % 2;
+                        int closestDistance = 9999999;
+                        vec2i deltaPos = { 0, 0 };
+
+                        if (triangleIsDown) {
+                            if (monster_->OldPosition.Y > 0 && DistanceToGoal[monster_->OldPosition.Y - 1][monster_->OldPosition.X]) {
+                                int proposedDistance = DistanceToGoal[monster_->OldPosition.Y - 1][monster_->OldPosition.X];
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { 0, -1 };
+                            }
+                        } else {
+                            if (monster_->OldPosition.Y < TILES_Y - 1 && DistanceToGoal[monster_->OldPosition.Y + 1][monster_->OldPosition.X]) {
+                                int proposedDistance = DistanceToGoal[monster_->OldPosition.Y + 1][monster_->OldPosition.X];
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { 0, +1 };
+                            }
+                        }
+
+                        int sameAmount = 1;
+                        
+                        if (monster_->OldPosition.X > 0 && DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X - 1]) {
+                            int proposedDistance = DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X - 1];
+                            if (proposedDistance < closestDistance) {
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { -1, 0 };
+                                sameAmount = 1;
+                            } else if (proposedDistance == closestDistance) {
+                                ++sameAmount;
+                                if (rand() < RAND_MAX / sameAmount) {
+                                    deltaPos = vec2i { -1, 0 };
+                                }
+                            }
+                        }
+                        
+                        if (monster_->OldPosition.X < TILES_X - 1 && DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X + 1]) {
+                            int proposedDistance = DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X + 1];
+                            if (proposedDistance < closestDistance) {
+                                closestDistance = proposedDistance;
+                                deltaPos = vec2i { +1, 0 };
+                                sameAmount = 1;
+                            } else if (proposedDistance == closestDistance) {
+                                ++sameAmount;
+                                if (rand() < RAND_MAX / sameAmount) {
+                                    deltaPos = vec2i { +1, 0 };
+                                }
+                            }
+                        }
+
+                        monster_->GoalPosition = monster_->OldPosition + deltaPos;
+                    }
+
                     if (monster_->MovementT >= 1.0f) {
                         monster_->MovementT -= 1.0f;
 
@@ -754,10 +1050,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                             }
                         }
 
-                        monster_->OldPosition.X = monster_->GoalPosition.X;
-                        monster_->OldPosition.Y = monster_->GoalPosition.Y;
-                        monster_->GoalPosition.X += deltaPos.X;
-                        monster_->GoalPosition.Y += deltaPos.Y;
+                        monster_->OldPosition = monster_->GoalPosition;
+                        monster_->GoalPosition += deltaPos;
                     } else {
                         monster_->MovementT += monster_->Speed;
                     }
@@ -917,6 +1211,55 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                 // TODO(Tobi): This only checks midpoint-midpoint; not edge-edge
                 if (CirclesDoIntersect(target->ActualPosition, target->Radius, projectile_->Position, projectile_->Speed)) {
+
+                    /// Assign effects
+                    // NOTE(Tobi): The effects are assigned before the health reduction so that the mana steal is correct (although almost pointless)
+                    {
+                        /// Poison (Green)
+                        if (projectile_->ColorsCount[DC_GREEN] != 0) {
+                            // TODO(Tobi): This is just adding up the poison damage just like in GC; do I want to copy that
+                            target->PoisonAmount += sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
+                            target->PoisonFrames = DIAMOND_EFFECT_LENGTH;
+                        }
+
+                        // TODO(Tobi): How will adding slow effects (or wound effects) actually work?; I only set a multiplier and that is valid for some amount of time; but what happens if the refresh happens with a different value?
+                        // I could just store a length for different values and take the highest one
+
+                        /// Slow (Blue)
+                        // if (projectile_->ColorsCount[DC_BLUE] != 0) {
+                        //     // TODO(Tobi): Maybe the length also grows and not just the modifier
+                        //     // TODO(Tobi): FORMULA target->SlowFactor += sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
+                        //     target->SlowFrames = DIAMOND_EFFECT_LENGTH;
+                        // }
+
+                        // /// Red (Wounded)
+                        // if (projectile_->ColorsCount[DC_BLUE] != 0) {
+                        //     // TODO(Tobi): Maybe the length also grows and not just the modifier
+                        //     // TODO(Tobi): FORMULA target->WoundedFactor += sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
+                        //     target->WoundedFrames = DIAMOND_EFFECT_LENGTH;
+                        // }
+
+                        /// Magic reduce (Cyan)
+                        if (projectile_->ColorsCount[DC_AQUA] != 0) {
+                            float magicReduce = projectile_->ColorsCount[DC_AQUA] * DIAMOND_LEVEL_1_MAGIC_REDUCE;
+                            target->Magic = AtLeast(target->Magic - magicReduce, 0.0f);
+                        }
+
+                        /// Armor reduce (Purple)
+                        if (projectile_->ColorsCount[DC_PURPLE] != 0) {
+                            float armorReduce = projectile_->ColorsCount[DC_PURPLE] * DIAMOND_LEVEL_1_ARMOR_REDUCE;
+                            target->Armor = AtLeast(target->Armor - armorReduce, 0.0f);
+                        }
+
+                        /// Yellow (Mana Steal)
+                        if (projectile_->ColorsCount[DC_YELLOW] != 0) {
+                            // TODO(Tobi): This is waaaaaaaaaaaaay too much
+                            float manaSteal = projectile_->ColorsCount[DC_YELLOW] * DIAMOND_LEVEL_1_MANA_STEAL;
+                            manaSteal = AtMost(manaSteal, target->Health);
+                            Mana += manaSteal;
+                        }
+                    }
+
                     target->Health -= projectile_->Damage;
                     if (target->Health <= 0) {
                         Mana += target->Mana;
@@ -927,11 +1270,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         // TODO(Tobi): The monster has been killed; do something
                     } else {
                         AudioClipStart(Sounds.Hit, false, 0.2f);
-
-                        /// Assign effects
-                        if (projectile_->ColorsCount[DC_GREEN] != 0) {
-                            target->PoisonSpeed = sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
-                        }
                     }
 
                     Projectiles[projectile_i] = Projectiles[--ProjectileCount];
@@ -971,7 +1309,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        /// Render Grass / Path
+        /// Render Grass / Path / Wall
         inc0 (y_i,   TILES_Y) {
             int evenLineOffset = 1 - (y_i % 2);
             inc0 (x_i,   TILES_X) {
@@ -992,7 +1330,14 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteUp, col);
                     }
                 } else {
-                    if (!(Ground[y_i][x_i] & (T_PATH | T_GOAL))) {
+                    if (Ground[y_i][x_i] & (T_WALL)) {
+                        // Wall
+                        if (triangleIsDown) {
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, DARK_GREY);
+                        } else {
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, DARK_GREY);
+                        }
+                    } else if (!(Ground[y_i][x_i] & (T_PATH | T_GOAL))) {
                         // Grass
                         if (triangleIsDown) {
                             DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, WHITE);
@@ -1316,7 +1661,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 float monsterContextMenuTop = selectedMonster->ActualPosition.Y + drawRectMain.StartY / (float) HEXAGON_A;
 
                 int lines = 3;
-                if (selectedMonster->PoisonSpeed > 0) {
+                if (selectedMonster->PoisonAmount > 0) {
                     ++lines;
                 }
                 if (selectedMonster->Armor > 0) {
@@ -1332,6 +1677,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 snprintf(dummy, ArrayCount(dummy), "Health: %.2f / %.2f", selectedMonster->Health, selectedMonster->MaxHealth);
                 TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop, dummy, WHITE);
 
+                // TODO(Tobi): Modify with slow factor
                 snprintf(dummy, ArrayCount(dummy), "Speed: %.2f", selectedMonster->Speed);
                 TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE);
 
@@ -1349,11 +1695,13 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, AQUA);
                     ++linesAsOfYet;
                 }
-                if (selectedMonster->PoisonSpeed > 0) {
-                    snprintf(dummy, ArrayCount(dummy), "PoisonSpeed: %.2f", selectedMonster->PoisonSpeed);
+                if (selectedMonster->PoisonFrames > 0) {
+                    snprintf(dummy, ArrayCount(dummy), "Poisoned: %.2f", selectedMonster->PoisonAmount);
                     TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, GREEN);
                     ++linesAsOfYet;
                 }
+
+                // TODO(Tobi): Show wounded
             }
         }
 
@@ -1388,6 +1736,52 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 DrawWorldCircle(&drawRectMain, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, RED);
             } else {
                 DrawWorldCircle(&drawRectMenuDiamonds, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, BLUE);
+            }
+        }
+
+        /// Render wall highlight
+        if (Menu.WallBuildMode) {
+            if (BoxContainsInEx(0, 0, TILES_X, TILES_Y, mouseTilePos.X, mouseTilePos.Y)) {
+                vec2f middle = TriToActualPos(mouseTilePos);
+                bool triangleIsDown = (mouseTilePos.X + mouseTilePos.Y) % 2;
+                if (triangleIsDown) {
+                    middle += vec2f { 0, 1 / 3.0f };
+                    vec2f topLeft  = middle + vec2f { -0.5f, - HEXAGON_H / 2 };
+                    vec2f topRight = middle + vec2f { +0.5f, - HEXAGON_H / 2 };
+                    vec2f down     = middle + vec2f {     0, + HEXAGON_H / 2 };
+                    DrawWorldLineThick(&drawRectMain, topLeft, topRight, 1, WHITE);
+                    DrawWorldLineThick(&drawRectMain, topRight, down, 1, WHITE);
+                    DrawWorldLineThick(&drawRectMain, down, topLeft, 1, WHITE);
+                } else {
+                    vec2f bottomLeft  = middle + vec2f { -0.5f, + HEXAGON_H / 2 };
+                    vec2f bottomRight = middle + vec2f { +0.5f, + HEXAGON_H / 2 };
+                    vec2f up          = middle + vec2f {     0, - HEXAGON_H / 2 };
+                    DrawWorldLineThick(&drawRectMain, bottomLeft, bottomRight, 1, WHITE);
+                    DrawWorldLineThick(&drawRectMain, bottomRight, up, 1, WHITE);
+                    DrawWorldLineThick(&drawRectMain, up, bottomLeft, 1, WHITE);
+                }
+            }
+        }
+
+        // Render hex highlight
+        if (Menu.TowerBuildMode || Menu.TrapBuildMode) {
+            vec2i tilePos = TranslateToTopLeftPositionWithoutAnythig(mouseTilePos);
+            if (tilePos != TRANSLATE_NOTHING_FOUND) {
+                vec2f actualPos = TriToActualPos(tilePos);
+                
+                vec2f topLeftPos     = actualPos + vec2f {  0.0f, -2 / 3.0f * HEXAGON_H };
+                vec2f topRightPos    = actualPos + vec2f {  1.0f, -2 / 3.0f * HEXAGON_H };
+                vec2f rightPos       = actualPos + vec2f {  1.5f, +1 / 3.0f * HEXAGON_H };
+                vec2f bottomLeftPos  = actualPos + vec2f {  0.0f, +4 / 3.0f * HEXAGON_H };
+                vec2f bottomRightPos = actualPos + vec2f {  1.0f, +4 / 3.0f * HEXAGON_H };
+                vec2f leftPos        = actualPos + vec2f { -0.5f, +1 / 3.0f * HEXAGON_H };
+
+                DrawWorldLineThick(&drawRectMain, topLeftPos, topRightPos, 3, WHITE);
+                DrawWorldLineThick(&drawRectMain, topRightPos, rightPos, 3, WHITE);
+                DrawWorldLineThick(&drawRectMain, rightPos, bottomRightPos, 3, WHITE);
+                DrawWorldLineThick(&drawRectMain, bottomRightPos, bottomLeftPos, 3, WHITE);
+                DrawWorldLineThick(&drawRectMain, bottomLeftPos, leftPos, 3, WHITE);
+                DrawWorldLineThick(&drawRectMain, leftPos, topLeftPos, 3, WHITE);
             }
         }
 

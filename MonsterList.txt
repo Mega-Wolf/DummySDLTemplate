@@ -1,0 +1,11 @@
+Monster List:
+- Swarmling
+- Reaver
+- Giant
+- Shield generator
+- Tower blocker
+- Shaman
+- Wall/Tower crusher
+- Enhancer
+- Healer
+- 

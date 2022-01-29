@@ -360,6 +360,10 @@ void DrawWorldLine(draw_rect* drawRect, float startX, float startY, float endX, 
     DrawScreenLine(drawRect, RoundFloatToInt(HEXAGON_A * startX), RoundFloatToInt(HEXAGON_A * startY), RoundFloatToInt(HEXAGON_A * endX), RoundFloatToInt(HEXAGON_A * endY), col);
 }
 
+void DrawWorldLine(draw_rect* drawRect, vec2f start, vec2f end, color32 col) {
+    DrawWorldLine(drawRect, start.X, start.Y, end.X, end.Y, col);
+}
+
 void DrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float endX, float endY, int pixelThickness, color32 col) {
     int intStartX = RoundFloatToInt(HEXAGON_A * startX);
     int intStartY = RoundFloatToInt(HEXAGON_A * startY);
@@ -367,6 +371,10 @@ void DrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float e
     int intEndY = RoundFloatToInt(HEXAGON_A * endY);
 
     DrawScreenLineThick(drawRect, intStartX, intStartY, intEndX, intEndY, (float) pixelThickness, col);
+}
+
+void DrawWorldLineThick(draw_rect* drawRect, vec2f start, vec2f end, int pixelThickness, color32 col) {
+    DrawWorldLineThick(drawRect, start.X, start.Y, end.X, end.Y, pixelThickness, col);
 }
 
 void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
