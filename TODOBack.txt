@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 37,
+	"RunningNumber": 38,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -62,14 +62,6 @@
 		{
 			"ID": "00000004",
 			"Description": "Focus a monster (make it top priority)",
-			"Date": "0000-00-00",
-			"Version": "0.0.1",
-			"Group": "Game",
-			"Type": "+"
-		},
-		{
-			"ID": "00000005",
-			"Description": "Choose tower priority",
 			"Date": "0000-00-00",
 			"Version": "0.0.1",
 			"Group": "Game",
@@ -298,6 +290,14 @@
 			"Version": "0.0.0",
 			"Group": " xxx ",
 			"Type": "+"
+		},
+		{
+			"ID": "00000037",
+			"Description": "UI for choosing priority",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
 		}
 	],
 	"Finished": [
@@ -321,6 +321,14 @@
 			"ID": "00000033",
 			"Description": "In-game building - traps",
 			"Date": "2022-01-28",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000005",
+			"Description": "Choose tower priority (at least programmatically)",
+			"Date": "2022-01-29",
 			"Version": "0.0.1",
 			"Group": "Game",
 			"Type": "+"

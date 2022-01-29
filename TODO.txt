@@ -1,12 +1,12 @@
 _____________________ 0.0.0: "" _____________________
 00000035: + 0000-00-00 0.0.0 " xxx "     In-game building; overlays are a bit off
 00000036: + 0000-00-00 0.0.0 " xxx "     Separate in-game building fromeditor stuff
+00000037: + 0000-00-00 0.0.0 " xxx "     UI for choosing priority
 
 _____________________ 0.0.1: "Super basic workings" _____________________
 00000000: + 0000-00-00 0.0.1 "Sprites"     Sprites for diamond effects (on the monsters)
 00000003: > 0000-00-00 0.0.1 "Game"     Correctly implement traps (stronger effects, less power)
 00000004: + 0000-00-00 0.0.1 "Game"     Focus a monster (make it top priority)
-00000005: + 0000-00-00 0.0.1 "Game"     Choose tower priority
 00000007: + 0000-00-00 0.0.1 "Sprites"     Cogwheel sprites (5 different levels for now)
 00000008: + 0000-00-00 0.0.1 "Sprites"     Cogwheel sprites (support 2 or even three different colours)
 

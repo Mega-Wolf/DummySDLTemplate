@@ -37,7 +37,7 @@ struct button {
     bool Toggled;
 };
 
-#define PLATFORM_KEYBOARD_BUTTON_COUNT 20
+#define PLATFORM_KEYBOARD_BUTTON_COUNT 30
 union keyboard {
     struct {
         button Up;
@@ -48,6 +48,17 @@ union keyboard {
         button Enter;
         button Backspace;
         button Escape;
+
+        button Num0;
+        button Num1;
+        button Num2;
+        button Num3;
+        button Num4;
+        button Num5;
+        button Num6;
+        button Num7;
+        button Num8;
+        button Num9;
 
         button F1;
         button F2;

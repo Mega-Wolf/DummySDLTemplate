@@ -165,6 +165,10 @@ int MonsterWaveSpeedEnd;
 #define KEY_TOWER F8
 #define KEY_TRAP F9
 
+#define KEY_PRIO_GOAL Num1
+#define KEY_PRIO_LEAST_HP Num2
+#define KEY_PRIO_RANDOM Num3
+
 bool ShowPathfinding;
 
 int ShakeFrames;

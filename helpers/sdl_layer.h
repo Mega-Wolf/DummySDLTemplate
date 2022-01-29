@@ -113,6 +113,17 @@ int main(int argc, char* argv[]) {
         ProcessKeyboard(&Inputs.Keyboard.Backspace, keyboardStates[SDL_SCANCODE_BACKSPACE]);
         ProcessKeyboard(&Inputs.Keyboard.Escape,    keyboardStates[SDL_SCANCODE_ESCAPE]);
 
+        ProcessKeyboard(&Inputs.Keyboard.Num0, keyboardStates[SDL_SCANCODE_0]);
+        ProcessKeyboard(&Inputs.Keyboard.Num1,  keyboardStates[SDL_SCANCODE_1]);
+        ProcessKeyboard(&Inputs.Keyboard.Num2,  keyboardStates[SDL_SCANCODE_2]);
+        ProcessKeyboard(&Inputs.Keyboard.Num3,  keyboardStates[SDL_SCANCODE_3]);
+        ProcessKeyboard(&Inputs.Keyboard.Num4,  keyboardStates[SDL_SCANCODE_4]);
+        ProcessKeyboard(&Inputs.Keyboard.Num5,  keyboardStates[SDL_SCANCODE_5]);
+        ProcessKeyboard(&Inputs.Keyboard.Num6,  keyboardStates[SDL_SCANCODE_6]);
+        ProcessKeyboard(&Inputs.Keyboard.Num7,  keyboardStates[SDL_SCANCODE_7]);
+        ProcessKeyboard(&Inputs.Keyboard.Num8,  keyboardStates[SDL_SCANCODE_8]);
+        ProcessKeyboard(&Inputs.Keyboard.Num9,  keyboardStates[SDL_SCANCODE_9]);
+
         ProcessKeyboard(&Inputs.Keyboard.F1,  keyboardStates[SDL_SCANCODE_F1]);
         ProcessKeyboard(&Inputs.Keyboard.F2,  keyboardStates[SDL_SCANCODE_F2]);
         ProcessKeyboard(&Inputs.Keyboard.F3,  keyboardStates[SDL_SCANCODE_F3]);

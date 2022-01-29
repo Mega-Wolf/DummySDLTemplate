@@ -19,6 +19,14 @@ enum diamond_color {
     DC_AMOUNT
 };
 
+enum shooting_priority {
+    SP_CLOSEST_TO_GOAL,
+    SP_LEAST_HEALTH,
+    SP_RANDOM,
+
+    SP_AMOUNT
+};
+
 color32 DiamondColors[DC_AMOUNT] = {
     WHITE,
     YELLOW,
@@ -33,6 +41,8 @@ color32 DiamondColors[DC_AMOUNT] = {
 struct diamond {
     unsigned int Generation;
     unsigned int LastGeneration;
+
+    shooting_priority Priority;
     
     bool IsInField;
 
