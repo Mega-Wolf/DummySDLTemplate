@@ -52,14 +52,6 @@
 			"Type": "+"
 		},
 		{
-			"ID": "00000003",
-			"Description": "Correctly implement traps (stronger effects, less power)",
-			"Date": "0000-00-00",
-			"Version": "0.0.1",
-			"Group": "Game",
-			"Type": ">"
-		},
-		{
 			"ID": "00000007",
 			"Description": "Cogwheel sprites (5 different levels for now)",
 			"Date": "0000-00-00",
@@ -332,6 +324,14 @@
 			"Version": "0.0.1",
 			"Group": "Game",
 			"Type": "+"
+		},
+		{
+			"ID": "00000003",
+			"Description": "Correctly implement traps (stronger effects, less power)",
+			"Date": "2022-01-29",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": ">"
 		}
 	]
 }

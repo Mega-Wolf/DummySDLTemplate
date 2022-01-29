@@ -5,7 +5,6 @@ _____________________ 0.0.0: "" _____________________
 
 _____________________ 0.0.1: "Super basic workings" _____________________
 00000000: + 0000-00-00 0.0.1 "Sprites"     Sprites for diamond effects (on the monsters)
-00000003: > 0000-00-00 0.0.1 "Game"     Correctly implement traps (stronger effects, less power)
 00000007: + 0000-00-00 0.0.1 "Sprites"     Cogwheel sprites (5 different levels for now)
 00000008: + 0000-00-00 0.0.1 "Sprites"     Cogwheel sprites (support 2 or even three different colours)
 

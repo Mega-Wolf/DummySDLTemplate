@@ -1239,9 +1239,17 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 newProjectile->Speed = PROJECTILE_SPEED;
                 newProjectile->Target = GenerationLinkCreate(target);
 
+                // TODO(Tobi): The effect multiplier for traps won't work like that in the future
+                int colorFactor = 1;
+                if (Ground[diamond_->TilePositionTopLeft.Y][diamond_->TilePositionTopLeft.X] & T_TRAP) {
+                    // NOTE(Tobi): Double effects if in trap + only half damage
+                    colorFactor = 2;
+                    newProjectile->Damage /= 2.0f;
+                }
+
                 // TODO(Tobi): Are the colours even important for projectiles if I give them their damage and their effect anyway?
                 inc0 (color_i,   DC_AMOUNT) {
-                    newProjectile->ColorsCount[color_i] = diamond_->ColorsCount[color_i];
+                    newProjectile->ColorsCount[color_i] = diamond_->ColorsCount[color_i] * colorFactor;
                 }
 
                 float randomAngle = (rand() / (float)(RAND_MAX + 1)) * 2 * PI;
