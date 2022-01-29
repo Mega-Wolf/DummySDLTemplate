@@ -60,14 +60,6 @@
 			"Type": ">"
 		},
 		{
-			"ID": "00000004",
-			"Description": "Focus a monster (make it top priority)",
-			"Date": "0000-00-00",
-			"Version": "0.0.1",
-			"Group": "Game",
-			"Type": "+"
-		},
-		{
 			"ID": "00000007",
 			"Description": "Cogwheel sprites (5 different levels for now)",
 			"Date": "0000-00-00",
@@ -328,6 +320,14 @@
 		{
 			"ID": "00000005",
 			"Description": "Choose tower priority (at least programmatically)",
+			"Date": "2022-01-29",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000004",
+			"Description": "Focus a monster (make it top priority)",
 			"Date": "2022-01-29",
 			"Version": "0.0.1",
 			"Group": "Game",

@@ -1150,71 +1150,82 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             /// Find target monster
             monster* target = nullptr;
-            switch (diamond_->Priority) {
-                case SP_CLOSEST_TO_GOAL: {
-                    float closestDistanceToGoal = 999999999.0f;
-                    inc_bucket (monster_i, monster_, &Monsters) {
-                        Assert(monster_->Health > 0, "Monster should be inactive");
-
-                        if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
-                            int newDistanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
-                            int oldDistanceToGoal;
-                            if (monster_->OldPosition.X == -1 || monster_->OldPosition.X == TILES_X || monster_->OldPosition.Y == -1 || monster_->OldPosition.Y == TILES_Y) {
-                                oldDistanceToGoal = newDistanceToGoal + 1;
-                            } else {
-                                oldDistanceToGoal = DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X];
-                            }
-
-                            float t = monster_->MovementT;
-                            float distanceToGoal = t * newDistanceToGoal + (1 - t) *  oldDistanceToGoal;
-
-                            if (distanceToGoal < closestDistanceToGoal) {
-                                closestDistanceToGoal = distanceToGoal;
-                                target = monster_;
-                            }
-                        }
+            {
+                monster* selectedMonster = GenerationLinkResolve(SelectedMonster);
+                if (selectedMonster) {
+                    if (CirclesDoIntersect(selectedMonster->ActualPosition, selectedMonster->Radius, diamond_->ActualPosition, diamondRange)) {
+                        target = selectedMonster;
                     }
-                } break;
-                case SP_LEAST_HEALTH: {
-                    float leastHealth = 999999999.0f;
-                    inc_bucket (monster_i, monster_, &Monsters) {
-                        Assert(monster_->Health > 0, "Monster should be inactive");
+                }
+            
+                if (!target) {
+                    switch (diamond_->Priority) {
+                        case SP_CLOSEST_TO_GOAL: {
+                            float closestDistanceToGoal = 999999999.0f;
+                            inc_bucket (monster_i, monster_, &Monsters) {
+                                Assert(monster_->Health > 0, "Monster should be inactive");
 
-                        if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
-                            if (monster_->Health < leastHealth) {
-                                leastHealth = monster_->Health;
-                                target = monster_;
+                                if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
+                                    int newDistanceToGoal = DistanceToGoal[monster_->GoalPosition.Y][monster_->GoalPosition.X];
+                                    int oldDistanceToGoal;
+                                    if (monster_->OldPosition.X == -1 || monster_->OldPosition.X == TILES_X || monster_->OldPosition.Y == -1 || monster_->OldPosition.Y == TILES_Y) {
+                                        oldDistanceToGoal = newDistanceToGoal + 1;
+                                    } else {
+                                        oldDistanceToGoal = DistanceToGoal[monster_->OldPosition.Y][monster_->OldPosition.X];
+                                    }
+
+                                    float t = monster_->MovementT;
+                                    float distanceToGoal = t * newDistanceToGoal + (1 - t) *  oldDistanceToGoal;
+
+                                    if (distanceToGoal < closestDistanceToGoal) {
+                                        closestDistanceToGoal = distanceToGoal;
+                                        target = monster_;
+                                    }
+                                }
                             }
-                        }
-                    }
-                } break;
-                case SP_RANDOM: {
-                    // NOTE(Tobi): I iterate over the whole thing twice; first I count how many I would hit and then again to grab one; this could be made easier by copying out the ones I hit and then just grabbing one
+                        } break;
+                        case SP_LEAST_HEALTH: {
+                            float leastHealth = 999999999.0f;
+                            inc_bucket (monster_i, monster_, &Monsters) {
+                                Assert(monster_->Health > 0, "Monster should be inactive");
 
-                    int monstersInRange = 0;
-                    inc_bucket (monster_i, monster_, &Monsters) {
-                        Assert(monster_->Health > 0, "Monster should be inactive");
-                        if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
-                            ++monstersInRange;
-                        }
-                    }
-                    if (monstersInRange == 0) { break; }
-
-                    int chosenIndex = rand() % monstersInRange;
-
-                    int chosen_i = 0;
-                    inc_bucket (monster_i, monster_, &Monsters) {
-                        Assert(monster_->Health > 0, "Monster should be inactive");
-                        if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
-                            if (chosen_i == chosenIndex) {
-                                target = monster_;
-                                break;
+                                if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
+                                    if (monster_->Health < leastHealth) {
+                                        leastHealth = monster_->Health;
+                                        target = monster_;
+                                    }
+                                }
                             }
-                            ++chosen_i;
-                        }
+                        } break;
+                        case SP_RANDOM: {
+                            // NOTE(Tobi): I iterate over the whole thing twice; first I count how many I would hit and then again to grab one; this could be made easier by copying out the ones I hit and then just grabbing one
+
+                            int monstersInRange = 0;
+                            inc_bucket (monster_i, monster_, &Monsters) {
+                                Assert(monster_->Health > 0, "Monster should be inactive");
+                                if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
+                                    ++monstersInRange;
+                                }
+                            }
+                            if (monstersInRange == 0) { break; }
+
+                            int chosenIndex = rand() % monstersInRange;
+
+                            int chosen_i = 0;
+                            inc_bucket (monster_i, monster_, &Monsters) {
+                                Assert(monster_->Health > 0, "Monster should be inactive");
+                                if (CirclesDoIntersect(monster_->ActualPosition, monster_->Radius, diamond_->ActualPosition, diamondRange)) {
+                                    if (chosen_i == chosenIndex) {
+                                        target = monster_;
+                                        break;
+                                    }
+                                    ++chosen_i;
+                                }
+                            }
+                        } break;
                     }
-                } break;
-            }            
+                }
+            } 
 
             /// Create projectile if target monster
             if (target) {
