@@ -1,6 +1,6 @@
 _____________________ 0.0.0: "" _____________________
 00000035: + 0000-00-00 0.0.0 " xxx "     In-game building; overlays are a bit off
-00000036: + 0000-00-00 0.0.0 " xxx "     Separate in-game building fromeditor stuff
+00000036: + 0000-00-00 0.0.0 " xxx "     Separate in-game building from editor stuff
 00000037: + 0000-00-00 0.0.0 " xxx "     UI for choosing priority
 
 _____________________ 0.0.1: "Super basic workings" _____________________

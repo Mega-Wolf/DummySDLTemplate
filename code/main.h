@@ -9,29 +9,10 @@
 #include "bitmap.h"
 #include "waveform.h"
 
-enum terrain {
-    T_GRASS = 0,
-    T_PATH = 1,
-    T_TOWER = 2,
-    T_GOAL = 4,
-    T_TRAP = 8,
-    T_WALL = 16,
-};
-
-int FrameCount;
-
-terrain Ground[TILES_Y][TILES_X];
-
-bool IsLevelEditorActive = true; // TODO(Tobi): This is done so the game is paused at the beginning
-
-int StartPositionsCount;
-vec2i StartPositions[TILES_Y * 2 + (TILES_X - 2) * 2];
+#define SQRT_3 1.73205080757f
+#define HEXAGON_H (SQRT_3 / 2)
 
 #define MONSTER_COUNT_MAX 100
-monster _MonsterList[MONSTER_COUNT_MAX];
-bucket_list<monster> Monsters = BucketListInit(ArrayCount(_MonsterList), _MonsterList);
-
-int DistanceToGoal[TILES_Y][TILES_X];
 
 #define MENU_DIAMONDS_Y 7
 #define MENU_DIAMONDS_X 3 // TODO(Tobi): Remove
@@ -41,6 +22,33 @@ int DistanceToGoal[TILES_Y][TILES_X];
 #define MENU_OFFSET_X (GRID_SIZE * TILES_X)
 
 #define DRAG_DROP_POSITION vec2i { 99999, 99999 }
+
+#define WAVE_COUNT 4
+#define WAVE_FRAME_LENGTH (FPS * 20)
+#define MONSTER_WAVE_FAST_SPEED 7
+
+#define KEY_TOGGLE_EDITOR F1
+#define KEY_BUY F2
+#define KEY_LEVEL_UP F3
+#define KEY_MERGE F4
+#define KEY_SPEED_WAVE F5
+#define KEY_TOGGLE_SHOW_PATHFINDING F6
+#define KEY_WALL F7
+#define KEY_TOWER F8
+#define KEY_TRAP F9
+
+#define KEY_PRIO_GOAL Num1
+#define KEY_PRIO_LEAST_HP Num2
+#define KEY_PRIO_RANDOM Num3
+
+enum terrain {
+    T_GRASS = 0,
+    T_PATH = 1,
+    T_TOWER = 2,
+    T_GOAL = 4,
+    T_TRAP = 8,
+    T_WALL = 16,
+};
 
 struct menu_data {
     int SelectedBuyingLevel;
@@ -59,8 +67,6 @@ struct menu_data {
         bool WasInField;
     } DragDrop;
 };
-
-menu_data Menu;
 
 struct monster_wave {
     int FullCount;
@@ -83,10 +89,22 @@ struct monster_wave {
 
 };
 
-#define WAVE_COUNT 4
+int FrameCount;
+terrain Ground[TILES_Y][TILES_X];
+bool IsLevelEditorActive = true; // TODO(Tobi): This is done so the game is paused at the beginning
 
-#define WAVE_FRAME_LENGTH (FPS * 20)
+int StartPositionsCount;
+vec2i StartPositions[TILES_Y * 2 + (TILES_X - 2) * 2];
 
+monster _MonsterList[MONSTER_COUNT_MAX];
+bucket_list<monster> Monsters = BucketListInit(ArrayCount(_MonsterList), _MonsterList);
+
+int DistanceToGoal[TILES_Y][TILES_X];
+
+menu_data Menu;
+
+int MonsterWaveFrames;
+int MonsterWaveSpeedEnd;
 monster_wave MonsterWaves[WAVE_COUNT] = {
     {
         10,
@@ -150,28 +168,5 @@ monster_wave MonsterWaves[WAVE_COUNT] = {
     }
 };
 
-int MonsterWaveFrames;
-int MonsterWaveSpeedEnd;
-
-#define MONSTER_WAVE_FAST_SPEED 7
-
-#define KEY_TOGGLE_EDITOR F1
-#define KEY_BUY F2
-#define KEY_LEVEL_UP F3
-#define KEY_MERGE F4
-#define KEY_SPEED_WAVE F5
-#define KEY_TOGGLE_SHOW_PATHFINDING F6
-#define KEY_WALL F7
-#define KEY_TOWER F8
-#define KEY_TRAP F9
-
-#define KEY_PRIO_GOAL Num1
-#define KEY_PRIO_LEAST_HP Num2
-#define KEY_PRIO_RANDOM Num3
-
 bool ShowPathfinding;
-
 int ShakeFrames;
-
-#define SQRT_3 1.73205080757f
-#define HEXAGON_H (SQRT_3 / 2)

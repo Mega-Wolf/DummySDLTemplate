@@ -6,6 +6,21 @@
 
 #include "maths.h"
 
+// TODO(Tobi): This doesn't fit with the animation since the bar will now be bigger instead of going slower
+#define SOCKETING_COOLDOWN 200;
+#define DIAMOND_LEVEL_1_RANGE 4.0f
+#define DIAMOND_LEVEL_1_COOLDOWN 60
+#define DIAMOND_LEVEL_1_DAMAGE 10.0f
+#define DIAMOND_LEVEL_1_MAGIC_REDUCE 10.0f
+#define DIAMOND_LEVEL_1_ARMOR_REDUCE 10.0f
+#define DIAMOND_LEVEL_1_MANA_STEAL 10.0f
+
+#define DIAMOND_EFFECT_LENGTH (3 * FPS) // NOTE(Tobi): At the moment, poison, slow and wounded all last the same amount of time
+
+#define DIAMOND_LEVEL_1_POISON 5.0f
+
+#define PROJECTILE_SPEED 0.4f
+
 enum diamond_color {
     DC_WHITE,
     DC_YELLOW,
@@ -109,25 +124,8 @@ struct projectile {
 diamond _DiamondList[TILES_Y * TILES_X];
 bucket_list<diamond> Diamonds = BucketListInit(ArrayCount(_DiamondList), _DiamondList);
 
-
 int ProjectileCount;
 projectile Projectiles[TILES_Y * TILES_X];
-
-// TODO(Tobi): This doesn't fit with the animation since the bar will now be bigger instead of going slower
-#define SOCKETING_COOLDOWN 200;
-#define DIAMOND_LEVEL_1_RANGE 4.0f
-#define DIAMOND_LEVEL_1_COOLDOWN 60
-#define DIAMOND_LEVEL_1_DAMAGE 10.0f
-#define DIAMOND_LEVEL_1_MAGIC_REDUCE 10.0f
-#define DIAMOND_LEVEL_1_ARMOR_REDUCE 10.0f
-#define DIAMOND_LEVEL_1_MANA_STEAL 10.0f
-
-#define DIAMOND_EFFECT_LENGTH (3 * FPS) // NOTE(Tobi): At the moment, poison, slow and wounded all last the same amount of time
-
-#define DIAMOND_LEVEL_1_POISON 5.0f
-
-#define PROJECTILE_SPEED 0.4f
-
 
 float Mana; // NOTE(Tobi): I have this as float at the moment, so that I can have fractions of mana (do I want that?)
 float ManaMergeCost = 240.0f; // TODO(Tobi): This will probably be set once at the start of the level
@@ -155,4 +153,3 @@ float ManaCalcBuyCost(int buyingLevel) {
     float totalCost = manaMerging + manaDiamondCost;
     return totalCost;
 }
-
