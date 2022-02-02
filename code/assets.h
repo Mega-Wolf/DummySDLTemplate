@@ -39,6 +39,9 @@
     ASSET_SPRITE_ARRAY_NAMES(Monster, 8, "assets\\sprites\\MonsterUp.bmp", "assets\\sprites\\MonsterUpRight.bmp", "assets\\sprites\\MonsterRight.bmp", "assets\\sprites\\MonsterDownRight.bmp", "assets\\sprites\\MonsterDown.bmp", "assets\\sprites\\MonsterDownLeft.bmp", "assets\\sprites\\MonsterLeft.bmp", "assets\\sprites\\MonsterUpLeft.bmp") \
     ASSET_SPRITE_ARRAY_BITFIELD(PathUp, "assets\\sprites\\hexagon\\Up_", 3, ".bmp", "Bottom", "Left", "Right") \
     ASSET_SPRITE_ARRAY_BITFIELD(PathDown, "assets\\sprites\\hexagon\\Down_", 3, ".bmp", "Top", "Left", "Right") \
+    ASSET_SPRITE(BloodTex, "assets\\sprites\\Blood.bmp") \
+    ASSET_SPRITE(PoisonTex, "assets\\sprites\\Poison.bmp") \
+    ASSET_SPRITE(IceTex, "assets\\sprites\\Ice.bmp") \
 )
 
 /// Particles

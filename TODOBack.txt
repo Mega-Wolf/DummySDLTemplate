@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 38,
+	"RunningNumber": 43,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -24,17 +24,13 @@
 		{
 			"Version": "0.0.0",
 			"Description": ""
+		},
+		{
+			"Version": "0.0.6",
+			"Description": "From here on, mainly content"
 		}
 	],
 	"Tasks": [
-		{
-			"ID": "00000000",
-			"Description": "Sprites for diamond effects (on the monsters)",
-			"Date": "0000-00-00",
-			"Version": "0.0.1",
-			"Group": "Sprites",
-			"Type": "+"
-		},
 		{
 			"ID": "00000001",
 			"Description": "Swarmling dummy sprites (6 directions)",
@@ -53,7 +49,7 @@
 		},
 		{
 			"ID": "00000007",
-			"Description": "Cogwheel sprites (5 different levels for now)",
+			"Description": "Dummy Cogwheel sprites (5 different levels for now) (Shall I Do more high-res and just rotate the stuff; or specifically rotated; quite some work)",
 			"Date": "0000-00-00",
 			"Version": "0.0.1",
 			"Group": "Sprites",
@@ -61,7 +57,7 @@
 		},
 		{
 			"ID": "00000008",
-			"Description": "Cogwheel sprites (support 2 or even three different colours)",
+			"Description": "Dummy Cogwheel sprites (support 2 or even three different colours)",
 			"Date": "0000-00-00",
 			"Version": "0.0.1",
 			"Group": "Sprites",
@@ -69,7 +65,7 @@
 		},
 		{
 			"ID": "00000009",
-			"Description": "OpenGL port",
+			"Description": "OpenGL port (not sure if this will make some stuff a bit more difficult; somehow make modular)",
 			"Date": "0000-00-00",
 			"Version": "0.0.2",
 			"Group": "Backend",
@@ -77,7 +73,7 @@
 		},
 		{
 			"ID": "00000010",
-			"Description": "2 more buildings",
+			"Description": "2 more buildings (something doing strong attacks and something doing a lot of attacks) (but I think I want another two more)",
 			"Date": "0000-00-00",
 			"Version": "0.0.4",
 			"Group": "Design",
@@ -93,7 +89,7 @@
 		},
 		{
 			"ID": "00000012",
-			"Description": "Better background sprites",
+			"Description": "Better background sprites (maybe a lot of that will be done via shaders? That would be quite nice; for that I definitely need shader recompile BEFORE (which shouldn't be too difficult); one could create an image out of the shader stuff and then could actually keep that generated image instead of rerendering every frame)",
 			"Date": "0000-00-00",
 			"Version": "0.0.3",
 			"Group": "Sprites",
@@ -133,7 +129,7 @@
 		},
 		{
 			"ID": "00000017",
-			"Description": "2 boss monsters",
+			"Description": "2 boss monsters (spawning swarmlings, destroying walls?, shielded stuff)",
 			"Date": "0000-00-00",
 			"Version": "0.0.3",
 			"Group": "Design",
@@ -197,7 +193,7 @@
 		},
 		{
 			"ID": "00000025",
-			"Description": "Balance Aqua",
+			"Description": "Balance Aqua (I don't really have that much stuff using that at that point, but probably just take the same as purple)",
 			"Date": "0000-00-00",
 			"Version": "0.0.5",
 			"Group": "Design",
@@ -253,7 +249,7 @@
 		},
 		{
 			"ID": "00000034",
-			"Description": "Wall Sprites (at least up and down, bugt more will be needed in the future for 3d effect)",
+			"Description": "Wall Sprites (at least up and down, but more will be needed in the future for 3d effect)",
 			"Date": "0000-00-00",
 			"Version": "0.0.2",
 			"Group": "Sprites",
@@ -265,19 +261,59 @@
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
 			"Group": " xxx ",
-			"Type": "+"
+			"Type": "~"
 		},
 		{
 			"ID": "00000036",
-			"Description": "Separate in-game building from editor stuff",
+			"Description": "Separate in-game building from editor stuff (otherwise, this always gets saved as well)",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": ">"
+		},
+		{
+			"ID": "00000037",
+			"Description": "UI for choosing diamond priority",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
 			"Group": " xxx ",
 			"Type": "+"
 		},
 		{
-			"ID": "00000037",
-			"Description": "UI for choosing priority",
+			"ID": "00000038",
+			"Description": "Better buildings sprites (sprites for wall, tower, trap and future buildings (How do I want to have that arranged))",
+			"Date": "0000-00-00",
+			"Version": "0.0.2",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000039",
+			"Description": "Rethink the layout of the right menu, do I really want all that stuff in hexagons; that doesn't look as cool as I thought",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		},
+		{
+			"ID": "00000040",
+			"Description": "Monsters, that use the Magic Stat (several, e.g. inhibiting my towers; providing a shield for others; I want to have a few more)",
+			"Date": "0000-00-00",
+			"Version": "0.0.6",
+			"Group": "Design",
+			"Type": "+"
+		},
+		{
+			"ID": "00000041",
+			"Description": "Think about a world map visualisation (one big thing?; splitted into hexagons? or cogwheels?)",
+			"Date": "0000-00-00",
+			"Version": "0.0.4",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000042",
+			"Description": "Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
 			"Group": " xxx ",
@@ -332,6 +368,14 @@
 			"Version": "0.0.1",
 			"Group": "Game",
 			"Type": ">"
+		},
+		{
+			"ID": "00000000",
+			"Description": "Dummy Sprites for diamond effects (on the monsters) (Poisoned (poison droplet), wounded (blood droplet), Slowed (snowflake)) (Do I really want to have two droplets?)",
+			"Date": "2022-02-02",
+			"Version": "0.0.1",
+			"Group": "Sprites",
+			"Type": "+"
 		}
 	]
 }

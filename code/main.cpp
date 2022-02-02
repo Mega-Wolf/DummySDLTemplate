@@ -1292,6 +1292,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     // NOTE(Tobi): The effects are assigned before the health reduction so that the mana steal is correct (although almost pointless)
                     {
                         /// Poison (Green)
+                        // TODO(Tobi): Maybe poison should work more similar to slow and wounded (below)
                         if (projectile_->ColorsCount[DC_GREEN] != 0) {
                             // TODO(Tobi): This is just adding up the poison damage just like in GC; do I want to copy that
                             target->PoisonAmount += sqrtf(1.0f + (projectile_->ColorsCount[DC_GREEN] - 1) /100.0f) * DIAMOND_LEVEL_1_POISON;
@@ -1623,10 +1624,43 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X, monster_->ActualPosition.Y, MonsterSprites[directionInt], monster_->Color);
             #endif
 
-            /// Render Monster Healthbar
-            if (monster_->Health < monster_->MaxHealth) {
-                DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f, monster_->ActualPosition.Y + 0.5f, monster_->Health / monster_->MaxHealth, 1 / 6.0f, RED);
-                DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK);
+            /// Render Monster Healthbar and effect sprites
+            {
+                monster_->WoundedFrames = 1;
+                monster_->SlowFrames = 1;
+
+                int effects = 0;
+                if (monster_->PoisonFrames > 0) {
+                    ++effects;
+                }
+                if (monster_->WoundedFrames > 0) {
+                    ++effects;
+                }
+                if (monster_->SlowFrames > 0) {
+                    ++effects;
+                }
+
+                if (monster_->Health < monster_->MaxHealth || effects > 0) {
+                    DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f, monster_->ActualPosition.Y + 0.5f, monster_->Health / monster_->MaxHealth, 1 / 6.0f, RED);
+                    DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK);
+                }
+
+                int drawnEffects = 0;
+                float xOffsetEffectSprites = 0.15f * (effects - 1);
+                if (monster_->PoisonFrames) {
+                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.PoisonTex, WHITE);
+                    ++drawnEffects;
+                }
+
+                if (monster_->WoundedFrames) {
+                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.BloodTex, WHITE);
+                    ++drawnEffects;
+                }
+
+                if (monster_->SlowFrames) {
+                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.IceTex, WHITE);
+                    ++drawnEffects;
+                }
             }
         }
 

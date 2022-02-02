@@ -1,33 +1,36 @@
 _____________________ 0.0.0: "" _____________________
-00000035: + 0000-00-00 0.0.0 " xxx "     In-game building; overlays are a bit off
-00000036: + 0000-00-00 0.0.0 " xxx "     Separate in-game building from editor stuff
-00000037: + 0000-00-00 0.0.0 " xxx "     UI for choosing priority
+00000035: ~ 0000-00-00 0.0.0 " xxx "     In-game building; overlays are a bit off
+00000036: > 0000-00-00 0.0.0 " xxx "     Separate in-game building from editor stuff (otherwise, this always gets saved as well)
+00000037: + 0000-00-00 0.0.0 " xxx "     UI for choosing diamond priority
+00000039: + 0000-00-00 0.0.0 " xxx "     Rethink the layout of the right menu, do I really want all that stuff in hexagons; that doesn't look as cool as I thought
+00000042: + 0000-00-00 0.0.0 " xxx "     Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive
 
 _____________________ 0.0.1: "Super basic workings" _____________________
-00000000: + 0000-00-00 0.0.1 "Sprites"     Sprites for diamond effects (on the monsters)
-00000007: + 0000-00-00 0.0.1 "Sprites"     Cogwheel sprites (5 different levels for now)
-00000008: + 0000-00-00 0.0.1 "Sprites"     Cogwheel sprites (support 2 or even three different colours)
+00000007: + 0000-00-00 0.0.1 "Sprites"     Dummy Cogwheel sprites (5 different levels for now) (Shall I Do more high-res and just rotate the stuff; or specifically rotated; quite some work)
+00000008: + 0000-00-00 0.0.1 "Sprites"     Dummy Cogwheel sprites (support 2 or even three different colours)
 
 _____________________ 0.0.2: "Graphical update" _____________________
 00000001: + 0000-00-00 0.0.2 "Sprites"     Swarmling dummy sprites (6 directions)
 00000002: + 0000-00-00 0.0.2 "Sprites"     Reaver dummy sprites (6 directions)
-00000009: + 0000-00-00 0.0.2 "Backend"     OpenGL port
-00000034: + 0000-00-00 0.0.2 "Sprites"     Wall Sprites (at least up and down, bugt more will be needed in the future for 3d effect)
+00000009: + 0000-00-00 0.0.2 "Backend"     OpenGL port (not sure if this will make some stuff a bit more difficult; somehow make modular)
+00000034: + 0000-00-00 0.0.2 "Sprites"     Wall Sprites (at least up and down, but more will be needed in the future for 3d effect)
+00000038: + 0000-00-00 0.0.2 "Game"     Better buildings sprites (sprites for wall, tower, trap and future buildings (How do I want to have that arranged))
 
 _____________________ 0.0.3: "Editors" _____________________
-00000012: + 0000-00-00 0.0.3 "Sprites"     Better background sprites
+00000012: + 0000-00-00 0.0.3 "Sprites"     Better background sprites (maybe a lot of that will be done via shaders? That would be quite nice; for that I definitely need shader recompile BEFORE (which shouldn't be too difficult); one could create an image out of the shader stuff and then could actually keep that generated image instead of rerendering every frame)
 00000013: + 0000-00-00 0.0.3 "Editor"     Level editor (that lets you select deco sprites etc.)
 00000014: + 0000-00-00 0.0.3 "Editor"     Monster wave editor
-00000017: + 0000-00-00 0.0.3 "Design"     2 boss monsters
+00000017: + 0000-00-00 0.0.3 "Design"     2 boss monsters (spawning swarmlings, destroying walls?, shielded stuff)
 00000018: + 0000-00-00 0.0.3 "Design"     Design the first level (visually + waves etc.)
 00000031: + 0000-00-00 0.0.3 "Sprites"     New visual version of wave stones (are these cogwheels?)
 
 _____________________ 0.0.4: "World Overview etc." _____________________
-00000010: + 0000-00-00 0.0.4 "Design"     2 more buildings
+00000010: + 0000-00-00 0.0.4 "Design"     2 more buildings (something doing strong attacks and something doing a lot of attacks) (but I think I want another two more)
 00000011: + 0000-00-00 0.0.4 "Game"     Wiggle movement of monsters
 00000015: + 0000-00-00 0.0.4 "Backend"     World map with level selection
 00000016: + 0000-00-00 0.0.4 "Backend"     Actual save games
 00000019: + 0000-00-00 0.0.4 "Design"     Design the second level (visually + waves etc.)
+00000041: + 0000-00-00 0.0.4 "Sprites"     Think about a world map visualisation (one big thing?; splitted into hexagons? or cogwheels?)
 
 _____________________ 0.0.5: "First deep dive into numbers" _____________________
 00000020: + 0000-00-00 0.0.5 "Design"     General Damage output of diamonds + range (+ levelling)
@@ -35,10 +38,13 @@ _____________________ 0.0.5: "First deep dive into numbers" ____________________
 00000022: + 0000-00-00 0.0.5 "Design"     Balance Red
 00000023: + 0000-00-00 0.0.5 "Design"     Balance Yellow
 00000024: + 0000-00-00 0.0.5 "Design"     Balance Blue
-00000025: + 0000-00-00 0.0.5 "Design"     Balance Aqua
+00000025: + 0000-00-00 0.0.5 "Design"     Balance Aqua (I don't really have that much stuff using that at that point, but probably just take the same as purple)
 00000026: + 0000-00-00 0.0.5 "Design"     Balance Purple
 00000027: + 0000-00-00 0.0.5 "Design"     Balance White
 00000028: + 0000-00-00 0.0.5 "Design"     Balance Black
 00000029: + 0000-00-00 0.0.5 "Design"     Balance Combinations
 00000030: + 0000-00-00 0.0.5 "Design"     Graph System
+
+_____________________ 0.0.6: "From here on, mainly content" _____________________
+00000040: + 0000-00-00 0.0.6 "Design"     Monsters, that use the Magic Stat (several, e.g. inhibiting my towers; providing a shield for others; I want to have a few more)
 
