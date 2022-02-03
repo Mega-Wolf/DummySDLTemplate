@@ -72,7 +72,8 @@ union dummyHeader {
 
 
 loaded_audio LoadWav(char* filename) {
-    FILE* file = fopen(filename, "rb");
+    FILE* file = nullptr;
+    fopen_s(&file, filename, "rb");
 
     loaded_audio ret = {};
     wav_header wh;

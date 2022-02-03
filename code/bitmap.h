@@ -41,7 +41,8 @@ struct bitmap_header {
 #pragma pack(pop)
 
 loaded_bitmap BitmapLoad(char* filename) {
-    FILE* file = fopen(filename, "rb");
+    FILE* file = nullptr;
+    fopen_s(&file, filename, "rb");
 
     loaded_bitmap ret = {};
     bitmap_header bh;

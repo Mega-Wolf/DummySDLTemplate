@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 43,
+	"RunningNumber": 44,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -375,6 +375,14 @@
 			"Date": "2022-02-02",
 			"Version": "0.0.1",
 			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000043",
+			"Description": "LevelEditor only before I start running the game; only save level, if I actually changed something",
+			"Date": "2022-02-03",
+			"Version": "0.0.0",
+			"Group": "Editor",
 			"Type": "+"
 		}
 	]

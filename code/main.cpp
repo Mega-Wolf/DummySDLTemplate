@@ -132,7 +132,8 @@ void Init() {
 
     DummyFontInfo = AcquireDebugFont();
 
-    FILE* file = fopen("assets/levels/dummy.lvl", "rb");
+    FILE* file = nullptr;
+    fopen_s(&file, "assets/levels/dummy.lvl", "rb");
     if (file != nullptr) {
         fread(Ground, sizeof(Ground), 1, file);
         fclose(file);
@@ -417,11 +418,25 @@ void Update(color32* array, int width, int height, inputs* ins) {
     /// Handle Input
     {
         if (IS_KEY_PRESSED(KEY_TOGGLE_EDITOR)) {
-            IsLevelEditorActive = !IsLevelEditorActive;
 
-            if (!IsLevelEditorActive) {
-                CollectStartPositions();
-                InitDistanceArray();
+            LevelRunning = !LevelRunning;
+            if (FrameCount == 0) {
+                // NOTE(Tobi): You can only edit the level before you start it; once started, you cannot edit it anymore
+
+                IsLevelEditorActive = !IsLevelEditorActive;
+
+                /// Save level data
+                if (!IsLevelEditorActive && LevelEditorChangedSomething) {
+                    LevelEditorChangedSomething = false;
+
+                    FILE* file = nullptr;
+                    fopen_s(&file, "assets/levels/dummy.lvl", "wb");
+                    fwrite(Ground, sizeof(Ground), 1, file);
+                    fclose(file);
+
+                    CollectStartPositions();
+                    InitDistanceArray();
+                }
             }
         }
 
@@ -429,17 +444,19 @@ void Update(color32* array, int width, int height, inputs* ins) {
             ShowPathfinding = !ShowPathfinding;
         }
 
-        /// "Level Editor"
+        /// Level Editor
         if (IsLevelEditorActive) {
             if (ins->Mouse.Left.Down) {
                 if (mouseTilePos.X >= 0 && mouseTilePos.X <TILES_X && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y) {
                     Ground[mouseTilePos.Y][mouseTilePos.X] = T_PATH;
+                    LevelEditorChangedSomething = true;
                 }
             }
 
             if (ins->Mouse.Middle.Down) {
                 if (mouseTilePos.X >= 0 && mouseTilePos.X < TILES_X && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y) {
                     Ground[mouseTilePos.Y][mouseTilePos.X] = T_GRASS;
+                    LevelEditorChangedSomething = true;
                 }
             }
 
@@ -448,6 +465,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 if (!triangleIsDown && mouseTilePos.X >= 0 && mouseTilePos.X < TILES_X - 2 && mouseTilePos.Y >= 0 && mouseTilePos.Y < TILES_Y - 1) {
                     if (Ground[mouseTilePos.Y][mouseTilePos.X] == T_TOWER) {
                         Ground[mouseTilePos.Y][mouseTilePos.X] = T_TRAP | T_PATH;
+                        LevelEditorChangedSomething = true;
 
                         inc0 (y_i,   2) {
                             inc0 (x_i,   3) {
@@ -457,8 +475,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         }
                     } else if (Ground[mouseTilePos.Y][mouseTilePos.X] & T_TRAP) {
                         Ground[mouseTilePos.Y][mouseTilePos.X] = T_GOAL | T_PATH;
+                        LevelEditorChangedSomething = true;
                     } else {
                         Ground[mouseTilePos.Y][mouseTilePos.X] = T_TOWER;
+                        LevelEditorChangedSomething = true;
 
                         inc0 (y_i,   2) {
                             inc0 (x_i,   3) {
@@ -509,7 +529,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
     diamond* diamondUnderCursor = nullptr;
 
     /// Logic Update
-    if (!IsLevelEditorActive) {
+    if (LevelRunning) {
         ++FrameCount;
 
         /// Menu logic
@@ -1376,7 +1396,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
         /// Clear screen
         {
             color32 clearColor;
-            if (IsLevelEditorActive) {
+            if (!LevelRunning) {
                 clearColor = COL32_RGB(0, 0, 192);
             } else {
                 clearColor = BLACK;
@@ -1489,7 +1509,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Draw lines in edit mode
         #if 0
-        if (IsLevelEditorActive) {
+        if (!LevelRunning) {
             inc0 (x_i,   TILES_X - 1) {
                 DrawScreenRectangle(&drawRectMain, GRID_SIZE * (x_i + 1), 0, 1, drawRectMain.Height, BLUE);
             }
@@ -1938,7 +1958,4 @@ void Update(color32* array, int width, int height, inputs* ins) {
 }
 
 void Exit() {
-    FILE* file = fopen("assets/levels/dummy.lvl", "wb");
-    fwrite(Ground, sizeof(Ground), 1, file);
-    fclose(file);
 }

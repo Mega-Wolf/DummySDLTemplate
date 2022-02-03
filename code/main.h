@@ -92,6 +92,8 @@ struct monster_wave {
 int FrameCount;
 terrain Ground[TILES_Y][TILES_X];
 bool IsLevelEditorActive = true; // TODO(Tobi): This is done so the game is paused at the beginning
+bool LevelRunning = false;
+bool LevelEditorChangedSomething;
 
 int StartPositionsCount;
 vec2i StartPositions[TILES_Y * 2 + (TILES_X - 2) * 2];
