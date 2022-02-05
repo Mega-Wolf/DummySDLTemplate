@@ -2,6 +2,14 @@
 
 #include "bitmap.h"
 #include "waveform.h"
+#include "../helpers/opengl.h"
+
+// #define SPRITE_INIT_FUNCTION SPRITE_INIT_FUNCTION
+// #define SPRITE_TYPE loaded_bitmap
+#define SPRITE_INIT_FUNCTION CreateSprite
+#define SPRITE_TYPE sprite_data
+
+// TODO(Tobi): The sprite init funciton might need more data like what'S the centre of the sprite
 
 #define ASSET_LIST(name, pairs)
 #define ASSET_AUDIO(name, path)
@@ -59,10 +67,10 @@
 #undef ASSET_SPRITE_ARRAY_BITFIELD
 
 #define ASSET_AUDIO(name, path) loaded_audio name;
-#define ASSET_SPRITE(name, path) loaded_bitmap name;
-#define ASSET_SPRITE_ARRAY(name, pathStart, size, ...) loaded_bitmap name[size];
-#define ASSET_SPRITE_ARRAY_NAMES(name, size, ...) loaded_bitmap name[size];
-#define ASSET_SPRITE_ARRAY_BITFIELD(name, pathStart, bits, pathEnd, ...) loaded_bitmap name[1 << bits];
+#define ASSET_SPRITE(name, path) SPRITE_TYPE name;
+#define ASSET_SPRITE_ARRAY(name, pathStart, size, ...) SPRITE_TYPE name[size];
+#define ASSET_SPRITE_ARRAY_NAMES(name, size, ...) SPRITE_TYPE name[size];
+#define ASSET_SPRITE_ARRAY_BITFIELD(name, pathStart, bits, pathEnd, ...) SPRITE_TYPE name[1 << bits];
 
 #define ASSET_LIST(name, pairs) \
     struct { \
@@ -87,21 +95,21 @@ ASSETS_PARTICLES
     *AssetSystemActiveAudio++ = LoadWav(path); \
 }
 #define ASSET_SPRITE(name, path) { \
-    *AssetSystemActiveBitmap++ = BitmapLoad(path); \
+    *AssetSystemActiveBitmap++ = SPRITE_INIT_FUNCTION(path); \
 }
 
 #define ASSET_SPRITE_ARRAY(name, pathStart, size, pathEnd) \
 inc0 (_i,   size) { \
     char _dummy[256]; \
     snprintf(_dummy, 256, pathStart ## "%d" ## pathEnd, _i); \
-    *AssetSystemActiveBitmap++ = BitmapLoad(_dummy); \
+    *AssetSystemActiveBitmap++ = SPRITE_INIT_FUNCTION(_dummy); \
 }
 
 #define ASSET_SPRITE_ARRAY_NAMES(name, size, ...) \
 { \
     char* _names[] = { __VA_ARGS__ }; \
     inc0 (_i,   size) { \
-        *AssetSystemActiveBitmap++ = BitmapLoad(_names[_i]); \
+        *AssetSystemActiveBitmap++ = SPRITE_INIT_FUNCTION(_names[_i]); \
     } \
 }
 
@@ -116,7 +124,7 @@ inc0 (_i,   1 << bits) { \
         } \
     } \
     _count += snprintf(&_dummy[_count], 256 - _count, pathEnd); \
-    *AssetSystemActiveBitmap++ = BitmapLoad(_dummy); \
+    *AssetSystemActiveBitmap++ = SPRITE_INIT_FUNCTION(_dummy); \
 }
 
 #define AUDIO_LIST(name, pairs) \
@@ -131,7 +139,7 @@ inc0 (_i,   1 << bits) { \
     pairs
 
 
-loaded_bitmap* AssetSystemActiveBitmap;
+SPRITE_TYPE* AssetSystemActiveBitmap;
 loaded_audio* AssetSystemActiveAudio;
 
 void AssetSystemStartAudioList(void* audioList) {
@@ -141,7 +149,7 @@ void AssetSystemStartAudioList(void* audioList) {
 
 void AssetSystemStartSpriteList(void* spriteList) {
     AssetSystemActiveAudio = nullptr;
-    AssetSystemActiveBitmap = (loaded_bitmap*) spriteList;
+    AssetSystemActiveBitmap = (SPRITE_TYPE*) spriteList;
 }
 
 void AssetsInit () {

@@ -5,6 +5,8 @@
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#include "../extern/glad/glad.c"
+#include <SDL_opengl.h>
 
 #include "backend.h"
 
@@ -31,11 +33,18 @@ int main(int argc, char* argv[]) {
 
     SDL_Init(SDL_INIT_VIDEO);
 
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
     #ifndef PLATFORM_NO_AUDIO
         SDL_Init(SDL_INIT_AUDIO);
     #endif
 
-    SDL_Window* window = SDL_CreateWindow("", MONITOR_OFFSET + 1000, 50, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI);
+    SDL_Window* window = SDL_CreateWindow("", MONITOR_OFFSET + 1000, 50, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI |SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    SDL_GLContext glContext = SDL_GL_CreateContext(window); // TODO(Tobi): Do I need the OpenGL context
+    gladLoadGL();
+
     SDL_Surface* window_surface = SDL_GetWindowSurface(window);
 
     #ifndef PLATFORM_NO_AUDIO
@@ -167,7 +176,8 @@ int main(int argc, char* argv[]) {
 
         Update((color32*) pixels, width, height, &Inputs);
 
-        SDL_UpdateWindowSurface(window);
+        //SDL_UpdateWindowSurface(window);
+        SDL_GL_SwapWindow(window);
     }
 
     // TODO(Tobi): This freezes indefinitely quite often so I just don't care since it will be closed anyway

@@ -22,6 +22,8 @@
 #define IS_MOUSE_PRESSED(key) ins->Mouse.key.Down && ins->Mouse.key.Toggled
 #define IS_MOUSE_RELEASED(key) !ins->Mouse.key.Down && ins->Mouse.key.Toggled
 
+typedef unsigned int uint32;
+
 
 #define PI 3.141592f
 

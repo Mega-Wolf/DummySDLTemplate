@@ -12,6 +12,8 @@ struct draw_rect {
 
     color32* ArrayData;
     int ArrayWidth;
+
+    int RenderLayer;
 };
 
 // TODO(Tobi): Something is off with my y positions

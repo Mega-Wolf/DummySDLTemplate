@@ -8,7 +8,7 @@ set CompilerFlags= ^
  -Oi -GR- -EHa- -Gm- ^
  -FC -Zi
 
-set LinkerFlags= -opt:ref libs\*
+set LinkerFlags= -opt:ref libs\* opengl32.lib
 
 cl %CompilerFlags% .\code\main.cpp /Fe:main.exe /link %LinkerFlags% 
 

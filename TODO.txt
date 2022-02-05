@@ -4,6 +4,7 @@ _____________________ 0.0.0: "" _____________________
 00000037: + 0000-00-00 0.0.0 " xxx "     UI for choosing diamond priority
 00000039: + 0000-00-00 0.0.0 " xxx "     Rethink the layout of the right menu, do I really want all that stuff in hexagons; that doesn't look as cool as I thought
 00000042: + 0000-00-00 0.0.0 " xxx "     Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive
+00000044: + 0000-00-00 0.0.0 " xxx "     I somehow want the OpenGL stuff to be pixel perfect; otherwise, some stuff might look really stupid; is that possible
 
 _____________________ 0.0.1: "Super basic workings" _____________________
 00000007: + 0000-00-00 0.0.1 "Sprites"     Dummy Cogwheel sprites (5 different levels for now) (Shall I Do more high-res and just rotate the stuff; or specifically rotated; quite some work)

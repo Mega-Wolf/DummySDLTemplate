@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 44,
+	"RunningNumber": 45,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -314,6 +314,14 @@
 		{
 			"ID": "00000042",
 			"Description": "Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		},
+		{
+			"ID": "00000044",
+			"Description": "I somehow want the OpenGL stuff to be pixel perfect; otherwise, some stuff might look really stupid; is that possible",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
 			"Group": " xxx ",
