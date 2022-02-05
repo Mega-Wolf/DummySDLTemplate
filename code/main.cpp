@@ -36,8 +36,8 @@ void DrawScreenBitmap(draw_rect* drawRect, int x, int y, sprite_data spriteData,
 
 void DrawWorldBitmap(draw_rect* drawRect, float x, float y, sprite_data spriteData, color32 col) {
     // TODO(Tobi): Castto int for pixelperfectness?
-    float actualX = RoundFloatToInt(HEXAGON_A * x) + drawRect->StartX;
-    float actualY = RoundFloatToInt(HEXAGON_A * y) + drawRect->StartY;
+    float actualX = (float) (RoundFloatToInt(HEXAGON_A * x) - (spriteData.LoadedBitmap.Width) / 2 + drawRect->StartX);
+    float actualY = (float) (RoundFloatToInt(HEXAGON_A * y) - (spriteData.LoadedBitmap.Height) / 2 + drawRect->StartY);
 
     color4f colFloat = {
         col.Red / 255.0f,
@@ -2001,6 +2001,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
         #endif
 
     }
+
+    DrawScreenBitmap(&drawRectAll, 0, 0, Sprites.Tower, WHITE);
+    DrawScreenBitmap(&drawRectAll, 0, 0, Sprites.Cogwheels[0], RED);
 
 
     RendererRender();

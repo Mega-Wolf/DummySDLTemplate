@@ -189,10 +189,15 @@ sprite_data CreateSprite(char* texturePath) {
     // float top = -0.5f + loadedBitmap.Height / 64.0f;
     // float bottom = -0.5f;
 
-    float left = -loadedBitmap.Width / 2;
-    float right = -loadedBitmap.Width / 2 + loadedBitmap.Width;
-    float top = -loadedBitmap.Height / 2  + loadedBitmap.Height;
-    float bottom = -loadedBitmap.Height / 2;
+    // float left = -loadedBitmap.Width / 2;
+    // float right = -loadedBitmap.Width / 2 + loadedBitmap.Width;
+    // float top = -loadedBitmap.Height / 2  + loadedBitmap.Height;
+    // float bottom = -loadedBitmap.Height / 2;
+
+    float left = 0;
+    float right = loadedBitmap.Width;
+    float top = 0;
+    float bottom = loadedBitmap.Height;
 
     ret.Left = left;
     ret.Right = right;
@@ -299,11 +304,18 @@ void RendererInit() {
         // -0.5f, -0.5f, 0.0f,      0.0f, 0.0f, // bottom left
         // -0.5f,  0.5f, 0.0f,      0.0f, 1.0f  // top left 
 
-         0.5f, 1.0f, 0.0f,      1.0f, 1.0f, // top right
-         0.5f, 0.0f, 0.0f,      1.0f, 0.0f, // bottom right
-        -0.5f, 0.0f, 0.0f,      0.0f, 0.0f, // bottom left
-        -0.5f, 1.0f, 0.0f,      0.0f, 1.0f  // top left 
+        //  0.5f, 1.0f, 0.0f,      1.0f, 1.0f, // top right
+        //  0.5f, 0.0f, 0.0f,      1.0f, 0.0f, // bottom right
+        // -0.5f, 0.0f, 0.0f,      0.0f, 0.0f, // bottom left
+        // -0.5f, 1.0f, 0.0f,      0.0f, 1.0f  // top left 
+
+        1.0f, 1.0f, 0.0f,      1.0f, 1.0f, // top right
+        1.0f, 0.0f, 0.0f,      1.0f, 0.0f, // bottom right
+        0.0f, 0.0f, 0.0f,      0.0f, 0.0f, // bottom left
+        0.0f, 1.0f, 0.0f,      0.0f, 1.0f  // top left 
     };
+
+    // TODO(Tobi): Where do I use the vertices thing above and the stuff below
 
     uint32 vbo;
 
@@ -363,7 +375,7 @@ void RendererRender() {
 
         // NOTE(Tobi): This probably is almost always the same calculation
         //hmm_mat4 projection = HMM_Orthographic(0, OGLData.ActiveContext->ViewportWidth, 0, OGLData.ActiveContext->ViewportHeight, 0.1f, 100.0f);
-        hmm_mat4 projection = HMM_Orthographic(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, 0.1f, 100.0f);
+        hmm_mat4 projection = HMM_Orthographic(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0.1f, 100.0f);
         hmm_mat4 projectionViewMatrix = projection * view;
 
         
@@ -374,11 +386,11 @@ void RendererRender() {
         glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Do I have to do that?
     }
 
-    glEnable(GL_SCISSOR_TEST);
+    //glEnable(GL_SCISSOR_TEST);
 
     /// Render sprites one-by-one
     inc0 (layer_i,   RENDER_LAYER_COUNT) {
-        glScissor(OGLData.LayerDrawRects[layer_i].StartX, OGLData.LayerDrawRects[layer_i].StartY, OGLData.LayerDrawRects[layer_i].Width, OGLData.LayerDrawRects[layer_i].Height);
+        //glScissor(OGLData.LayerDrawRects[layer_i].StartX, WINDOW_HEIGHT - OGLData.LayerDrawRects[layer_i].StartY - OGLData.LayerDrawRects[layer_i].Height, OGLData.LayerDrawRects[layer_i].Width, OGLData.LayerDrawRects[layer_i].Height);
         // glScissor(200, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         inc0 (renderObject_i,   OGLData.LayerSizes[layer_i]) {
             render_object* ro = &OGLData.LayerData[layer_i][renderObject_i];
