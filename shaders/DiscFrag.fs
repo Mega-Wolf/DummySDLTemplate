@@ -4,18 +4,17 @@
 in vec2 TexCoord;
 
 uniform vec4 Color;
-uniform sampler2D texture1;
 
 out vec4 FragColor;
 
 void main() {
-    if (
-        abs(TexCoord.x - 0.5) > 0.45 ||
-        abs(TexCoord.y - 0.5) > 0.45
-    ) {
+    
+    vec2 diff = 2 * abs(TexCoord - vec2(0.5, 0.5));
+    float lengthSquared = diff.x * diff.x + diff.y * diff.y;
+    
+    if (lengthSquared <= 1) {
         FragColor = Color;
     } else {
         discard;
     }
-    
 }

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "drawing.h"
+#include "opengl_drawing.h"
 #include "bitmap.h"
 #include "macros.h"
 #include "maths.h"
 
 struct playing_particle_effect {
-    loaded_bitmap* Sprites;
+    sprite_data* Sprites;
     int SpriteCount;
     
     draw_rect* DrawRect;
@@ -22,7 +22,7 @@ struct playing_particle_effect {
 int ParticleEffectsCount;
 playing_particle_effect ParticleEffects[MAX_PARTICLE_EFFECTS];
 
-void ParticleEffectStartWorld(draw_rect* drawRect, int spriteCount, loaded_bitmap* sprites, float x, float y, color32 color) {
+void ParticleEffectStartWorld(draw_rect* drawRect, int spriteCount, sprite_data* sprites, float x, float y, color32 color) {
     playing_particle_effect* newParticleEffect = &ParticleEffects[ParticleEffectsCount++];
     *newParticleEffect = {};
     newParticleEffect->DrawRect = drawRect;

@@ -5,6 +5,10 @@ _____________________ 0.0.0: "" _____________________
 00000039: + 0000-00-00 0.0.0 " xxx "     Rethink the layout of the right menu, do I really want all that stuff in hexagons; that doesn't look as cool as I thought
 00000042: + 0000-00-00 0.0.0 " xxx "     Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive
 00000044: + 0000-00-00 0.0.0 " xxx "     I somehow want the OpenGL stuff to be pixel perfect; otherwise, some stuff might look really stupid; is that possible
+00000050: > 0000-00-00 0.0.0 "OpenGL"     Provide hexes and triangles as those shapes instead of having rect stuff with alpha-cutoffs (I will actually still be able to give the top left point if I want to) - is that even more performant or just useless? For now, I could actually ignore that
+00000051: > 0000-00-00 0.0.0 "OpenGL"     Some of the things I do, could use shader arguments (circle or border; however, I don't really have a system as of yet to set such values)
+00000052: + 0000-00-00 0.0.0 "OpenGL"     Such a system could also include dynamically having lists of "same" things ("Now, I will have three lists of monster sprites, healthbar stuff, and subsprites" and then I could actually batch these together later on)
+00000054: + 0000-00-00 0.0.0 "Backend"     Automatic Shader Recompiling
 
 _____________________ 0.0.1: "Super basic workings" _____________________
 00000007: + 0000-00-00 0.0.1 "Sprites"     Dummy Cogwheel sprites (5 different levels for now) (Shall I Do more high-res and just rotate the stuff; or specifically rotated; quite some work)
@@ -16,6 +20,12 @@ _____________________ 0.0.2: "Graphical update" _____________________
 00000009: + 0000-00-00 0.0.2 "Backend"     OpenGL port (not sure if this will make some stuff a bit more difficult; somehow make modular)
 00000034: + 0000-00-00 0.0.2 "Sprites"     Wall Sprites (at least up and down, but more will be needed in the future for 3d effect)
 00000038: + 0000-00-00 0.0.2 "Game"     Better buildings sprites (sprites for wall, tower, trap and future buildings (How do I want to have that arranged))
+00000045: + 0000-00-00 0.0.2 "OpenGL"     Enable depth testing (which means, setting the z value somehow different; not dependent on the drawRect; however, I still want to use fixed values somehow); This means that I could theoretically still keep my rendering layer stuff; maybe I have to have a few more though; I might have to think about some other way of storing them though (separate the different render stages (alpha vs normal/cutoff (shall cutoffs happen separated to normal))) - also I don't want to have a fixed upper limit at the moment; maybe a linked sublist
+00000046: + 0000-00-00 0.0.2 "OpenGL"     Circles and Discs (Do I want to do that via a texture of with some fancy shader thing); with a fancy shader thing, I could make the border thicker
+00000047: + 0000-00-00 0.0.2 "OpenGL"     Text (they could actually share their textures and therefore be batched together)
+00000048: + 0000-00-00 0.0.2 "OpenGL"     Other drawing functions (borders, etc. - I could do the border thing with a shader)
+00000049: + 0000-00-00 0.0.2 "OpenGL"     Somehow support alpha stuff (has to happen in last iteration)
+00000053: + 0000-00-00 0.0.2 "OpenGL"     How do lines work in OGL
 
 _____________________ 0.0.3: "Editors" _____________________
 00000012: + 0000-00-00 0.0.3 "Sprites"     Better background sprites (maybe a lot of that will be done via shaders? That would be quite nice; for that I definitely need shader recompile BEFORE (which shouldn't be too difficult); one could create an image out of the shader stuff and then could actually keep that generated image instead of rerendering every frame)

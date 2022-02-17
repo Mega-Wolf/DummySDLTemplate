@@ -43,14 +43,20 @@ struct render_object {
 struct ogl_data {
     // This part is global
     uint32 BrokenShader;
-    uint32 DummyShader;
+    uint32 BasicShader;
+    uint32 BasicAlphaCutoffShader;
+    uint32 SimpleShader;
     uint32 OutlineShader;
+    uint32 DiscShader;
+    uint32 CircleShader;
 
     uint32 DummyVAO;
     uint32 BlockIDMatrices;
 
     sprite_data BrokenSprite;
     sprite_data WhiteSprite;
+
+    sprite_data TopLeftUnitSprite;
 
     // ogl_context* ActiveContext;
 
@@ -195,9 +201,9 @@ sprite_data CreateSprite(char* texturePath) {
     // float bottom = -loadedBitmap.Height / 2;
 
     float left = 0;
-    float right = loadedBitmap.Width;
+    float right = (float) loadedBitmap.Width;
     float top = 0;
-    float bottom = loadedBitmap.Height;
+    float bottom = (float) loadedBitmap.Height;
 
     ret.Left = left;
     ret.Right = right;
@@ -253,31 +259,31 @@ void ShaderResolveAndSetBool(int shaderID, char* varName, bool value) {
 
 void ShaderResolveAndSetInt(int shaderID, char* varName, int value) {
     int location = glGetUniformLocation(shaderID, varName);
-    //Assert(location >= 0, "Location is %d", location);
+    Assert(location >= 0, "Location is %d", location);
     glUniform1i(location, value);
 }
 
 void ShaderResolveAndSetFloat(int shaderID, char* varName, float value) {
     int location = glGetUniformLocation(shaderID, varName);
-    //Assert(location >= 0, "Location is %d", location);
+    Assert(location >= 0, "Location is %d", location);
     glUniform1f(location, value);
 }
 
 void ShaderResolveAndSetVec3(int shaderID, char* varName, hmm_vec3* value) {
     int location = glGetUniformLocation(shaderID, varName);
-    //Assert(location >= 0, "Location is %d", location);
+    Assert(location >= 0, "Location is %d", location);
     glUniform3fv(location, 1, value->Elements);
 }
 
 void ShaderResolveAndSetVec4(int shaderID, char* varName, hmm_vec4* value) {
     int location = glGetUniformLocation(shaderID, varName);
-    //Assert(location >= 0, "Location is %d", location);
+    Assert(location >= 0, "Location is %d", location);
     glUniform4fv(location, 1, value->Elements);
 }
 
 void ShaderResolveAndSetMat4(int shaderID, char* varName, hmm_mat4* value) {
     int location = glGetUniformLocation(shaderID, varName);
-    //Assert(location >= 0, "Location is %d", location);
+    Assert(location >= 0, "Location is %d", location);
     glUniformMatrix4fv(location, 1, false, (float*) value);
 }
 
@@ -287,9 +293,14 @@ void RendererInit() {
     OGLData.BrokenShader = LoadShader("shaders/BrokenShaderVert.vs", "shaders/BrokenShaderFrag.fs");
     OGLData.BrokenSprite = CreateSprite("assets/images/AlphaTest.bmp");
     OGLData.WhiteSprite = CreateSprite("assets/images/White.bmp");
+    OGLData.TopLeftUnitSprite = CreateSprite("assets/images/White_11.bmp");
 
-    OGLData.DummyShader = LoadShader("shaders/BasicVert.vs", "shaders/BasicFrag.fs");
+    OGLData.BasicShader = LoadShader("shaders/BasicVert.vs", "shaders/BasicFrag.fs");
+    OGLData.BasicAlphaCutoffShader = LoadShader("shaders/BasicVert.vs", "shaders/BasicAlphaFrag.fs");
+    OGLData.SimpleShader = LoadShader("shaders/SimpleVert.vs", "shaders/SimpleFrag.fs");
     OGLData.OutlineShader = LoadShader("shaders/BasicVert.vs", "shaders/OutlineFrag.fs");
+    OGLData.DiscShader = LoadShader("shaders/BasicVert.vs", "shaders/DiscFrag.fs");
+    OGLData.CircleShader = LoadShader("shaders/BasicVert.vs", "shaders/CircleFrag.fs");
 
     glGenBuffers(1, &OGLData.BlockIDMatrices);
     glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices);
@@ -355,11 +366,14 @@ void RendererRender() {
 
     //glViewport(100, 100, 300, 300);
 
-    // TODO(Tobi): Enable/Disable alpha stuff
+    // TODO(Tobi): Enable/Disable alpha stuff (at the moment, I think everything is alpha)
 
     // TODO(Tobi): Normally per sprite; but most things are like that for now
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+
+    // TODO(Tobi): I will only need that for smoke at the moment
+    // TODO(Tobi): Provide hexes and triangles as ... hexes and triangles :D (Instead of rects with alpha cutoffs)
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     /// Setup projection and view matrices
     {
@@ -378,23 +392,22 @@ void RendererRender() {
         hmm_mat4 projection = HMM_Orthographic(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0.1f, 100.0f);
         hmm_mat4 projectionViewMatrix = projection * view;
 
-        
-
         glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices); // NOTE(Tobi): Is this necessary when doing the next thing?
         glBindBufferRange(GL_UNIFORM_BUFFER, 0, OGLData.BlockIDMatrices, 0, sizeof(hmm_mat4));
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(hmm_mat4), &projectionViewMatrix);
         glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Do I have to do that?
     }
 
-    //glEnable(GL_SCISSOR_TEST);
+    glEnable(GL_SCISSOR_TEST);
+
+    // TODO(Tobi): I should enable depth testing; however, then I have to set the z-value better
+    // glEnable(GL_DEPTH_TEST);
 
     /// Render sprites one-by-one
     inc0 (layer_i,   RENDER_LAYER_COUNT) {
-        //glScissor(OGLData.LayerDrawRects[layer_i].StartX, WINDOW_HEIGHT - OGLData.LayerDrawRects[layer_i].StartY - OGLData.LayerDrawRects[layer_i].Height, OGLData.LayerDrawRects[layer_i].Width, OGLData.LayerDrawRects[layer_i].Height);
-        // glScissor(200, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        glScissor(OGLData.LayerDrawRects[layer_i].StartX, WINDOW_HEIGHT - OGLData.LayerDrawRects[layer_i].StartY - OGLData.LayerDrawRects[layer_i].Height, OGLData.LayerDrawRects[layer_i].Width, OGLData.LayerDrawRects[layer_i].Height);
         inc0 (renderObject_i,   OGLData.LayerSizes[layer_i]) {
             render_object* ro = &OGLData.LayerData[layer_i][renderObject_i];
-
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, ro->Sprite.TextureID);
@@ -420,8 +433,7 @@ void RendererRender() {
 
 }
 
-
-void RendererScreenSprite(render_object* ro, int renderLayer) {
+void RendererRO(render_object* ro, int renderLayer) {
     Assert(renderLayer >= 0 && renderLayer < RENDER_LAYER_COUNT, "Wrong render layer %d", renderLayer);
     Assert(OGLData.LayerSizes[renderLayer] < RENDER_LAYER_MAX_SIZE, "Layer %d is full", renderLayer);
 
@@ -434,5 +446,32 @@ void RendererScreenSprite(hmm_mat4 modelMatrix, sprite* spriteData, uint32 shade
     ro.Sprite = *spriteData;
     ro.ShaderID = shaderID;
     ro.Color = col;
-    RendererScreenSprite(&ro, renderLayer);
+    RendererRO(&ro, renderLayer);
+}
+
+void RendererScreenRect(hmm_mat4 modelMatrix, color4f col, int renderLayer) {
+    render_object ro = {};
+    ro.ModelMatrix = modelMatrix;
+    ro.Sprite = OGLData.TopLeftUnitSprite.Sprite;
+    ro.ShaderID = OGLData.SimpleShader;
+    ro.Color = col;
+    RendererRO(&ro, renderLayer);
+}
+
+void RendererScreenDisc(hmm_mat4 modelMatrix, color4f col, int renderLayer) {
+    render_object ro = {};
+    ro.ModelMatrix = modelMatrix;
+    ro.Sprite = OGLData.TopLeftUnitSprite.Sprite;
+    ro.ShaderID = OGLData.DiscShader;
+    ro.Color = col;
+    RendererRO(&ro, renderLayer);
+}
+
+void RendererScreenCircle(hmm_mat4 modelMatrix, color4f col, int renderLayer) {
+    render_object ro = {};
+    ro.ModelMatrix = modelMatrix;
+    ro.Sprite = OGLData.TopLeftUnitSprite.Sprite;
+    ro.ShaderID = OGLData.CircleShader;
+    ro.Color = col;
+    RendererRO(&ro, renderLayer);
 }

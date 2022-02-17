@@ -10,4 +10,8 @@ out vec4 FragColor;
 
 void main() {
     FragColor = Color * texture(texture1, TexCoord);
+    if (FragColor.a < 0.5) {
+        // TODO(Tobi): Maybe prodive a uniform float for determining the cutoff value
+        discard;
+    }
 }

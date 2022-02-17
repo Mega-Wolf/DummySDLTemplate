@@ -54,7 +54,7 @@
 
 /// Particles
 #define ASSETS_PARTICLES SPRITE_LIST(Particles, \
-    ASSET_SPRITE_ARRAY(Smoke, "assets\\sprites\\Smoke", 16, ".bmp") \
+    ASSET_SPRITE_ARRAY(Smoke, "assets\\sprites\\smoke\\Smoke", 16, ".bmp") \
 )
 
 

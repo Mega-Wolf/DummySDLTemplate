@@ -42,7 +42,9 @@ int main(int argc, char* argv[]) {
     #endif
 
     SDL_Window* window = SDL_CreateWindow("", MONITOR_OFFSET + 1000, 50, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI |SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-    SDL_GLContext glContext = SDL_GL_CreateContext(window); // TODO(Tobi): Do I need the OpenGL context
+    // SDL_GLContext glContext =
+    // TODO(Tobi): Do I need this glContext somewhere?
+    SDL_GL_CreateContext(window); // TODO(Tobi): Do I need the OpenGL context
     gladLoadGL();
 
     SDL_Surface* window_surface = SDL_GetWindowSurface(window);

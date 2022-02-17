@@ -12,6 +12,9 @@
 
 //#include "macros.h"
 //#include "maths.h"
+
+#include "opengl_drawing.h"
+
 #include "drawing.h"
 #include "text.h"
 
@@ -22,33 +25,6 @@
 #include "../extern/HandmadeMath.h"
 
 font_info DummyFontInfo;
-
-void DrawScreenBitmap(draw_rect* drawRect, int x, int y, sprite_data spriteData, color32 col) {
-    color4f colFloat = {
-        col.Red / 255.0f,
-        col.Green / 255.0f,
-        col.Blue / 255.0f,
-        col.Alpha / 255.0f
-    };
-
-    RendererScreenSprite(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), 0), &spriteData.Sprite, OGLData.DummyShader, colFloat, drawRect->RenderLayer);
-}
-
-void DrawWorldBitmap(draw_rect* drawRect, float x, float y, sprite_data spriteData, color32 col) {
-    // TODO(Tobi): Castto int for pixelperfectness?
-    float actualX = (float) (RoundFloatToInt(HEXAGON_A * x) - (spriteData.LoadedBitmap.Width) / 2 + drawRect->StartX);
-    float actualY = (float) (RoundFloatToInt(HEXAGON_A * y) - (spriteData.LoadedBitmap.Height) / 2 + drawRect->StartY);
-
-    color4f colFloat = {
-        col.Red / 255.0f,
-        col.Green / 255.0f,
-        col.Blue / 255.0f,
-        col.Alpha / 255.0f
-    };
-
-    // TODO(Tobi): The sizes here are wrong
-    RendererScreenSprite(HMM_Translate(actualX, actualY, 0), &spriteData.Sprite, OGLData.DummyShader, colFloat, drawRect->RenderLayer);
-}
 
 void CollectStartPositions() {
     StartPositionsCount = 0;
@@ -397,7 +373,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
     }
 
     draw_rect drawRectAll = {};
-    drawRectAll.ArrayData = array;
     drawRectAll.ArrayWidth = width;
     drawRectAll.Width = width;
     drawRectAll.Height = height;
@@ -407,7 +382,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
     OGLData.LayerDrawRects[drawRectAll.RenderLayer] = drawRectAll;
 
     draw_rect drawRectWaveStones = {};
-    drawRectWaveStones.ArrayData = array;
     drawRectWaveStones.ArrayWidth = width;
     drawRectWaveStones.Width = MONSTER_STONE_BAR_WIDTH;
     drawRectWaveStones.Height = height;
@@ -417,7 +391,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
     OGLData.LayerDrawRects[drawRectWaveStones.RenderLayer] = drawRectWaveStones;
 
     draw_rect drawRectMain = {};
-    drawRectMain.ArrayData = array;
     drawRectMain.ArrayWidth = width;
     drawRectMain.Width = (TRIANGLE_PAIRS_X + 1) * HALF_HEXAGON_PIXEL_WIDTH;
     drawRectMain.Height = height;
@@ -428,7 +401,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
     vec2i mainMousePosition = TranslateMousePosition(&drawRectMain, ins);
 
     draw_rect drawRectRightMenu = {};
-    drawRectRightMenu.ArrayData = array;
     drawRectRightMenu.ArrayWidth = width;
     drawRectRightMenu.Width = MENU_DIAMONDS_X * GRID_SIZE;
     drawRectRightMenu.Height = height;
@@ -1408,8 +1380,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         target->Health = 0;
                         BucketListRemove(&Monsters, target);
                         AudioClipStart(Sounds.Death, false, 0.7f);
-                        // ParticleEffectStartWorld(&drawRectMain, 16, Particles.Smoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGBA(100, 80, 80, 160));
-                        // TODO(Tobi): Bring back particle effects
+                        ParticleEffectStartWorld(&drawRectMain, 16, Particles.Smoke, target->ActualPosition.X, target->ActualPosition.Y, COL32_RGBA(100, 80, 80, 255));
                         // TODO(Tobi): The monster has been killed; do something
                     } else {
                         AudioClipStart(Sounds.Hit, false, 0.2f);
@@ -1817,7 +1788,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
         if (Menu.DragDrop.Diamond) {
             sprite_data bitmap = Sprites.Cogwheels[0];
 
-            DrawScreenBitmap(&drawRectAll, ins->Mouse.PosX - bitmap.LoadedBitmap.Width / 2, ins->Mouse.PosY - bitmap.LoadedBitmap.Height / 2, bitmap.LoadedBitmap, Menu.DragDrop.Diamond->MixedColor);
+            DrawScreenBitmap(&drawRectAll, ins->Mouse.PosX - bitmap.LoadedBitmap.Width / 2, ins->Mouse.PosY - bitmap.LoadedBitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
 
             int count = 0;
             inc0 (color_i,   DC_AMOUNT) {
@@ -2001,10 +1972,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
         #endif
 
     }
-
-    DrawScreenBitmap(&drawRectAll, 0, 0, Sprites.Tower, WHITE);
-    DrawScreenBitmap(&drawRectAll, 0, 0, Sprites.Cogwheels[0], RED);
-
 
     RendererRender();
 }

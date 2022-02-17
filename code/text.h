@@ -3,7 +3,8 @@
 #include "../helpers/backend.h"
 
 #include "maths.h"
-#include "drawing.h"
+#include "../helpers/opengl.h"
+#include "opengl_drawing.h"
 #include "bitmap.h"
 
 struct letter_info {
@@ -14,6 +15,8 @@ struct letter_info {
     int Width;
     int XOffset;
     int XAdvance;
+
+    sprite_data SpriteData;
 };
 
 struct font_info {
@@ -233,10 +236,74 @@ font_info debugFont = {
 };
 #endif
 
+// TODO(Tobi): Well, this is kind of the opposite of what I want later on, but for now, I have to get it going
+// Well, actually; they all use the same texture at the moment; maybe it's not too bad
+void FontInfoInitOpenGL(font_info* fi) {
+    Assert(fi->Bitmap.Data, "No actual bitmap as atlas");
+
+    uint32 textureID;
+
+    glGenTextures(1, &textureID);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, fi->Bitmap.Width, fi->Bitmap.Height, 0, GL_BGRA, GL_UNSIGNED_BYTE, fi->Bitmap.Data);
+
+    inc0 (letter_i,   ArrayCount(font_info::LetterInfo)) {
+        float left   = 0;
+        float right  = (float) fi->LetterInfo[letter_i].Width;
+        float top    = 0;
+        float bottom = (float) fi->FontSize;
+
+        fi->LetterInfo[letter_i].SpriteData.Left = left;
+        fi->LetterInfo[letter_i].SpriteData.Right = right;
+        fi->LetterInfo[letter_i].SpriteData.Top = top;
+        fi->LetterInfo[letter_i].SpriteData.Bottom = bottom;
+        fi->LetterInfo[letter_i].SpriteData.LoadedBitmap = fi->Bitmap;
+        fi->LetterInfo[letter_i].SpriteData.Sprite.TextureID = textureID;
+
+        float vertices[] = {
+            // positions             // texture coords
+            right,    top, 0.0f,     (fi->LetterInfo[letter_i].X + fi->LetterInfo[letter_i].Width) / (float) fi->Bitmap.Width, 1 -                  fi->LetterInfo[letter_i].Y / (float) fi->Bitmap.Height, // top right
+            right, bottom, 0.0f,     (fi->LetterInfo[letter_i].X + fi->LetterInfo[letter_i].Width) / (float) fi->Bitmap.Width, 1 - (fi->LetterInfo[letter_i].Y + fi->FontSize) / (float) fi->Bitmap.Height, // bottom right
+            left,  bottom, 0.0f,                                        fi->LetterInfo[letter_i].X / (float) fi->Bitmap.Width, 1 - (fi->LetterInfo[letter_i].Y + fi->FontSize) / (float) fi->Bitmap.Height, // bottom left
+            left,     top, 0.0f,                                        fi->LetterInfo[letter_i].X / (float) fi->Bitmap.Width, 1 -                  fi->LetterInfo[letter_i].Y / (float) fi->Bitmap.Height  // top left 
+        };
+
+        uint32 vbo;
+
+        glGenVertexArrays(1, &fi->LetterInfo[letter_i].SpriteData.Sprite.VAO);
+        glGenBuffers(1, &vbo);
+
+        glBindVertexArray(fi->LetterInfo[letter_i].SpriteData.Sprite.VAO);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        //glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (0 * sizeof(float)));
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        glBindVertexArray(0);
+    }
+}
+
 // Debug font (Arial16)
 font_info AcquireDebugFont() {
     font_info fi = debugFont;
     fi.Bitmap = BitmapLoad("assets/fonts/Arial16.bmp");
+    FontInfoInitOpenGL(&fi);
     return fi;
 }
 
@@ -283,13 +350,15 @@ int TextRenderScreen(draw_rect* drawRect, font_info* fontInfo, int left, int top
 
         //ShapesBox(drawArea, oldX, top, (x - oldX) + (float) letterInfo->XOffset, (float) fontInfo->FontSize, backgroundCol);
 
-        DrawScreenBMPText(
-            drawRect,
-            x + letterInfo->XOffset, top,
-            letterInfo->X, letterInfo->Y,
-            letterInfo->Width, fontInfo->FontSize,
-            color, /*backgroundColor, */
-            &fontInfo->Bitmap);
+        // DrawScreenBMPText(
+        //     drawRect,
+        //     x + letterInfo->XOffset, top,
+        //     letterInfo->X, letterInfo->Y,
+        //     letterInfo->Width, fontInfo->FontSize,
+        //     color, /*backgroundColor, */
+        //     &fontInfo->Bitmap);
+
+        DrawScreenBitmap(drawRect, x + letterInfo->XOffset, top, letterInfo->SpriteData, color);
 
         oldX = x + letterInfo->XOffset + letterInfo->Width;
 

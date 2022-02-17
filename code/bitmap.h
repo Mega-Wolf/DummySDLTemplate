@@ -56,11 +56,14 @@ loaded_bitmap BitmapLoad(char* filename) {
 
         ret.Width = bh.Width;
         ret.Height = bh.Height;
-        ret.Data = (color32*) malloc(sizeof(color32) * bh.SizeOfBitmap);
+        ret.Data = (color32*) malloc(bh.SizeOfBitmap);
 
-        inc0 (y_i,   bh.Height) {
-            fread(&ret.Data[bh.Width * (bh.Height - 1- y_i)], sizeof(color32), bh.Width, file);
-        }
+        // NOTE(Tobi): Inverted Y; this is not needed anymore
+        // inc0 (y_i,   bh.Height) {
+        //     fread(&ret.Data[bh.Width * (bh.Height - 1- y_i)], sizeof(color32), bh.Width, file);
+        // }
+
+        fread(ret.Data, 1, bh.SizeOfBitmap, file);
 
         fclose(file);
     }

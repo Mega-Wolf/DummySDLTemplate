@@ -10,11 +10,15 @@ struct draw_rect {
     int Width;
     int Height;
 
-    color32* ArrayData;
+    //color32* ArrayData;
     int ArrayWidth;
 
     int RenderLayer;
 };
+
+// void RectCutVertical(draw_rect original, draw_rect* res1, draw_rect* res2) {
+
+// }
 
 // TODO(Tobi): Something is off with my y positions
 
@@ -22,11 +26,13 @@ int Index2d(int x, int y, draw_rect* drawRect) {
     return Index2D(x + drawRect->StartX, y + drawRect->StartY, drawRect->ArrayWidth);
 }
 
+#if 0
 void TrySetPixel(draw_rect* drawRect, int x, int y, color32 col) {
     if (x >= 0 && x < drawRect->Width && y >= 0 && y < drawRect->Height) {
         drawRect->ArrayData[Index2d(x, y, drawRect)] = col;
     }
 }
+#endif
 
 #define SQRT2 1.41421356237
 //#define SQRT2_DIV_2 0.70710678118
@@ -36,6 +42,8 @@ vec2i Camera;
 int RoundFloatToInt(float value) {
     return (int) (value + 0.5f);
 }
+
+#if 0
 
 void DrawScreenLine(draw_rect* drawRect, int startX, int startY, int endX, int endY, color32 col) {
 
@@ -180,6 +188,7 @@ void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, 
     }
 }
 
+/*
 void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
     x += Camera.X;
     y += Camera.Y;
@@ -190,6 +199,7 @@ void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int heigh
         }
     }
 }
+*/
 
 void DrawScreenRectangleAlpha(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
     x += Camera.X;
@@ -237,6 +247,7 @@ void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, 
     DrawScreenRectangle(drawRect, x + width - borderWidth, y, borderWidth, height, col);
 }
 
+/*
 void DrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
     x += Camera.X;
     y += Camera.Y;
@@ -290,7 +301,9 @@ void DrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, c
         }
     }
 }
+*/
 
+/*
 void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) {
     x += Camera.X;
     y += Camera.Y;
@@ -306,7 +319,9 @@ void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) 
         }
     }
 }
+*/
 
+/*
 void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col) {
     x += Camera.X;
     y += Camera.Y;
@@ -334,8 +349,10 @@ void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col
         TrySetPixel(drawRect, x + offset, y - i, col);
     }
 }
+*/
 
-void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, /*color32 backgroundColor,*/ loaded_bitmap* bitmap) {
+/*
+void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, loaded_bitmap* bitmap) {
     x += Camera.X;
     y += Camera.Y;
     
@@ -357,6 +374,7 @@ void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, in
         }
     }
 }
+*/
 
 void DrawWorldLine(draw_rect* drawRect, float startX, float startY, float endX, float endY, color32 col) {
     DrawScreenLine(drawRect, RoundFloatToInt(HEXAGON_A * startX), RoundFloatToInt(HEXAGON_A * startY), RoundFloatToInt(HEXAGON_A * endX), RoundFloatToInt(HEXAGON_A * endY), col);
@@ -379,9 +397,11 @@ void DrawWorldLineThick(draw_rect* drawRect, vec2f start, vec2f end, int pixelTh
     DrawWorldLineThick(drawRect, start.X, start.Y, end.X, end.Y, pixelThickness, col);
 }
 
+/*
 void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
     DrawScreenRectangle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
 }
+*/
 
 void DrawWorldRectangleAlpha(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
     DrawScreenRectangleAlpha(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
@@ -391,14 +411,22 @@ void DrawWorldBorder(draw_rect* drawRect, float x, float y, float width, float h
     DrawScreenBorder(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), (int) (HEXAGON_A * height), (int) (HEXAGON_A * borderWidth), (int) (HEXAGON_A * borderHeight), col);
 }
 
+/*
 void DrawWorldBitmap(draw_rect* drawRect, float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
     DrawScreenBitmap(drawRect, RoundFloatToInt(HEXAGON_A * x) - (bitmap.Width) / 2, RoundFloatToInt(HEXAGON_A * y) - (bitmap.Height) / 2, bitmap, wantedColor);
 }
+*/
 
+/*
 void DrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col) {
     DrawScreenDisc(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col);
 }
+*/
 
+/*
 void DrawWorldCircle(draw_rect* drawRect, float x, float y, float radius, color32 col) {
     DrawScreenCircle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col);
 }
+*/
+
+#endif
