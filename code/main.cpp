@@ -362,6 +362,9 @@ bool IsInLogicalTriangle(vec2i triLogicalPosition, vec2f pos) {
 generation_link<monster> SelectedMonster;
 
 void Update(color32* array, int width, int height, inputs* ins) {
+    UNUSED_PARAM(array);
+
+    ++FrameCountReal;
 
     if (ShakeFrames > 0) {
         --ShakeFrames;
@@ -373,62 +376,44 @@ void Update(color32* array, int width, int height, inputs* ins) {
     }
 
     draw_rect drawRectAll = {};
-    drawRectAll.ArrayWidth = width;
     drawRectAll.Width = width;
     drawRectAll.Height = height;
     drawRectAll.StartX = 0;
     drawRectAll.StartY = 0;
-    drawRectAll.RenderLayer = 0;
-    OGLData.LayerDrawRects[drawRectAll.RenderLayer] = drawRectAll;
 
     draw_rect drawRectWaveStones = {};
-    drawRectWaveStones.ArrayWidth = width;
     drawRectWaveStones.Width = MONSTER_STONE_BAR_WIDTH;
     drawRectWaveStones.Height = height;
     drawRectWaveStones.StartX = 0;
     drawRectWaveStones.StartY = 0;
-    drawRectWaveStones.RenderLayer = 1;
-    OGLData.LayerDrawRects[drawRectWaveStones.RenderLayer] = drawRectWaveStones;
 
     draw_rect drawRectMain = {};
-    drawRectMain.ArrayWidth = width;
     drawRectMain.Width = (TRIANGLE_PAIRS_X + 1) * HALF_HEXAGON_PIXEL_WIDTH;
     drawRectMain.Height = height;
     drawRectMain.StartX = drawRectWaveStones.Width;
     drawRectMain.StartY = 0;
-    drawRectMain.RenderLayer = 2;
-    OGLData.LayerDrawRects[drawRectMain.RenderLayer] = drawRectMain;
     vec2i mainMousePosition = TranslateMousePosition(&drawRectMain, ins);
 
     draw_rect drawRectRightMenu = {};
-    drawRectRightMenu.ArrayWidth = width;
     drawRectRightMenu.Width = MENU_DIAMONDS_X * GRID_SIZE;
     drawRectRightMenu.Height = height;
     drawRectRightMenu.StartX = drawRectMain.StartX + drawRectMain.Width;
     drawRectRightMenu.StartY = 0;
-    drawRectRightMenu.RenderLayer = 3;
-    OGLData.LayerDrawRects[drawRectRightMenu.RenderLayer] = drawRectRightMenu;
     vec2i rightMenuMousePosition = TranslateMousePosition(&drawRectRightMenu, ins);
 
     draw_rect drawRectMenuDiamonds = drawRectRightMenu;
     drawRectMenuDiamonds.StartY = MENU_OFFSET_Y;
     drawRectMenuDiamonds.Height = (MENU_DIAMONDS_Y + 1) / 2 * HEXAGON_PIXEL_HEIGHT;
-    drawRectMenuDiamonds.RenderLayer = 4;
-    OGLData.LayerDrawRects[drawRectMenuDiamonds.RenderLayer] = drawRectMenuDiamonds;
     vec2i menuDiamondsMousePosition = TranslateMousePosition(&drawRectMenuDiamonds, ins);
 
     draw_rect drawRectMenuBuild = drawRectRightMenu;
     drawRectMenuBuild.StartY = height - 10 * HALF_HEXAGON_PIXEL_HEIGHT;
     drawRectMenuBuild.Height = 10 * HALF_HEXAGON_PIXEL_HEIGHT;
-    drawRectMenuBuild.RenderLayer = 5;
-    OGLData.LayerDrawRects[drawRectMenuBuild.RenderLayer] = drawRectMenuBuild;
     vec2i menuBuildMousePosition = TranslateMousePosition(&drawRectMenuBuild, ins);
 
     draw_rect drawRectManaBar = drawRectRightMenu;
     drawRectManaBar.StartY = drawRectMenuDiamonds.StartY + drawRectMenuDiamonds.Height;
     drawRectManaBar.Height = drawRectMenuBuild.StartY - drawRectManaBar.StartY;
-    drawRectManaBar.RenderLayer = 6;
-    OGLData.LayerDrawRects[drawRectManaBar.RenderLayer] = drawRectManaBar;
 
     vec2i mouseTilePos = MouseToTilePos(mainMousePosition);
 
@@ -528,6 +513,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
             Menu.TrapBuildMode = !Menu.TrapBuildMode;
             Menu.WallBuildMode = false;
             Menu.TowerBuildMode = false;
+        }
+
+        if (IS_KEY_PRESSED(KEY_RECOMPILE_SHADERS)) {
+            AutomaticShaderRecompilation = !AutomaticShaderRecompilation;
         }
 
         if (ins->Mouse.WheelDelta > 0) {
@@ -1405,25 +1394,21 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
 
     }
+
+    if (AutomaticShaderRecompilation) {
+        if (FrameCountReal % (FPS * 5)) {
+            RecompileAllShaders();
+        }
+    }
     
     /// Rendering
     {
+        RendererStartFrame();
+
         // TODO(Tobi): The screen shake in combination with the right draw rects is still kind of off
 
-        /// Clear screen
-        {
-            color32 clearColor;
-            if (!LevelRunning) {
-                clearColor = COL32_RGB(0, 0, 192);
-            } else {
-                clearColor = BLACK;
-            }
-            inc0 (i,   height * width) {
-                array[i] = clearColor;
-            }
-        }
-
         /// Render Grass / Path / Wall
+        RendererSetDrawRect(&drawRectMain);
         inc0 (y_i,   TILES_Y) {
             int evenLineOffset = 1 - (y_i % 2);
             inc0 (x_i,   TILES_X) {
@@ -1439,24 +1424,24 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         col = COL32_RGB(r, g, b);
                     }
                     if (triangleIsDown) {
-                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteDown, col);
+                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteDown, col, DEPTH_BACKGROUND);
                     } else {
-                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteUp, col);
+                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteUp, col, DEPTH_BACKGROUND);
                     }
                 } else {
                     if (Ground[y_i][x_i] & (T_WALL)) {
                         // Wall
                         if (triangleIsDown) {
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, DARK_GREY);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, DARK_GREY, DEPTH_BACKGROUND);
                         } else {
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, DARK_GREY);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, DARK_GREY, DEPTH_BACKGROUND);
                         }
                     } else if (!(Ground[y_i][x_i] & (T_PATH | T_GOAL))) {
                         // Grass
                         if (triangleIsDown) {
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, WHITE, DEPTH_BACKGROUND);
                         } else {
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, WHITE, DEPTH_BACKGROUND);
                         }
                     } else {
                         // Path
@@ -1473,8 +1458,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 pathBMPIndex += TRI_DOWN_RIGHT;
                             }
 
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, WHITE);
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[pathBMPIndex], WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassDown, WHITE, DEPTH_BACKGROUND);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathDown[pathBMPIndex], WHITE, DEPTH_BACKGROUND);
                         } else {
                             if (y_i == TILES_Y - 1 || Ground[y_i + 1][x_i] & (T_PATH | T_GOAL)) {
                                 pathBMPIndex += TRI_UP_BOTTOM;
@@ -1486,8 +1471,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                                 pathBMPIndex += TRI_UP_RIGHT;
                             }
 
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, WHITE);
-                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[pathBMPIndex], WHITE);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.GrassUp, WHITE, DEPTH_BACKGROUND);
+                            DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.PathUp[pathBMPIndex], WHITE, DEPTH_BACKGROUND);
                         }
                     }
                 }
@@ -1519,7 +1504,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
 
                 if (buildingBitmap) {
-                    DrawScreenBitmap(&drawRectMain, x, y, *buildingBitmap, buildingColor);
+                    DrawScreenBitmap(&drawRectMain, x, y, *buildingBitmap, buildingColor, DEPTH_BUILDINGS);
                 }
             }
         }
@@ -1544,66 +1529,66 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 inc0 (x_i,   MENU_DIAMONDS_PAIRS_X + 1) {
                     if (oddLine && x_i == MENU_DIAMONDS_PAIRS_X) { break; }
                     if (oddLine) {
-                        DrawScreenBitmap(&drawRectMenuDiamonds, x_i * (HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH) + HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, DARK_GREY);
+                        DrawScreenBitmap(&drawRectMenuDiamonds, x_i * (HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH) + HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, DARK_GREY, DEPTH_BUILDINGS);
                     } else {
-                        DrawScreenBitmap(&drawRectMenuDiamonds, x_i * (HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH), y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, DARK_GREY);
+                        DrawScreenBitmap(&drawRectMenuDiamonds, x_i * (HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH), y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, DARK_GREY, DEPTH_BUILDINGS);
                     }
                 }
             }
 
             // Render the stuff at the bottom
-            // Hard-coded, because everythign else isn't really better
+            // Hard-coded, because everything else isn't really better
 
-            DrawScreenRectangle(&drawRectMenuBuild, 0, 0 * HALF_HEXAGON_PIXEL_HEIGHT, 5 * HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, COL32_RGB(120, 130, 30));
-            DrawScreenRectangle(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, 5 * HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, COL32_RGB(30, 20, 90));
+            DrawScreenRectangle(&drawRectMenuBuild, 0, 0 * HALF_HEXAGON_PIXEL_HEIGHT, 5 * HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, COL32_RGB(120, 130, 30), DEPTH_BACKGROUND);
+            DrawScreenRectangle(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, 5 * HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, COL32_RGB(30, 20, 90), DEPTH_BACKGROUND);
 
             // Left ones
-            DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
-            DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
 
-            DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], RED);
-            DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], PURPLE);
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], RED, DEPTH_BUILDINGS);
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], PURPLE, DEPTH_BUILDINGS);
 
             // Middle ones
-            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 0 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
-            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 2 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
-            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 6 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
-            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 8 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 0 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 2 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 6 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 8 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
 
-            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 0 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], WHITE);
-            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 2 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], YELLOW);
-            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 6 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], BLUE);
-            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 8 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], DARK_GREY);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 0 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], WHITE, DEPTH_DIAMONDS);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 2 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], YELLOW, DEPTH_DIAMONDS);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 6 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], BLUE, DEPTH_DIAMONDS);
+            DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 8 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], DARK_GREY, DEPTH_DIAMONDS);
 
             // Right ones
-            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
-            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE);
+            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
+            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
 
-            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], GREEN);
-            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], AQUA);
+            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], GREEN, DEPTH_DIAMONDS);
+            DrawScreenBitmap(&drawRectMenuBuild, HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], AQUA, DEPTH_DIAMONDS);
 
             // Level buy number in the middle
             char dummy[10];
             snprintf(dummy, ArrayCount(dummy), "%d", Menu.SelectedBuyingLevel + 1);
             int textWidth = TextGetRenderSize(&DummyFontInfo, dummy);
-            DrawScreenDisc(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT, 20, DARK_GREY);
-            TextRenderScreen(&drawRectMenuBuild, &DummyFontInfo, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH - textWidth) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT - DummyFontInfo.FontSize / 2, dummy, WHITE);
+            DrawScreenDisc(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT, 20, DARK_GREY, DEPTH_BUILDINGS);
+            TextRenderScreen(&drawRectMenuBuild, &DummyFontInfo, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH - textWidth) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT - DummyFontInfo.FontSize / 2, dummy, WHITE, DEPTH_DIAMONDS);
         }
 
         /// Render Mana Bar
         {
-
             float manaPercentage = Mana / 1000.0f;
-            DrawScreenRectangle(&drawRectManaBar, 0, 0, 5 * HALF_HEXAGON_PIXEL_WIDTH, drawRectManaBar.Height, COL32_RGB(64, 32,   0));
-            DrawScreenRectangle(&drawRectManaBar, 0, RoundFloat32ToInt32((1.0f - manaPercentage) * drawRectManaBar.Height), 5 * HALF_HEXAGON_PIXEL_WIDTH, RoundFloat32ToInt32(manaPercentage * drawRectManaBar.Height), ORANGE);
+            DrawScreenRectangle(&drawRectManaBar, 0, 0, 5 * HALF_HEXAGON_PIXEL_WIDTH, drawRectManaBar.Height, COL32_RGB(64, 32,   0), DEPTH_BUILDINGS);
+            DrawScreenRectangle(&drawRectManaBar, 0, RoundFloat32ToInt32((1.0f - manaPercentage) * drawRectManaBar.Height), 5 * HALF_HEXAGON_PIXEL_WIDTH, RoundFloat32ToInt32(manaPercentage * drawRectManaBar.Height), ORANGE, DEPTH_BUILDINGS);
 
             char dummy[128];
             snprintf(dummy, ArrayCount(dummy), "%d", (int) Mana);
             int textWidth = TextGetRenderSize(&DummyFontInfo, dummy);
-            TextRenderScreen(&drawRectManaBar, &DummyFontInfo, (5 * HALF_HEXAGON_PIXEL_WIDTH - textWidth) / 2, (drawRectManaBar.Height - DummyFontInfo.FontSize) / 2, dummy, WHITE);
+            TextRenderScreen(&drawRectManaBar, &DummyFontInfo, (5 * HALF_HEXAGON_PIXEL_WIDTH - textWidth) / 2, (drawRectManaBar.Height - DummyFontInfo.FontSize) / 2, dummy, WHITE, DEPTH_DIAMONDS);
         }
 
         /// Render Diamonds in Traps
+        // TODO(Tobi): With a depth value this shouldn't be any different than the other ones and I can combine them again
         inc_bucket (diamond_i, diamond_, &Diamonds) {
             // NOTE(Tobi): I will definitely not have that separated in the future
 
@@ -1612,9 +1597,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
             if (!(Ground[diamond_->TilePositionTopLeft.Y][diamond_->TilePositionTopLeft.X] & T_TRAP)) { continue; }
 
             int frame = FrameCount % 30 / 10;
+            // TODO(Tobi): Adjusting the alpha of the color doesn't work at the moment
             color32 trapRenderColor = diamond_->MixedColor;
             trapRenderColor.Alpha = 128; // TODO(Tobi): Maybe change their brightness instead; that way, the darker ones aren't effected that intensly
-            DrawWorldBitmap(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, Sprites.Cogwheels[frame], trapRenderColor);
+            DrawWorldBitmap(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, Sprites.Cogwheels[frame], trapRenderColor, DEPTH_DIAMONDS);
             
             int count = 0;
             inc0 (color_i,   DC_AMOUNT) {
@@ -1622,15 +1608,15 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderWorld(&drawRectMain, &DummyFontInfo, diamond_->ActualPosition.X + 0.475f, diamond_->ActualPosition.Y + 0.225f, dummy, WHITE);
+            TextRenderWorld(&drawRectMain, &DummyFontInfo, diamond_->ActualPosition.X + 0.475f, diamond_->ActualPosition.Y + 0.225f, dummy, WHITE, DEPTH_DEBUGGING);
 
             /// Render Diamond Range
             // (Which is 1 now in a trap; TODO(Tobi): Make constant)
-            DrawWorldCircle(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, 1.0f, YELLOW);
+            DrawWorldCircle(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, 1.0f, YELLOW, DEPTH_DEBUGGING);
 
             /// Render Diamond Cooldown
             if (diamond_->CooldownFrames) {
-                DrawWorldRectangle(&drawRectMain, diamond_->ActualPosition.X - 0.5f, diamond_->ActualPosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
+                DrawWorldRectangle(&drawRectMain, diamond_->ActualPosition.X - 0.5f, diamond_->ActualPosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN, DEPTH_DEBUGGING);
             }
         }
 
@@ -1640,7 +1626,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
             #if 1
                 // TODO(Tobi): I need new sprites otherwise
                 // TODO(Tobi): Do I want to have hex pos and actual pos separated
-                DrawWorldDisc(&drawRectMain, monster_->ActualPosition.X, monster_->ActualPosition.Y, monster_->Radius, BLUE);
+                DrawWorldDisc(&drawRectMain, monster_->ActualPosition.X, monster_->ActualPosition.Y, monster_->Radius, BLUE, DEPTH_MONSTERS);
             #else
                 int directionInt = 0;
                 {
@@ -1678,24 +1664,24 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
 
                 if (monster_->Health < monster_->MaxHealth || effects > 0) {
-                    DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f, monster_->ActualPosition.Y + 0.5f, monster_->Health / monster_->MaxHealth, 1 / 6.0f, RED);
-                    DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK);
+                    DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f, monster_->ActualPosition.Y + 0.5f, monster_->Health / monster_->MaxHealth, 1 / 6.0f, RED, DEPTH_STATS);
+                    DrawWorldRectangle(&drawRectMain, monster_->ActualPosition.X - 0.5f + monster_->Health / monster_->MaxHealth, monster_->ActualPosition.Y + 0.5f, 1.0f - monster_->Health / monster_->MaxHealth, 1 / 6.0f, BLACK, DEPTH_STATS);
                 }
 
                 int drawnEffects = 0;
                 float xOffsetEffectSprites = 0.15f * (effects - 1);
                 if (monster_->PoisonFrames) {
-                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.PoisonTex, WHITE);
+                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.PoisonTex, WHITE, DEPTH_STATS);
                     ++drawnEffects;
                 }
 
                 if (monster_->WoundedFrames) {
-                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.BloodTex, WHITE);
+                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.BloodTex, WHITE, DEPTH_STATS);
                     ++drawnEffects;
                 }
 
                 if (monster_->SlowFrames) {
-                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.IceTex, WHITE);
+                    DrawWorldBitmap(&drawRectMain, monster_->ActualPosition.X + - xOffsetEffectSprites + 0.3f * drawnEffects, monster_->ActualPosition.Y + 0.8f, Sprites.IceTex, WHITE, DEPTH_STATS);
                     ++drawnEffects;
                 }
             }
@@ -1718,7 +1704,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 frame = 0;
                 drawRect = &drawRectMenuDiamonds;
             }
-            DrawWorldBitmap(drawRect, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, Sprites.Cogwheels[frame], diamond_->MixedColor);
+            DrawWorldBitmap(drawRect, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, Sprites.Cogwheels[frame], diamond_->MixedColor, DEPTH_DIAMONDS);
             //  COL32_RGB(40, 20, 170)
             
             int count = 0;
@@ -1727,15 +1713,15 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderWorld(drawRect, &DummyFontInfo, diamond_->ActualPosition.X + 0.475f, diamond_->ActualPosition.Y + 0.225f, dummy, WHITE);
+            TextRenderWorld(drawRect, &DummyFontInfo, diamond_->ActualPosition.X + 0.475f, diamond_->ActualPosition.Y + 0.225f, dummy, WHITE, DEPTH_DEBUGGING);
 
             if (diamond_->IsInField) {
                 /// Render Diamond Range
-                DrawWorldCircle(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, diamond_->RangeRadius, YELLOW);
+                DrawWorldCircle(&drawRectMain, diamond_->ActualPosition.X, diamond_->ActualPosition.Y, diamond_->RangeRadius, YELLOW, DEPTH_DEBUGGING);
 
                 /// Render Diamond Cooldown
                 if (diamond_->CooldownFrames) {
-                    DrawWorldRectangle(&drawRectMain, diamond_->ActualPosition.X - 0.5f, diamond_->ActualPosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN);
+                    DrawWorldRectangle(&drawRectMain, diamond_->ActualPosition.X - 0.5f, diamond_->ActualPosition.Y + 0.5f, diamond_->CooldownFrames / (float)diamond_->MaxCooldown, 1 / 6.0f, GREEN, DEPTH_DEBUGGING);
                 }
             }
         }
@@ -1751,10 +1737,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
             direction.Y /= length;
             direction.X /= (float) GRID_SIZE;
             direction.Y /= (float) GRID_SIZE;
-            DrawWorldDisc(&drawRectMain, projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
-            DrawWorldDisc(&drawRectMain, projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 4 / (float)GRID_SIZE, projectile_->Color);
-            DrawWorldDisc(&drawRectMain, projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 2 / (float)GRID_SIZE, WHITE);
-            DrawWorldDisc(&drawRectMain, projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 2 / (float)GRID_SIZE, WHITE);
+            DrawWorldDisc(&drawRectMain, projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 4 / (float)GRID_SIZE, projectile_->Color, DEPTH_BULLETS);
+            DrawWorldDisc(&drawRectMain, projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 4 / (float)GRID_SIZE, projectile_->Color, DEPTH_BULLETS);
+            DrawWorldDisc(&drawRectMain, projectile_->Position.X - direction.X, projectile_->Position.Y - direction.Y, 2 / (float)GRID_SIZE, WHITE, DEPTH_BULLETS);
+            DrawWorldDisc(&drawRectMain, projectile_->Position.X + direction.X, projectile_->Position.Y + direction.Y, 2 / (float)GRID_SIZE, WHITE, DEPTH_BULLETS);
         }
 
         ParticlesUpdate();
@@ -1764,23 +1750,23 @@ void Update(color32* array, int width, int height, inputs* ins) {
             int startWaveFrame = WAVE_FRAME_LENGTH * wave_i;
             if (startWaveFrame < MonsterWaveFrames) { continue; }
 
-            DrawScreenRectangle(&drawRectWaveStones, 2, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, MONSTER_STONE_BAR_WIDTH - 4, MONSTER_STONE_BAR_HEIGHT - 4, MonsterWaves[wave_i].Prototype.Color);
+            DrawScreenRectangle(&drawRectWaveStones, 2, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, MONSTER_STONE_BAR_WIDTH - 4, MONSTER_STONE_BAR_HEIGHT - 4, MonsterWaves[wave_i].Prototype.Color, DEPTH_BACKGROUND);
 
             color32 borderColor = wave_i <= MonsterWaveSpeedEnd ? RED : LIGHT_GREY;
-            DrawScreenBorder(&drawRectWaveStones, 0, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH, MONSTER_STONE_BAR_WIDTH, MONSTER_STONE_BAR_HEIGHT, -2, -2, borderColor);
+            DrawScreenBorder(&drawRectWaveStones, 0, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH, MONSTER_STONE_BAR_WIDTH, MONSTER_STONE_BAR_HEIGHT, -2, -2, borderColor, DEPTH_BUILDINGS);
 
             char* numbers[] = {
                 "1", "2", "3", "4", "5", "6", "7", "8", "9"
             };
-            TextRenderScreen(&drawRectWaveStones, &DummyFontInfo, 8, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, numbers[wave_i], BLACK);
+            TextRenderScreen(&drawRectWaveStones, &DummyFontInfo, 8, (startWaveFrame - MonsterWaveFrames) * MONSTER_STONE_BAR_HEIGHT / WAVE_FRAME_LENGTH + 2, numbers[wave_i], BLACK, DEPTH_MONSTERS);
         }
 
         /// Render Top Menu
         {
-            DrawWorldBitmap(&drawRectRightMenu, 4.5f, 2, Sprites.IconMerge, WHITE);
+            DrawWorldBitmap(&drawRectRightMenu, 4.5f, 2, Sprites.IconMerge, WHITE, DEPTH_BACKGROUND);
 
             if (Menu.ShallMerge) {
-                DrawWorldCircle(&drawRectRightMenu, 4.5f, 2, 1, YELLOW);
+                DrawWorldCircle(&drawRectRightMenu, 4.5f, 2, 1, YELLOW, DEPTH_STATS);
             }
         }
 
@@ -1788,7 +1774,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
         if (Menu.DragDrop.Diamond) {
             sprite_data bitmap = Sprites.Cogwheels[0];
 
-            DrawScreenBitmap(&drawRectAll, ins->Mouse.PosX - bitmap.LoadedBitmap.Width / 2, ins->Mouse.PosY - bitmap.LoadedBitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor);
+            DrawScreenBitmap(&drawRectAll, ins->Mouse.PosX - bitmap.LoadedBitmap.Width / 2, ins->Mouse.PosY - bitmap.LoadedBitmap.Height / 2, bitmap, Menu.DragDrop.Diamond->MixedColor, DEPTH_HUD);
 
             int count = 0;
             inc0 (color_i,   DC_AMOUNT) {
@@ -1797,7 +1783,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
             char dummy[5];
             snprintf(dummy, 5, "%d", count);
-            TextRenderScreen(&drawRectAll, &DummyFontInfo,RoundFloat32ToInt32(ins->Mouse.PosX + 0.475f * HEXAGON_A), RoundFloat32ToInt32(ins->Mouse.PosY + 0.225f * HEXAGON_A), dummy, WHITE);
+            TextRenderScreen(&drawRectAll, &DummyFontInfo,RoundFloat32ToInt32(ins->Mouse.PosX + 0.475f * HEXAGON_A), RoundFloat32ToInt32(ins->Mouse.PosY + 0.225f * HEXAGON_A), dummy, WHITE, DEPTH_HUD_TEXT);
         }
 
         /// Render selected Monster popup
@@ -1818,33 +1804,34 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     ++lines;
                 }
 
-                DrawWorldRectangleAlpha(&drawRectAll, monsterContextMenuLeft, monsterContextMenuTop, 4.5f, lines * DummyFontInfo.FontSize / (float) HEXAGON_A, COL32_RGBA(0, 0, 0, 160));
+                // TODO(Tobi): Alpha stuff is not supported at the moment
+                DrawWorldRectangleAlpha(&drawRectAll, monsterContextMenuLeft, monsterContextMenuTop, 4.5f, lines * DummyFontInfo.FontSize / (float) HEXAGON_A, COL32_RGBA(0, 0, 0, 160), DEPTH_HUD);
 
                 char dummy[32];
                 snprintf(dummy, ArrayCount(dummy), "Health: %.2f / %.2f", selectedMonster->Health, selectedMonster->MaxHealth);
-                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop, dummy, WHITE);
+                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop, dummy, WHITE, DEPTH_HUD_TEXT);
 
                 // TODO(Tobi): Modify with slow factor
                 snprintf(dummy, ArrayCount(dummy), "Speed: %.2f", selectedMonster->Speed);
-                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE);
+                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE, DEPTH_HUD_TEXT);
 
                 snprintf(dummy, ArrayCount(dummy), "Mana: %.2f", selectedMonster->Mana);
-                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + 2 * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE);
+                TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + 2 * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE, DEPTH_HUD_TEXT);
 
                 int linesAsOfYet = 3;
                 if (selectedMonster->Armor > 0) {
                     snprintf(dummy, ArrayCount(dummy), "Armor: %.2f", selectedMonster->Armor);
-                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, PURPLE);
+                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, PURPLE, DEPTH_HUD_TEXT);
                     ++linesAsOfYet;
                 }
                 if (selectedMonster->Magic > 0) {
                     snprintf(dummy, ArrayCount(dummy), "Magic: %.2f", selectedMonster->Magic);
-                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, AQUA);
+                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, AQUA, DEPTH_HUD_TEXT);
                     ++linesAsOfYet;
                 }
                 if (selectedMonster->PoisonFrames > 0) {
                     snprintf(dummy, ArrayCount(dummy), "Poisoned: %.2f", selectedMonster->PoisonAmount);
-                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, GREEN);
+                    TextRenderWorld(&drawRectAll, &DummyFontInfo, monsterContextMenuLeft, monsterContextMenuTop + linesAsOfYet * DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, GREEN, DEPTH_HUD_TEXT);
                     ++linesAsOfYet;
                 }
 
@@ -1868,21 +1855,20 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 diamondContextMenuTop = diamondPosition.Y + drawRectMain.StartY / (float) HEXAGON_A;
             }
 
-            DrawWorldRectangleAlpha(&drawRectAll, diamondContextMenuLeft, diamondContextMenuTop, 4.5f, 2 * DummyFontInfo.FontSize / (float) HEXAGON_A, COL32_RGBA(0, 0, 0, 160));
+            DrawWorldRectangleAlpha(&drawRectAll, diamondContextMenuLeft, diamondContextMenuTop, 4.5f, 2 * DummyFontInfo.FontSize / (float) HEXAGON_A, COL32_RGBA(0, 0, 0, 160), DEPTH_HUD);
 
             char dummy[32];
             snprintf(dummy, ArrayCount(dummy), "Damage: %.2f", diamondUnderCursor->Damage);
-            TextRenderWorld(&drawRectAll, &DummyFontInfo, diamondContextMenuLeft, diamondContextMenuTop, dummy, WHITE);
+            TextRenderWorld(&drawRectAll, &DummyFontInfo, diamondContextMenuLeft, diamondContextMenuTop, dummy, WHITE, DEPTH_HUD_TEXT);
 
             snprintf(dummy, ArrayCount(dummy), "Cooldown Frames: %d", diamondUnderCursor->MaxCooldown);
-            TextRenderWorld(&drawRectAll, &DummyFontInfo, diamondContextMenuLeft, diamondContextMenuTop + DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE);
+            TextRenderWorld(&drawRectAll, &DummyFontInfo, diamondContextMenuLeft, diamondContextMenuTop + DummyFontInfo.FontSize / (float) HEXAGON_A, dummy, WHITE, DEPTH_HUD_TEXT);
 
             // TODO(Tobi): Print the effects stuff
-
             if (diamondUnderCursor->IsInField) {
-                DrawWorldCircle(&drawRectMain, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, RED);
+                DrawWorldCircle(&drawRectMain, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, RED, DEPTH_DEBUGGING);
             } else {
-                DrawWorldCircle(&drawRectMenuDiamonds, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, BLUE);
+                DrawWorldCircle(&drawRectMenuDiamonds, diamondUnderCursor->ActualPosition.X, diamondUnderCursor->ActualPosition.Y, 1.0f, BLUE, DEPTH_DEBUGGING);
             }
         }
 
@@ -1971,9 +1957,12 @@ void Update(color32* array, int width, int height, inputs* ins) {
             //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_TOP], WHITE);
         #endif
 
+        if (AutomaticShaderRecompilation) {
+            TextRenderScreen(&drawRectAll, &DummyFontInfo, 0, 0, "SHADER RECOMPILE: ON", WHITE, DEPTH_DEBUGGING);
+        }
+
     }
 
-    RendererRender();
 }
 
 void Exit() {

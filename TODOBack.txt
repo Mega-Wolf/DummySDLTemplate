@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 55,
+	"RunningNumber": 56,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -328,46 +328,6 @@
 			"Type": "+"
 		},
 		{
-			"ID": "00000045",
-			"Description": "Enable depth testing (which means, setting the z value somehow different; not dependent on the drawRect; however, I still want to use fixed values somehow); This means that I could theoretically still keep my rendering layer stuff; maybe I have to have a few more though; I might have to think about some other way of storing them though (separate the different render stages (alpha vs normal/cutoff (shall cutoffs happen separated to normal))) - also I don't want to have a fixed upper limit at the moment; maybe a linked sublist",
-			"Date": "0000-00-00",
-			"Version": "0.0.2",
-			"Group": "OpenGL",
-			"Type": "+"
-		},
-		{
-			"ID": "00000046",
-			"Description": "Circles and Discs (Do I want to do that via a texture of with some fancy shader thing); with a fancy shader thing, I could make the border thicker",
-			"Date": "0000-00-00",
-			"Version": "0.0.2",
-			"Group": "OpenGL",
-			"Type": "+"
-		},
-		{
-			"ID": "00000047",
-			"Description": "Text (they could actually share their textures and therefore be batched together)",
-			"Date": "0000-00-00",
-			"Version": "0.0.2",
-			"Group": "OpenGL",
-			"Type": "+"
-		},
-		{
-			"ID": "00000048",
-			"Description": "Other drawing functions (borders, etc. - I could do the border thing with a shader)",
-			"Date": "0000-00-00",
-			"Version": "0.0.2",
-			"Group": "OpenGL",
-			"Type": "+"
-		},
-		{
-			"ID": "00000049",
-			"Description": "Somehow support alpha stuff (has to happen in last iteration)",
-			"Date": "0000-00-00",
-			"Version": "0.0.2",
-			"Group": "OpenGL",
-			"Type": "+"
-		},
-		{
 			"ID": "00000050",
 			"Description": "Provide hexes and triangles as those shapes instead of having rect stuff with alpha-cutoffs (I will actually still be able to give the top left point if I want to) - is that even more performant or just useless? For now, I could actually ignore that",
 			"Date": "0000-00-00",
@@ -400,11 +360,11 @@
 			"Type": "+"
 		},
 		{
-			"ID": "00000054",
-			"Description": "Automatic Shader Recompiling",
+			"ID": "00000055",
+			"Description": "Get rid of the weird and annoying OpenGL depth values again; I have to solve that differently",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
-			"Group": "Backend",
+			"Group": " xxx ",
 			"Type": "+"
 		}
 	],
@@ -471,6 +431,54 @@
 			"Date": "2022-02-03",
 			"Version": "0.0.0",
 			"Group": "Editor",
+			"Type": "+"
+		},
+		{
+			"ID": "00000046",
+			"Description": "Circles and Discs (Do I want to do that via a texture of with some fancy shader thing); with a fancy shader thing, I could make the border thicker",
+			"Date": "2022-02-17",
+			"Version": "0.0.2",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000047",
+			"Description": "Text (they could actually share their textures and therefore be batched together)",
+			"Date": "2022-02-17",
+			"Version": "0.0.2",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000048",
+			"Description": "Other drawing functions (borders, etc. - I could do the border thing with a shader)",
+			"Date": "2022-02-17",
+			"Version": "0.0.2",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000049",
+			"Description": "Somehow support alpha stuff (has to happen in last iteration)",
+			"Date": "2022-02-19",
+			"Version": "0.0.2",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000045",
+			"Description": "Enable depth testing (which means, setting the z value somehow different; not dependent on the drawRect; however, I still want to use fixed values somehow); This means that I could theoretically still keep my rendering layer stuff; maybe I have to have a few more though; I might have to think about some other way of storing them though (separate the different render stages (alpha vs normal/cutoff (shall cutoffs happen separated to normal))) - also I don't want to have a fixed upper limit at the moment; maybe a linked sublist",
+			"Date": "2022-02-19",
+			"Version": "0.0.2",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000054",
+			"Description": "Automatic Shader Recompiling",
+			"Date": "2022-02-24",
+			"Version": "0.0.2",
+			"Group": "Backend",
 			"Type": "+"
 		}
 	]

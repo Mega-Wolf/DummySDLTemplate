@@ -9,22 +9,35 @@ struct draw_rect {
     int StartY;
     int Width;
     int Height;
-
-    //color32* ArrayData;
-    int ArrayWidth;
-
-    int RenderLayer;
 };
 
-// void RectCutVertical(draw_rect original, draw_rect* res1, draw_rect* res2) {
+void RectCutVerticalOffset(draw_rect original, int offset, draw_rect* res1, draw_rect* res2) {
+    Assert(BetweenInIn(offset, 0, original.Width), "The offset (%d) is not valid Allowed: [0 - %d]", original.Width);
 
-// }
+    *res1 = original;
+    res1->Width = offset;
+
+    *res2 = original;
+    res2->StartX += offset;
+    res2->Width = original.Width - offset;
+}
+
+void RectCutHorizontalOffset(draw_rect original, int offset, draw_rect* res1, draw_rect* res2) {
+    Assert(BetweenInIn(offset, 0, original.Height), "The offset (%d) is not valid Allowed: [0 - %d]", original.Height);
+
+    *res1 = original;
+    res1->Height = offset;
+
+    *res2 = original;
+    res2->StartY += offset;
+    res2->Height = original.Height - offset;
+}
 
 // TODO(Tobi): Something is off with my y positions
 
-int Index2d(int x, int y, draw_rect* drawRect) {
-    return Index2D(x + drawRect->StartX, y + drawRect->StartY, drawRect->ArrayWidth);
-}
+// int Index2d(int x, int y, draw_rect* drawRect) {
+//     return Index2D(x + drawRect->StartX, y + drawRect->StartY, drawRect->ArrayWidth);
+// }
 
 #if 0
 void TrySetPixel(draw_rect* drawRect, int x, int y, color32 col) {

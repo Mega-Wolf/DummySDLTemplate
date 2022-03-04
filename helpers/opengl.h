@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO(Tobi): The OpenGL stuff will probably be changed several times, so I don't care about it all too much now
+
 #include "../code/macros.h"
 #include "debug_functions.h"
 #include "../code/bitmap.h"
@@ -7,8 +9,21 @@
 #include "../extern/glad/glad.h"
 #include "../extern/HandmadeMath.h"
 
+#include "profiler.h"
+
 #define RENDER_LAYER_COUNT 10
 #define RENDER_LAYER_MAX_SIZE 4096 // TODO(Tobi): How many objects can be on one layer; obviously change that please
+
+struct debug_shader_info {
+    char* VertexPath;
+    char* FragmentPath;
+    uint32 ProgramID;
+    uint32 VertexID;
+    uint32 FragmentID;
+};
+
+int DebugShaderInfosCount;
+debug_shader_info DebugShaderInfos[100];
 
 struct color4f {
     float Red;
@@ -105,6 +120,13 @@ int LoadShader(char* vertexShaderPath, char* fragmentShaderPath) {
     _LoadAndCompileShader(vertexShader, vertexShaderPath);
     _LoadAndCompileShader(fragmentShader, fragmentShaderPath);
 
+    DebugShaderInfos[DebugShaderInfosCount].ProgramID    = programID;
+    DebugShaderInfos[DebugShaderInfosCount].VertexID     = vertexShader;
+    DebugShaderInfos[DebugShaderInfosCount].FragmentID   = fragmentShader;
+    DebugShaderInfos[DebugShaderInfosCount].VertexPath   = vertexShaderPath;
+    DebugShaderInfos[DebugShaderInfosCount].FragmentPath = fragmentShaderPath;
+    ++DebugShaderInfosCount;
+
     glAttachShader(programID, vertexShader);
     glAttachShader(programID, fragmentShader);
     glLinkProgram(programID);
@@ -123,15 +145,53 @@ int LoadShader(char* vertexShaderPath, char* fragmentShaderPath) {
         } else {
             // NOTE(Tobi): I just assume that this is the case everywhere
             glUseProgram(programID);
+
+            // TODO(Tobi): What does this even mean (same for original place)
             glUniform1i(glGetUniformLocation(programID, "texture1"), 0);
             glUniformBlockBinding(programID, glGetUniformBlockIndex(programID, "Matrices"), 0);
         }
     }
 
+    // TODO(Tobi): Does this change anything
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
     return returnID;
+}
+
+void RecompileAllShaders() {
+    inc0 (shader_i,   DebugShaderInfosCount) {
+        debug_shader_info dsi = DebugShaderInfos[shader_i];
+        _LoadAndCompileShader(dsi.FragmentID, dsi.FragmentPath);
+        _LoadAndCompileShader(dsi.VertexID, dsi.VertexPath);
+
+        // NOTE(Tobi): Those are already attached; I don't have to do that again
+        //glAttachShader(programID, vertexShader);
+        //glAttachShader(programID, fragmentShader);
+        glLinkProgram(dsi.ProgramID);
+        // check for linking errors
+
+        uint32 returnID = dsi.ProgramID;
+        {
+            int success;
+            char infoLog[512];
+            glGetProgramiv(dsi.ProgramID, GL_LINK_STATUS, &success);
+            if (!success) {
+                glGetProgramInfoLog(dsi.ProgramID, 512, NULL, infoLog);
+                Assert(false, "Error: Shader LINKING failed\n%s\nVertex: %s\nFragment: %s\n", infoLog, dsi.VertexPath, dsi.FragmentPath);
+
+                returnID = OGLData.BrokenShader; 
+            } else {
+                // NOTE(Tobi): I just assume that this is the case everywhere
+                glUseProgram(dsi.ProgramID);
+                glUniform1i(glGetUniformLocation(dsi.ProgramID, "texture1"), 0);
+                glUniformBlockBinding(dsi.ProgramID, glGetUniformBlockIndex(dsi.ProgramID, "Matrices"), 0);
+            }
+        }
+
+        glDeleteShader(dsi.VertexID);
+        glDeleteShader(dsi.FragmentID);
+    }
 }
 
 uint32 LoadTexture(char* texturePath) {
@@ -290,6 +350,8 @@ void ShaderResolveAndSetMat4(int shaderID, char* varName, hmm_mat4* value) {
 void RendererInit() {
     glClearColor(0.5f, 0.7f, 1.0f, 0.0f);
 
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     OGLData.BrokenShader = LoadShader("shaders/BrokenShaderVert.vs", "shaders/BrokenShaderFrag.fs");
     OGLData.BrokenSprite = CreateSprite("assets/images/AlphaTest.bmp");
     OGLData.WhiteSprite = CreateSprite("assets/images/White.bmp");
@@ -361,6 +423,56 @@ void RendererInit() {
     // // Due to several reasons, I feel that the whole rendering thing is different in edit/debug mode and in run mode
 }
 
+void RendererStartFrame() {
+    glDisable(GL_SCISSOR_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_SCISSOR_TEST);
+
+    //glViewport(100, 100, 300, 300);
+
+    // TODO(Tobi): Enable/Disable alpha stuff (at the moment, I think everything is alpha)
+
+    // TODO(Tobi): Normally per sprite; but most things are like that for now
+
+    // TODO(Tobi): I will only need that for smoke at the moment
+    // TODO(Tobi): Provide hexes and triangles as ... hexes and triangles :D (Instead of rects with alpha cutoffs)
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+
+    /// Setup projection and view matrices
+    {
+        // NOTE(Tobi): ViewMatrix would be
+        hmm_mat4 viewRotation = HMM_Mat4d(1.0f); //HMM_RotateRadians(HMM_PI32 / 4, HMM_Vec3(0, 0, 1));
+        //hmm_mat4 viewTranslation = HMM_Translate(level->Camera.X, level->Camera.Y, -10);
+        hmm_mat4 viewTranslation = HMM_Translate(0, 0, -10);
+        hmm_mat4 viewScale = HMM_Mat4d(1.0f); //HMM_Scale(1, 1, 1);
+        hmm_mat4 view = viewTranslation * viewRotation * viewScale; 
+        // platform.WindowData->UserdefinedData.OGLContext->ViewMatrix = view;
+        // Since I don't do any of these; I ignore that (TODO(Tobi): What about screenshake; that could be needed at one point)
+
+
+        // NOTE(Tobi): This probably is almost always the same calculation
+        //hmm_mat4 projection = HMM_Orthographic(0, OGLData.ActiveContext->ViewportWidth, 0, OGLData.ActiveContext->ViewportHeight, 0.1f, 100.0f);
+        hmm_mat4 projection = HMM_Orthographic(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0.1f, 100.0f);
+        hmm_mat4 projectionViewMatrix = projection * view;
+
+        glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices); // NOTE(Tobi): Is this necessary when doing the next thing?
+        glBindBufferRange(GL_UNIFORM_BUFFER, 0, OGLData.BlockIDMatrices, 0, sizeof(hmm_mat4));
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(hmm_mat4), &projectionViewMatrix);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Do I have to do that?
+    }
+
+    glEnable(GL_SCISSOR_TEST);
+
+    // TODO(Tobi): I should enable depth testing; however, then I have to set the z-value better
+    // glEnable(GL_DEPTH_TEST);
+}
+
+void RendererSetDrawRect(draw_rect* drawRect) {
+    glScissor(drawRect->StartX, WINDOW_HEIGHT - drawRect->StartY - drawRect->Height, drawRect->Width, drawRect->Height);
+}
+
+#if 0
 void RendererRender() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -429,49 +541,81 @@ void RendererRender() {
 
     // TODO(Tobi): Render debug stuff (lines, boxes, text, etc.)
     // TODO(Tobi): Is there really a need to separte them; can't I mix them together?
+}
+#endif 0
 
+void RendererPushObject(render_object* ro) {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ro->Sprite.TextureID);
+    glUseProgram(ro->ShaderID);
 
+    // TODO(Tobi): Resolve the stuff once; don't know where to save that though
+    ShaderResolveAndSetMat4(ro->ShaderID, "Model", &ro->ModelMatrix);
+    ShaderResolveAndSetVec4(ro->ShaderID, "Color", (hmm_vec4*) &ro->Color);
+    
+    glBindVertexArray(ro->Sprite.VAO);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    //glBindVertexArray(0);
 }
 
-void RendererRO(render_object* ro, int renderLayer) {
-    Assert(renderLayer >= 0 && renderLayer < RENDER_LAYER_COUNT, "Wrong render layer %d", renderLayer);
-    Assert(OGLData.LayerSizes[renderLayer] < RENDER_LAYER_MAX_SIZE, "Layer %d is full", renderLayer);
+void RendererPushAlphaObject(render_object* ro) {
+    glEnable(GL_BLEND);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ro->Sprite.TextureID);
+    glUseProgram(ro->ShaderID);
 
-    OGLData.LayerData[renderLayer][OGLData.LayerSizes[renderLayer]++] = *ro;
+    // TODO(Tobi): Resolve the stuff once; don't know where to save that though
+    ShaderResolveAndSetMat4(ro->ShaderID, "Model", &ro->ModelMatrix);
+    ShaderResolveAndSetVec4(ro->ShaderID, "Color", (hmm_vec4*) &ro->Color);
+    
+    glBindVertexArray(ro->Sprite.VAO);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    //glBindVertexArray(0);
+
+    glDisable(GL_BLEND);
 }
 
-void RendererScreenSprite(hmm_mat4 modelMatrix, sprite* spriteData, uint32 shaderID, color4f col, int renderLayer) {
+void RendererScreenSprite(hmm_mat4 modelMatrix, sprite* spriteData, uint32 shaderID, color4f col) {
     render_object ro = {};
     ro.ModelMatrix = modelMatrix;
     ro.Sprite = *spriteData;
     ro.ShaderID = shaderID;
     ro.Color = col;
-    RendererRO(&ro, renderLayer);
+    RendererPushObject(&ro);
 }
 
-void RendererScreenRect(hmm_mat4 modelMatrix, color4f col, int renderLayer) {
+void RendererScreenRect(hmm_mat4 modelMatrix, color4f col) {
     render_object ro = {};
     ro.ModelMatrix = modelMatrix;
     ro.Sprite = OGLData.TopLeftUnitSprite.Sprite;
     ro.ShaderID = OGLData.SimpleShader;
     ro.Color = col;
-    RendererRO(&ro, renderLayer);
+    RendererPushObject(&ro);
 }
 
-void RendererScreenDisc(hmm_mat4 modelMatrix, color4f col, int renderLayer) {
+void RendererScreenRectAlpha(hmm_mat4 modelMatrix, color4f col) {
+    render_object ro = {};
+    ro.ModelMatrix = modelMatrix;
+    ro.Sprite = OGLData.TopLeftUnitSprite.Sprite;
+    ro.ShaderID = OGLData.SimpleShader;
+    ro.Color = col;
+    RendererPushAlphaObject(&ro);
+}
+
+void RendererScreenDisc(hmm_mat4 modelMatrix, color4f col) {
     render_object ro = {};
     ro.ModelMatrix = modelMatrix;
     ro.Sprite = OGLData.TopLeftUnitSprite.Sprite;
     ro.ShaderID = OGLData.DiscShader;
     ro.Color = col;
-    RendererRO(&ro, renderLayer);
+    RendererPushObject(&ro);
 }
 
-void RendererScreenCircle(hmm_mat4 modelMatrix, color4f col, int renderLayer) {
+void RendererScreenCircle(hmm_mat4 modelMatrix, color4f col) {
     render_object ro = {};
     ro.ModelMatrix = modelMatrix;
     ro.Sprite = OGLData.TopLeftUnitSprite.Sprite;
     ro.ShaderID = OGLData.CircleShader;
     ro.Color = col;
-    RendererRO(&ro, renderLayer);
+    RendererPushObject(&ro);
 }

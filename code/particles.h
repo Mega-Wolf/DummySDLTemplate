@@ -44,6 +44,6 @@ void ParticlesUpdate() {
             continue;
         }
 
-        DrawWorldBitmap(ppe_->DrawRect, ppe_->WorldX, ppe_->WorldY, ppe_->Sprites[frameForSprites], ppe_->Color);
+        DrawWorldBitmap(ppe_->DrawRect, ppe_->WorldX, ppe_->WorldY, ppe_->Sprites[frameForSprites], ppe_->Color, DEPTH_PARTICLES);
     }
 }

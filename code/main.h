@@ -37,9 +37,25 @@
 #define KEY_TOWER F8
 #define KEY_TRAP F9
 
+#define KEY_RECOMPILE_SHADERS F10
+
 #define KEY_PRIO_GOAL Num1
 #define KEY_PRIO_LEAST_HP Num2
 #define KEY_PRIO_RANDOM Num3
+
+enum depth_values {
+    DEPTH_BACKGROUND,
+    DEPTH_BUILDINGS,
+    DEPTH_MONSTERS,
+    DEPTH_DIAMONDS,
+    DEPTH_PARTICLES,
+    DEPTH_BULLETS,
+    DEPTH_STATS,
+    DEPTH_HUD,
+    DEPTH_HUD_TEXT,
+
+    DEPTH_DEBUGGING
+};
 
 enum terrain {
     T_GRASS = 0,
@@ -94,6 +110,10 @@ terrain Ground[TILES_Y][TILES_X];
 bool IsLevelEditorActive = true; // TODO(Tobi): This is done so the game is paused at the beginning
 bool LevelRunning = false;
 bool LevelEditorChangedSomething;
+
+int FrameCountReal; // NOTE(Tobi): This one is even incremented when the game is paused
+bool AutomaticShaderRecompilation;
+
 
 int StartPositionsCount;
 vec2i StartPositions[TILES_Y * 2 + (TILES_X - 2) * 2];

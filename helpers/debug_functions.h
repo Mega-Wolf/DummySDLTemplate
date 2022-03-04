@@ -26,6 +26,8 @@ debug_read_file_result DebugPlatformReadEntireTextFile(char* fileName) {
     ret.Content[ret.Size] = '\0';
     ++ret.Size;
 
+    fclose(file);
+
     return ret;
 }
 

@@ -328,7 +328,7 @@ int TextGetRenderSizeWithCount(font_info* fontInfo, char* text, int amount) {
 
 // TODO(Tobi): width and height
 // TODO(Tobi): I might actually want to specify a fontSize and the font info doesn't hold the fontSize itself (it will be more like a true type or something)
-int TextRenderScreen(draw_rect* drawRect, font_info* fontInfo, int left, int top, char* text, color32 color/*, color32 backgroundColor*/) {
+int TextRenderScreen(draw_rect* drawRect, font_info* fontInfo, int left, int top, char* text, color32 color, int z) {
  
     // TODO(Tobi): This is just a dummy
     // Can I directly render here; I think later this will just create tiles with the texture on it right?
@@ -358,7 +358,7 @@ int TextRenderScreen(draw_rect* drawRect, font_info* fontInfo, int left, int top
         //     color, /*backgroundColor, */
         //     &fontInfo->Bitmap);
 
-        DrawScreenBitmap(drawRect, x + letterInfo->XOffset, top, letterInfo->SpriteData, color);
+        DrawScreenBitmap(drawRect, x + letterInfo->XOffset, top, letterInfo->SpriteData, color, z);
 
         oldX = x + letterInfo->XOffset + letterInfo->Width;
 
@@ -370,6 +370,6 @@ int TextRenderScreen(draw_rect* drawRect, font_info* fontInfo, int left, int top
     return x - left;
 }
 
-int TextRenderWorld(draw_rect* drawRect, font_info* fontInfo, float left, float top, char* text, color32 color/*, color32 backgroundColor*/) {
-    return TextRenderScreen(drawRect, fontInfo, RoundFloatToInt(HEXAGON_A * left), RoundFloatToInt(HEXAGON_A * top), text, color/*, backgroundColor*/);
+int TextRenderWorld(draw_rect* drawRect, font_info* fontInfo, float left, float top, char* text, color32 color, int z) {
+    return TextRenderScreen(drawRect, fontInfo, RoundFloatToInt(HEXAGON_A * left), RoundFloatToInt(HEXAGON_A * top), text, color, z);
 }

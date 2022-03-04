@@ -15,17 +15,18 @@ color4f color32_to_color4f(color32 col) {
     return colFloat;
 }
 
-void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
+void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int height, color32 col, int z) {
     x += Camera.X;
     y += Camera.Y;
 
     color4f colFloat = color32_to_color4f(col);
 
-    RendererScreenRect(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), 0) * HMM_Scale((float)width, (float)height, 1), colFloat, drawRect->RenderLayer);
+    RendererSetDrawRect(drawRect);
+    RendererScreenRect(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z) * HMM_Scale((float)width, (float)height, 1), colFloat);
 }
 
 // Negative border width/height means border goes inside
-void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col) {
+void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col, int z) {
     // NOTE(Tobi): I don't have to offset that, since it will call DrawScreenRectangle later on, however, it kind of looks cool
     // x += Camera.X;
     // y += Camera.Y;
@@ -44,39 +45,42 @@ void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, 
         borderHeight = -borderHeight;
     }
 
-    DrawScreenRectangle(drawRect, x, y, width, borderHeight, col);
-    DrawScreenRectangle(drawRect, x, y + height - borderHeight, width, borderHeight, col);
+    DrawScreenRectangle(drawRect, x, y, width, borderHeight, col, z);
+    DrawScreenRectangle(drawRect, x, y + height - borderHeight, width, borderHeight, col, z);
 
-    DrawScreenRectangle(drawRect, x, y, borderWidth, height, col);
-    DrawScreenRectangle(drawRect, x + width - borderWidth, y, borderWidth, height, col);
+    DrawScreenRectangle(drawRect, x, y, borderWidth, height, col, z);
+    DrawScreenRectangle(drawRect, x + width - borderWidth, y, borderWidth, height, col, z);
 }
 
-void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) {
+void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col, int z) {
     x += Camera.X;
     y += Camera.Y;
 
     color4f colFloat = color32_to_color4f(col);
 
-    RendererScreenDisc(HMM_Translate((float) (x + drawRect->StartX - radius), (float) (y + drawRect->StartY - radius), 0) * HMM_Scale((float) 2 * radius, (float) 2 * radius, 1), colFloat, drawRect->RenderLayer);
+    RendererSetDrawRect(drawRect);
+    RendererScreenDisc(HMM_Translate((float) (x + drawRect->StartX - radius), (float) (y + drawRect->StartY - radius), (float) z) * HMM_Scale((float) 2 * radius, (float) 2 * radius, 1), colFloat);
 }
 
-void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col) {
+void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col, int z) {
     x += Camera.X;
     y += Camera.Y;
 
     color4f colFloat = color32_to_color4f(col);
 
-    RendererScreenCircle(HMM_Translate((float) (x + drawRect->StartX - radius), (float) (y + drawRect->StartY - radius), 0) * HMM_Scale((float) 2 * radius, (float) 2 * radius, 1), colFloat, drawRect->RenderLayer);
+    RendererSetDrawRect(drawRect);
+    RendererScreenCircle(HMM_Translate((float) (x + drawRect->StartX - radius), (float) (y + drawRect->StartY - radius), (float) z) * HMM_Scale((float) 2 * radius, (float) 2 * radius, 1), colFloat);
 }
 
-void DrawScreenBitmap(draw_rect* drawRect, int x, int y, sprite_data spriteData, color32 col) {
+void DrawScreenBitmap(draw_rect* drawRect, int x, int y, sprite_data spriteData, color32 col, int z) {
     x += Camera.X;
     y += Camera.Y;
 
     color4f colFloat = color32_to_color4f(col);
 
     // TODO(Tobi): In the future, I will have to provide the shader on my own
-    RendererScreenSprite(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), 0), &spriteData.Sprite, OGLData.BasicAlphaCutoffShader, colFloat, drawRect->RenderLayer);
+    RendererSetDrawRect(drawRect);
+    RendererScreenSprite(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z), &spriteData.Sprite, OGLData.BasicAlphaCutoffShader, colFloat);
 }
 
 /*
@@ -115,14 +119,14 @@ void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, 
     UNUSED_PARAM(col);
 }
 
-void DrawScreenRectangleAlpha(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
-    // TODO(Tobi): Implement DrawScreenRectangleAlpha
-    UNUSED_PARAM(drawRect);
-    UNUSED_PARAM(x);
-    UNUSED_PARAM(y);
-    UNUSED_PARAM(width);
-    UNUSED_PARAM(height);
-    UNUSED_PARAM(col);
+void DrawScreenRectangleAlpha(draw_rect* drawRect, int x, int y, int width, int height, color32 col, int z) {
+    x += Camera.X;
+    y += Camera.Y;
+
+    color4f colFloat = color32_to_color4f(col);
+
+    RendererSetDrawRect(drawRect);
+    RendererScreenRectAlpha(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z) * HMM_Scale((float)width, (float)height, 1), colFloat);
 }
 
 // ##########################
@@ -140,23 +144,23 @@ void DrawWorldLineThick(draw_rect* drawRect, vec2f start, vec2f end, int pixelTh
     DrawWorldLineThick(drawRect, start.X, start.Y, end.X, end.Y, pixelThickness, col);
 }
 
-void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
-    DrawScreenRectangle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
+void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col, int z) {
+    DrawScreenRectangle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col, z);
 }
 
-void DrawWorldBitmap(draw_rect* drawRect, float x, float y, sprite_data spriteData, color32 col) {
+void DrawWorldBitmap(draw_rect* drawRect, float x, float y, sprite_data spriteData, color32 col, int z) {
     // TODO(Tobi): Not cast to int for non-pixel-perfectness? 
-    DrawScreenBitmap(drawRect, RoundFloatToInt(HEXAGON_A * x) - spriteData.LoadedBitmap.Width / 2, RoundFloatToInt(HEXAGON_A * y) - spriteData.LoadedBitmap.Height / 2, spriteData, col);
+    DrawScreenBitmap(drawRect, RoundFloatToInt(HEXAGON_A * x) - spriteData.LoadedBitmap.Width / 2, RoundFloatToInt(HEXAGON_A * y) - spriteData.LoadedBitmap.Height / 2, spriteData, col, z);
 }
 
-void DrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col) {
-    DrawScreenDisc(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col);
+void DrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col, int z) {
+    DrawScreenDisc(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col, z);
 }
 
-void DrawWorldCircle(draw_rect* drawRect, float x, float y, float radius, color32 col) {
-    DrawScreenCircle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col);
+void DrawWorldCircle(draw_rect* drawRect, float x, float y, float radius, color32 col, int z) {
+    DrawScreenCircle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col, z);
 }
 
-void DrawWorldRectangleAlpha(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
-    DrawScreenRectangleAlpha(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
+void DrawWorldRectangleAlpha(draw_rect* drawRect, float x, float y, float width, float height, color32 col, int z) {
+    DrawScreenRectangleAlpha(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col, z);
 }
