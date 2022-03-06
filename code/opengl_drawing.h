@@ -83,6 +83,12 @@ void DrawScreenBitmap(draw_rect* drawRect, int x, int y, sprite_data spriteData,
     RendererScreenSprite(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z), &spriteData.Sprite, OGLData.BasicAlphaCutoffShader, colFloat);
 }
 
+
+void DrawBackgroundSprite(draw_rect* drawRect, sprite_data spriteData, sprite_data spriteData2, int z) {
+    RendererSetDrawRect(drawRect);
+    RendererScreenSprite2(HMM_Translate((float) (drawRect->StartX + Camera.X), (float) (drawRect->StartY + Camera.Y), (float) z), &spriteData.Sprite, &spriteData2.Sprite, OGLData.BackgroundShader);
+}
+
 /*
 void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, sprite_data* sprite) {
     x += Camera.X;

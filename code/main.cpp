@@ -126,6 +126,11 @@ void InitDistanceArray() {
     }
 }
 
+loaded_bitmap BackgroundSprite;
+sprite_data BackgroundSpriteSprite;
+
+sprite_data Noises[9];
+
 void Init() {
     RendererInit();
     AssetsInit(); // NOTE(Tobi): Has to happen after OpenGL-Init so I can use the inited broken-stuff dummies
@@ -148,6 +153,66 @@ void Init() {
 
     CollectStartPositions();
     InitDistanceArray();
+
+    /// Dummy background stuff
+    {
+        BackgroundSprite = {};
+        BackgroundSprite.Height = WINDOW_HEIGHT;
+        BackgroundSprite.Width = (TRIANGLE_PAIRS_X + 1) * HALF_HEXAGON_PIXEL_WIDTH;
+        BackgroundSprite.Data = (color32*) calloc(BackgroundSprite.Height * BackgroundSprite.Width, sizeof(color32));
+
+        loaded_bitmap blurred = BackgroundSprite;
+        blurred.Data = (color32*) calloc(BackgroundSprite.Height * BackgroundSprite.Width, sizeof(color32));
+
+        // inc0 (i,   BackgroundSprite.Width * BackgroundSprite.Height) {
+        //     BackgroundSprite.Data[i] = COL32_RGBA(255, 255, 255, 255);
+        // }
+
+        draw_rect drawRectMain = {};
+        drawRectMain.Width = BackgroundSprite.Width;
+        drawRectMain.Height = BackgroundSprite.Height;
+        drawRectMain.Width = (TRIANGLE_PAIRS_X + 1) * HALF_HEXAGON_PIXEL_WIDTH;
+        drawRectMain.StartX = MONSTER_STONE_BAR_WIDTH;
+
+        inc0 (y_i,   TILES_Y) {
+            int evenLineOffset = 1 - (y_i % 2);
+            inc0 (x_i,   TILES_X) {
+                bool triangleIsDown = (x_i + y_i) % 2;
+                if (Ground[y_i][x_i] & (T_PATH | T_GOAL)) {
+                    // Path
+                    if (triangleIsDown) {
+                        SRDrawScreenBitmap(BackgroundSprite.Data, &drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteDown.LoadedBitmap, WHITE);
+                    } else {
+                        SRDrawScreenBitmap(BackgroundSprite.Data, &drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteUp.LoadedBitmap, WHITE);
+                    }
+                }
+            }
+        }
+
+        // inc0 (i,   BackgroundSprite.Width * BackgroundSprite.Height) {
+        //     BackgroundSprite.Data[i].Alpha = 255;
+        // }
+        
+        //SRGaussianBlur(blurred.Data, BackgroundSprite, 7.5f);
+        SRGaussianBlur1D(blurred.Data, BackgroundSprite, 7.5f, true);
+        SRGaussianBlur1D(BackgroundSprite.Data, blurred, 7.5f, false);
+
+        // inc0 (i,   BackgroundSprite.Width * BackgroundSprite.Height) {
+        //     blurred.Data[i].Blue = BackgroundSprite.Data[i].Blue;
+        // }
+
+        BackgroundSpriteSprite = CreateSpriteFromBitmap(BackgroundSprite);
+
+        Noises[0] = CreateSprite("assets/noise/T_Random_00.bmp");
+        Noises[1] = CreateSprite("assets/noise/T_Random_04.bmp");
+        Noises[2] = CreateSprite("assets/noise/T_Random_06.bmp");
+        Noises[3] = CreateSprite("assets/noise/T_Random_22.bmp");
+        Noises[4] = CreateSprite("assets/noise/T_Random_29.bmp");
+        Noises[5] = CreateSprite("assets/noise/T_Random_39.bmp");
+        Noises[6] = CreateSprite("assets/noise/T_Random_44.bmp");
+        Noises[7] = CreateSprite("assets/noise/T_Random_50.bmp");
+        Noises[8] = CreateSprite("assets/noise/T_Random_66.bmp");
+    }
 }
 
 vec2f TriToActualPos(vec2i triPosition) {
@@ -1407,6 +1472,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         // TODO(Tobi): The screen shake in combination with the right draw rects is still kind of off
 
+        #if 0
         /// Render Grass / Path / Wall
         RendererSetDrawRect(&drawRectMain);
         inc0 (y_i,   TILES_Y) {
@@ -1478,6 +1544,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 }
             }
         }
+        #endif
 
         /// Render buildings
         inc0 (y_i,   TILES_Y) {
@@ -1546,8 +1613,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
             DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
 
-            DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], RED, DEPTH_BUILDINGS);
-            DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], PURPLE, DEPTH_BUILDINGS);
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 3 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], RED, DEPTH_DIAMONDS);
+            DrawScreenBitmap(&drawRectMenuBuild, 0, 5 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Cogwheels[0], PURPLE, DEPTH_DIAMONDS);
 
             // Middle ones
             DrawScreenBitmap(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 0 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
@@ -1956,6 +2023,20 @@ void Update(color32* array, int width, int height, inputs* ins) {
             DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[0], WHITE);
             //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_TOP], WHITE);
         #endif
+
+        inc0 (y_i,   20) {
+            DrawWorldBitmap(&drawRectMain, 4.5f, HEXAGON_H * (2 * y_i), Sprites.Tower, WHITE, DEPTH_DEBUGGING);
+        }
+
+        // TODO(Tobi): Remove the noise texture switching and make those parameters
+        static int NoiseIndex = 0;
+        if (IS_KEY_PRESSED(F8)) {
+            NoiseIndex = (NoiseIndex + 1) % ArrayCount(Noises);
+        }
+
+        // TODO(Tobi): This thing does not render walls
+        RendererSetDrawRect(&drawRectMain);
+        DrawBackgroundSprite(&drawRectMain, BackgroundSpriteSprite, Noises[NoiseIndex], DEPTH_BACKGROUND);
 
         if (AutomaticShaderRecompilation) {
             TextRenderScreen(&drawRectAll, &DummyFontInfo, 0, 0, "SHADER RECOMPILE: ON", WHITE, DEPTH_DEBUGGING);

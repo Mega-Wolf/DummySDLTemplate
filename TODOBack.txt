@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 56,
+	"RunningNumber": 59,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -64,14 +64,6 @@
 			"Type": "+"
 		},
 		{
-			"ID": "00000009",
-			"Description": "OpenGL port (not sure if this will make some stuff a bit more difficult; somehow make modular)",
-			"Date": "0000-00-00",
-			"Version": "0.0.2",
-			"Group": "Backend",
-			"Type": "+"
-		},
-		{
 			"ID": "00000010",
 			"Description": "2 more buildings (something doing strong attacks and something doing a lot of attacks) (but I think I want another two more)",
 			"Date": "0000-00-00",
@@ -85,14 +77,6 @@
 			"Date": "0000-00-00",
 			"Version": "0.0.4",
 			"Group": "Game",
-			"Type": "+"
-		},
-		{
-			"ID": "00000012",
-			"Description": "Better background sprites (maybe a lot of that will be done via shaders? That would be quite nice; for that I definitely need shader recompile BEFORE (which shouldn't be too difficult); one could create an image out of the shader stuff and then could actually keep that generated image instead of rerendering every frame)",
-			"Date": "0000-00-00",
-			"Version": "0.0.3",
-			"Group": "Sprites",
 			"Type": "+"
 		},
 		{
@@ -321,7 +305,7 @@
 		},
 		{
 			"ID": "00000044",
-			"Description": "I somehow want the OpenGL stuff to be pixel perfect; otherwise, some stuff might look really stupid; is that possible",
+			"Description": "I somehow want the OpenGL stuff to be pixel perfect; otherwise, some stuff might look really stupid; is that possible (also: is it actually needed?)",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
 			"Group": " xxx ",
@@ -337,9 +321,9 @@
 		},
 		{
 			"ID": "00000051",
-			"Description": "Some of the things I do, could use shader arguments (circle or border; however, I don't really have a system as of yet to set such values)",
+			"Description": "Some of the things I do, could use shader arguments (circle or border; however, I don't really have a system as of yet to set such values) - I am totally okay with a shaders file, where I just hardcode different types of shaders",
 			"Date": "0000-00-00",
-			"Version": "0.0.0",
+			"Version": "0.0.1",
 			"Group": "OpenGL",
 			"Type": ">"
 		},
@@ -362,6 +346,22 @@
 		{
 			"ID": "00000055",
 			"Description": "Get rid of the weird and annoying OpenGL depth values again; I have to solve that differently",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000056",
+			"Description": "I would really love to get the metaprogramming up again and generate shader related stuff automatically (I don't know think it's much required though)",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": "Metaprogramming",
+			"Type": "#"
+		},
+		{
+			"ID": "00000057",
+			"Description": "Try out rendering the towers etc. with regular non-pixel perfect stuff; I think that will not really be needed unless maybe for the very small icons for the monsters and the health bar the rest can be in higher quality.",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
 			"Group": " xxx ",
@@ -480,6 +480,30 @@
 			"Version": "0.0.2",
 			"Group": "Backend",
 			"Type": "+"
+		},
+		{
+			"ID": "00000012",
+			"Description": "Better background sprites (maybe a lot of that will be done via shaders? That would be quite nice; for that I definitely need shader recompile BEFORE (which shouldn't be too difficult); one could create an image out of the shader stuff and then could actually keep that generated image instead of rerendering every frame)",
+			"Date": "2022-03-05",
+			"Version": "0.0.3",
+			"Group": "Sprites",
+			"Type": "+"
+		},
+		{
+			"ID": "00000009",
+			"Description": "OpenGL port (not sure if this will make some stuff a bit more difficult; somehow make modular)",
+			"Date": "2022-03-05",
+			"Version": "0.0.2",
+			"Group": "Backend",
+			"Type": "+"
+		},
+		{
+			"ID": "00000058",
+			"Description": "It seems like the depth is actually ignored",
+			"Date": "2022-03-06",
+			"Version": "0.0.0",
+			"Group": "OpenGL",
+			"Type": "="
 		}
 	]
 }

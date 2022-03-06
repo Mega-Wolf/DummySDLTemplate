@@ -65,6 +65,8 @@ struct ogl_data {
     uint32 DiscShader;
     uint32 CircleShader;
 
+    uint32 BackgroundShader; // TESTING
+
     uint32 DummyVAO;
     uint32 BlockIDMatrices;
 
@@ -219,6 +221,76 @@ uint32 LoadTexture(char* texturePath) {
     }
 }
 
+// TODO(Tobi): This is just copied 1:1 from below
+sprite_data CreateSpriteFromBitmap(loaded_bitmap loadedBitmap) {
+    sprite_data ret = {};
+
+    if (loadedBitmap.Data) {
+        glGenTextures(1, &ret.Sprite.TextureID);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, ret.Sprite.TextureID);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, loadedBitmap.Width, loadedBitmap.Height, 0, GL_BGRA, GL_UNSIGNED_BYTE, loadedBitmap.Data);
+    } else {
+        return OGLData.BrokenSprite;
+    }
+
+    float left = 0;
+    float right = (float) loadedBitmap.Width;
+    float top = 0;
+    float bottom = (float) loadedBitmap.Height;
+
+    ret.Left = left;
+    ret.Right = right;
+    ret.Top = top;
+    ret.Bottom = bottom;
+    ret.LoadedBitmap = loadedBitmap;
+
+    float vertices[] = {
+        // Bound to the middle
+        // positions             // texture coords
+        right,    top, 0.0f,      1.0f, 1.0f, // top right
+        right, bottom, 0.0f,      1.0f, 0.0f, // bottom right
+         left, bottom, 0.0f,      0.0f, 0.0f, // bottom left
+         left,    top, 0.0f,      0.0f, 1.0f  // top left 
+
+        // Bound to the floor
+        //  0.5f, 1.0f, 0.0f,      1.0f, 1.0f, // top right
+        //  0.5f, 0.0f, 0.0f,      1.0f, 0.0f, // bottom right
+        // -0.5f, 0.0f, 0.0f,      0.0f, 0.0f, // bottom left
+        // -0.5f, 1.0f, 0.0f,      0.0f, 1.0f  // top left 
+    };
+
+    uint32 vbo;
+
+    glGenVertexArrays(1, &ret.Sprite.VAO);
+    glGenBuffers(1, &vbo);
+
+    glBindVertexArray(ret.Sprite.VAO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    //glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (0 * sizeof(float)));
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    return ret;
+}
+
 sprite_data CreateSprite(char* texturePath) {
     sprite_data ret = {};
 
@@ -364,6 +436,8 @@ void RendererInit() {
     OGLData.DiscShader = LoadShader("shaders/BasicVert.vs", "shaders/DiscFrag.fs");
     OGLData.CircleShader = LoadShader("shaders/BasicVert.vs", "shaders/CircleFrag.fs");
 
+    OGLData.BackgroundShader = LoadShader("shaders/BasicVert.vs", "shaders/BackgroundFrag.fs");
+
     glGenBuffers(1, &OGLData.BlockIDMatrices);
     glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices);
     glBufferData(GL_UNIFORM_BUFFER, 1 * sizeof(hmm_mat4), NULL, GL_DYNAMIC_DRAW);
@@ -464,8 +538,7 @@ void RendererStartFrame() {
 
     glEnable(GL_SCISSOR_TEST);
 
-    // TODO(Tobi): I should enable depth testing; however, then I have to set the z-value better
-    // glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 }
 
 void RendererSetDrawRect(draw_rect* drawRect) {
@@ -573,6 +646,30 @@ void RendererPushAlphaObject(render_object* ro) {
     //glBindVertexArray(0);
 
     glDisable(GL_BLEND);
+}
+
+// TESTING
+void RendererScreenSprite2(hmm_mat4 modelMatrix, sprite* spriteData1, sprite* spriteData2, uint32 shaderID) {
+    glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
+    glBindTexture(GL_TEXTURE_2D, spriteData1->TextureID);
+
+    glActiveTexture(GL_TEXTURE0 + 1); // Texture unit 1
+    glBindTexture(GL_TEXTURE_2D, spriteData2->TextureID);
+
+    glUseProgram(shaderID);
+
+    // TODO(Tobi): Resolve the stuff once; don't know where to save that though
+
+    ShaderResolveAndSetInt(shaderID, "texture1", 0);
+    ShaderResolveAndSetInt(shaderID, "texture2", 1);
+
+    ShaderResolveAndSetMat4(shaderID, "Model", &modelMatrix);
+    color4f col = {1.0f, 1.0f, 1.0f, 1.0f};
+    ShaderResolveAndSetVec4(shaderID, "Color", (hmm_vec4*) &col);
+    
+    glBindVertexArray(spriteData1->VAO);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    //glBindVertexArray(0);
 }
 
 void RendererScreenSprite(hmm_mat4 modelMatrix, sprite* spriteData, uint32 shaderID, color4f col) {

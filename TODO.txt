@@ -4,26 +4,26 @@ _____________________ 0.0.0: "" _____________________
 00000037: + 0000-00-00 0.0.0 " xxx "     UI for choosing diamond priority
 00000039: + 0000-00-00 0.0.0 " xxx "     Rethink the layout of the right menu, do I really want all that stuff in hexagons; that doesn't look as cool as I thought
 00000042: + 0000-00-00 0.0.0 " xxx "     Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive
-00000044: + 0000-00-00 0.0.0 " xxx "     I somehow want the OpenGL stuff to be pixel perfect; otherwise, some stuff might look really stupid; is that possible
+00000044: + 0000-00-00 0.0.0 " xxx "     I somehow want the OpenGL stuff to be pixel perfect; otherwise, some stuff might look really stupid; is that possible (also: is it actually needed?)
 00000050: > 0000-00-00 0.0.0 "OpenGL"     Provide hexes and triangles as those shapes instead of having rect stuff with alpha-cutoffs (I will actually still be able to give the top left point if I want to) - is that even more performant or just useless? For now, I could actually ignore that
-00000051: > 0000-00-00 0.0.0 "OpenGL"     Some of the things I do, could use shader arguments (circle or border; however, I don't really have a system as of yet to set such values)
 00000052: + 0000-00-00 0.0.0 "OpenGL"     Such a system could also include dynamically having lists of "same" things ("Now, I will have three lists of monster sprites, healthbar stuff, and subsprites" and then I could actually batch these together later on)
-00000055: + 0000-00-00 0.0.0 " xxx "     Get rid of the weird and annoying OpenGL depth values again; I have to solve that differently
+00000055: + 0000-00-00 0.0.0 "OpenGL"     Get rid of the weird and annoying OpenGL depth values again; I have to solve that differently
+00000056: # 0000-00-00 0.0.0 "Metaprogramming"     I would really love to get the metaprogramming up again and generate shader related stuff automatically (I don't know think it's much required though)
+00000057: + 0000-00-00 0.0.0 " xxx "     Try out rendering the towers etc. with regular non-pixel perfect stuff; I think that will not really be needed unless maybe for the very small icons for the monsters and the health bar the rest can be in higher quality.
 
 _____________________ 0.0.1: "Super basic workings" _____________________
 00000007: + 0000-00-00 0.0.1 "Sprites"     Dummy Cogwheel sprites (5 different levels for now) (Shall I Do more high-res and just rotate the stuff; or specifically rotated; quite some work)
 00000008: + 0000-00-00 0.0.1 "Sprites"     Dummy Cogwheel sprites (support 2 or even three different colours)
+00000051: > 0000-00-00 0.0.1 "OpenGL"     Some of the things I do, could use shader arguments (circle or border; however, I don't really have a system as of yet to set such values) - I am totally okay with a shaders file, where I just hardcode different types of shaders
 
 _____________________ 0.0.2: "Graphical update" _____________________
 00000001: + 0000-00-00 0.0.2 "Sprites"     Swarmling dummy sprites (6 directions)
 00000002: + 0000-00-00 0.0.2 "Sprites"     Reaver dummy sprites (6 directions)
-00000009: + 0000-00-00 0.0.2 "Backend"     OpenGL port (not sure if this will make some stuff a bit more difficult; somehow make modular)
 00000034: + 0000-00-00 0.0.2 "Sprites"     Wall Sprites (at least up and down, but more will be needed in the future for 3d effect)
 00000038: + 0000-00-00 0.0.2 "Game"     Better buildings sprites (sprites for wall, tower, trap and future buildings (How do I want to have that arranged))
 00000053: + 0000-00-00 0.0.2 "OpenGL"     How do lines work in OGL
 
 _____________________ 0.0.3: "Editors" _____________________
-00000012: + 0000-00-00 0.0.3 "Sprites"     Better background sprites (maybe a lot of that will be done via shaders? That would be quite nice; for that I definitely need shader recompile BEFORE (which shouldn't be too difficult); one could create an image out of the shader stuff and then could actually keep that generated image instead of rerendering every frame)
 00000013: + 0000-00-00 0.0.3 "Editor"     Level editor (that lets you select deco sprites etc.)
 00000014: + 0000-00-00 0.0.3 "Editor"     Monster wave editor
 00000017: + 0000-00-00 0.0.3 "Design"     2 boss monsters (spawning swarmlings, destroying walls?, shielded stuff)

@@ -58,7 +58,7 @@ int RoundFloatToInt(float value) {
 
 #if 0
 
-void DrawScreenLine(draw_rect* drawRect, int startX, int startY, int endX, int endY, color32 col) {
+SRDrawScreenLine(draw_rect* drawRect, int startX, int startY, int endX, int endY, color32 col) {
 
     startX += Camera.X;
     startY += Camera.Y;
@@ -107,7 +107,7 @@ void DrawScreenLine(draw_rect* drawRect, int startX, int startY, int endX, int e
 }
 
 /*
-void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, int endY, int thickness, color32 col) {
+SRDrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, int endY, int thickness, color32 col) {
 
     int absX = abs(startX - endX);
     int absY = abs(startY - endY);
@@ -144,7 +144,7 @@ void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, 
 }
 */
 
-void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, int endY, float thickness, color32 col) { 
+SRDrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, int endY, float thickness, color32 col) { 
     int dx = abs(endX - startX);
     int sx = startX < endX ? 1 : -1;
     int dy = abs(endY - startY);
@@ -202,7 +202,7 @@ void DrawScreenLineThick(draw_rect* drawRect, int startX, int startY, int endX, 
 }
 
 /*
-void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
+SRDrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
     x += Camera.X;
     y += Camera.Y;
 
@@ -214,7 +214,7 @@ void DrawScreenRectangle(draw_rect* drawRect, int x, int y, int width, int heigh
 }
 */
 
-void DrawScreenRectangleAlpha(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
+SRDrawScreenRectangleAlpha(draw_rect* drawRect, int x, int y, int width, int height, color32 col) {
     x += Camera.X;
     y += Camera.Y;
 
@@ -234,7 +234,7 @@ void DrawScreenRectangleAlpha(draw_rect* drawRect, int x, int y, int width, int 
 }
 
 // Negative border width/height means border goes inside
-void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col) {
+SRDrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, int borderWidth, int borderHeight, color32 col) {
     // NOTE(Tobi): I don't have to offset that, since it will call DrawScreenRectangle later on, however, it kind of looks cool
     // x += Camera.X;
     // y += Camera.Y;
@@ -260,8 +260,10 @@ void DrawScreenBorder(draw_rect* drawRect, int x, int y, int width, int height, 
     DrawScreenRectangle(drawRect, x + width - borderWidth, y, borderWidth, height, col);
 }
 
+#endif
+
 /*
-void DrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
+void SRDrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
     x += Camera.X;
     y += Camera.Y;
 
@@ -316,8 +318,174 @@ void DrawScreenBitmap(draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, c
 }
 */
 
+
+void SRGaussianBlur1D(color32* arrayData, loaded_bitmap bitmap, float stdDev, bool horizontal) {
+    const int SIZE = 15;
+
+    /// Create the filter
+    // for now, I assume size = 1
+    float kernel[SIZE + SIZE + 1];
+    float sumOfValues = 0;
+    incIn (i,   -SIZE,    +SIZE) {
+        float value = 1/sqrtf(2 * PI * stdDev * stdDev) * expf(-(i * i) / (2 * stdDev * stdDev));
+        sumOfValues += value;
+        kernel[i + SIZE] = value;
+    }
+
+    inc0 (i,   SIZE + SIZE + 1) {
+        kernel[i] /= sumOfValues;
+    }
+
+    /// Apply filter
+    if (horizontal) {
+        inc0 (imageY_i,   bitmap.Height) {
+            inc0 (imageX_i,   bitmap.Width) {
+                float result = 0;
+
+                incIn (x_i,   -SIZE,    +SIZE) {
+                    int x = Clamp(imageX_i + x_i, 0, bitmap.Width - 1);
+
+                    float kernelValue = kernel[x_i + SIZE];
+                    int red = bitmap.Data[Index2D(x, imageY_i, bitmap.Width)].Red;
+
+                    result += kernelValue * red;
+                }
+                color32 resColor = {};
+                resColor.Red = (unsigned char) RoundFloatToInt(result);
+                resColor.Alpha = 255;
+                arrayData[Index2D(imageX_i, imageY_i, bitmap.Width)] = resColor;
+            }
+        }
+    } else {
+        inc0 (imageY_i,   bitmap.Height) {
+            inc0 (imageX_i,   bitmap.Width) {
+                float result = 0;
+
+                incIn (y_i,   -SIZE,    +SIZE) {
+                    int y = Clamp(imageY_i + y_i, 0, bitmap.Height - 1);
+
+                    float kernelValue = kernel[y_i + SIZE];
+                    int red = bitmap.Data[Index2D(imageX_i, y, bitmap.Width)].Red;
+
+                    result += kernelValue * red;
+                }
+                color32 resColor = {};
+                resColor.Red = (unsigned char) RoundFloatToInt(result);
+                resColor.Alpha = 255;
+                arrayData[Index2D(imageX_i, imageY_i, bitmap.Width)] = resColor;
+            }
+        }
+    }
+
+    
+}
+
+void SRGaussianBlur(color32* arrayData, loaded_bitmap bitmap, float stdDev) {
+    const int SIZE = 15;
+
+    /// Create the filter
+    // for now, I assume size = 1
+    float kernel[SIZE + SIZE + 1][SIZE + SIZE + 1];
+    float sumOfValues = 0;
+    incIn (y_i,   -SIZE,    +SIZE) {
+        incIn (x_i,   -SIZE,    +SIZE) {
+            float value = 1/(2 * PI * stdDev * stdDev) * expf(-(x_i*x_i + y_i * y_i) / (2 * stdDev * stdDev));
+            sumOfValues += value;
+
+            kernel[y_i + SIZE][x_i + SIZE] = value;
+        }
+    }
+
+    inc0 (y_i,   SIZE + SIZE + 1) {
+        inc0 (x_i,   SIZE + SIZE + 1) {
+            kernel[y_i][x_i] /= sumOfValues;
+        }
+    }
+
+    /// Apply filter
+    inc0 (imageY_i,   bitmap.Height) {
+        inc0 (imageX_i,   bitmap.Width) {
+            float result = 0;
+            incIn (y_i,   -SIZE,    +SIZE) {
+                int y = Clamp(imageY_i + y_i, 0, bitmap.Height - 1);
+
+                incIn (x_i,   -SIZE,    +SIZE) {
+                    int x = Clamp(imageX_i + x_i, 0, bitmap.Width - 1);
+
+                    float kernelValue = kernel[y_i + SIZE][x_i + SIZE];
+                    int red = bitmap.Data[Index2D(x, y, bitmap.Width)].Red;
+
+                    result += kernelValue * red;
+                }
+            }
+            color32 resColor = {};
+            resColor.Red = (unsigned char) RoundFloatToInt(result);
+            resColor.Alpha = 255;
+            arrayData[Index2D(imageX_i, imageY_i, bitmap.Width)] = resColor;
+        }
+    }
+}
+
+void SRDrawScreenBitmap(color32* arrayData, draw_rect* drawRect, int x, int y, loaded_bitmap bitmap, color32 wantedColor) {
+    y = drawRect->Height - y - bitmap.Height;
+
+    x += Camera.X;
+    y += Camera.Y;
+
+    int startX = AtLeast(-x, 0);
+    int startY = AtLeast(-y, 0);
+
+    int endX = AtMost(bitmap.Width, drawRect->Width - x);
+    int endY = AtMost(bitmap.Height, drawRect->Height - y);
+
+    inc (y_i,   startY,    endY) {
+        inc (x_i,   startX,    endX) {
+            color32 bitmapColor = bitmap.Data[Index2D(x_i, y_i, bitmap.Width)];
+            if (bitmapColor.Alpha == 0) { continue; }
+
+            int outputIndex = Index2D(x + x_i, y + y_i, drawRect->Width);
+
+            float bitmapRed   = bitmapColor.Red   / 255.0f;
+            float bitmapGreen = bitmapColor.Green / 255.0f;
+            float bitmapBlue  = bitmapColor.Blue  / 255.0f;
+            float bitmapAlpha = bitmapColor.Alpha / 255.0f;
+
+            float wantedRed   = wantedColor.Red   / 255.0f;
+            float wantedGreen = wantedColor.Green / 255.0f;
+            float wantedBlue  = wantedColor.Blue  / 255.0f;
+            float wantedAlpha = wantedColor.Alpha / 255.0f;
+
+            float resultRed   = bitmapRed   * wantedRed;
+            float resultGreen = bitmapGreen * wantedGreen;
+            float resultBlue  = bitmapBlue  * wantedBlue;
+    	    float resultAlpha = bitmapAlpha * wantedAlpha;
+
+            if (resultAlpha < 1.0f) {
+
+                color32 dstColor = arrayData[outputIndex];
+                float dstRed   = dstColor.Red   / 255.0f;
+                float dstGreen = dstColor.Green / 255.0f;
+                float dstBlue  = dstColor.Blue  / 255.0f;
+
+                resultRed   = resultRed   * resultAlpha + dstRed   * (1 - resultAlpha);
+                resultGreen = resultGreen * resultAlpha + dstGreen * (1 - resultAlpha);
+                resultBlue  = resultBlue  * resultAlpha + dstBlue  * (1 - resultAlpha);
+            }
+
+            color32 finalColor = {};
+            finalColor.Red   = (unsigned char) (resultRed   * 255);
+            finalColor.Green = (unsigned char) (resultGreen * 255);
+            finalColor.Blue  = (unsigned char) (resultBlue  * 255);
+
+            arrayData[outputIndex] = finalColor;
+        }
+    }
+}
+
+#if 0
+
 /*
-void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) {
+SRDrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) {
     x += Camera.X;
     y += Camera.Y;
 
@@ -335,7 +503,7 @@ void DrawScreenDisc(draw_rect* drawRect, int x, int y, int radius, color32 col) 
 */
 
 /*
-void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col) {
+SRDrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col) {
     x += Camera.X;
     y += Camera.Y;
 
@@ -365,7 +533,7 @@ void DrawScreenCircle(draw_rect* drawRect, int x, int y, int radius, color32 col
 */
 
 /*
-void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, loaded_bitmap* bitmap) {
+SRDrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, loaded_bitmap* bitmap) {
     x += Camera.X;
     y += Camera.Y;
     
@@ -389,15 +557,15 @@ void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, in
 }
 */
 
-void DrawWorldLine(draw_rect* drawRect, float startX, float startY, float endX, float endY, color32 col) {
+SRDrawWorldLine(draw_rect* drawRect, float startX, float startY, float endX, float endY, color32 col) {
     DrawScreenLine(drawRect, RoundFloatToInt(HEXAGON_A * startX), RoundFloatToInt(HEXAGON_A * startY), RoundFloatToInt(HEXAGON_A * endX), RoundFloatToInt(HEXAGON_A * endY), col);
 }
 
-void DrawWorldLine(draw_rect* drawRect, vec2f start, vec2f end, color32 col) {
+SRDrawWorldLine(draw_rect* drawRect, vec2f start, vec2f end, color32 col) {
     DrawWorldLine(drawRect, start.X, start.Y, end.X, end.Y, col);
 }
 
-void DrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float endX, float endY, int pixelThickness, color32 col) {
+SRDrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float endX, float endY, int pixelThickness, color32 col) {
     int intStartX = RoundFloatToInt(HEXAGON_A * startX);
     int intStartY = RoundFloatToInt(HEXAGON_A * startY);
     int intEndX = RoundFloatToInt(HEXAGON_A * endX);
@@ -406,38 +574,38 @@ void DrawWorldLineThick(draw_rect* drawRect, float startX, float startY, float e
     DrawScreenLineThick(drawRect, intStartX, intStartY, intEndX, intEndY, (float) pixelThickness, col);
 }
 
-void DrawWorldLineThick(draw_rect* drawRect, vec2f start, vec2f end, int pixelThickness, color32 col) {
+SRDrawWorldLineThick(draw_rect* drawRect, vec2f start, vec2f end, int pixelThickness, color32 col) {
     DrawWorldLineThick(drawRect, start.X, start.Y, end.X, end.Y, pixelThickness, col);
 }
 
 /*
-void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
+SRDrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
     DrawScreenRectangle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
 }
 */
 
-void DrawWorldRectangleAlpha(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
+SRDrawWorldRectangleAlpha(draw_rect* drawRect, float x, float y, float width, float height, color32 col) {
     DrawScreenRectangleAlpha(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), RoundFloatToInt(HEXAGON_A * height), col);
 }
 
-void DrawWorldBorder(draw_rect* drawRect, float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
+SRDrawWorldBorder(draw_rect* drawRect, float x, float y, float width, float height, float borderWidth, float borderHeight, color32 col) {
     DrawScreenBorder(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * width), (int) (HEXAGON_A * height), (int) (HEXAGON_A * borderWidth), (int) (HEXAGON_A * borderHeight), col);
 }
 
 /*
-void DrawWorldBitmap(draw_rect* drawRect, float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
+SRDrawWorldBitmap(draw_rect* drawRect, float x, float y, loaded_bitmap bitmap, color32 wantedColor) {
     DrawScreenBitmap(drawRect, RoundFloatToInt(HEXAGON_A * x) - (bitmap.Width) / 2, RoundFloatToInt(HEXAGON_A * y) - (bitmap.Height) / 2, bitmap, wantedColor);
 }
 */
 
 /*
-void DrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col) {
+SRDrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col) {
     DrawScreenDisc(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col);
 }
 */
 
 /*
-void DrawWorldCircle(draw_rect* drawRect, float x, float y, float radius, color32 col) {
+SRDrawWorldCircle(draw_rect* drawRect, float x, float y, float radius, color32 col) {
     DrawScreenCircle(drawRect, RoundFloatToInt(HEXAGON_A * x), RoundFloatToInt(HEXAGON_A * y), RoundFloatToInt(HEXAGON_A * radius), col);
 }
 */
