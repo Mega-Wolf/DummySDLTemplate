@@ -214,7 +214,7 @@ void RecompileAllShaders() {
     }
 }
 
-uint32 LoadTexture(char* texturePath) {
+uint32 LoadTexture(char* texturePath, bool repeat) {
     // TODO(Tobi): This is not how it was intended -.-
     // Also, this obviously leaks memory
     loaded_bitmap loadedBitmap = BitmapLoad(texturePath);
@@ -226,8 +226,8 @@ uint32 LoadTexture(char* texturePath) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, ret);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat ? GL_REPEAT : GL_CLAMP_TO_EDGE);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -240,7 +240,7 @@ uint32 LoadTexture(char* texturePath) {
 }
 
 // TODO(Tobi): This is just copied 1:1 from below
-sprite_data CreateSpriteFromBitmap(loaded_bitmap loadedBitmap) {
+sprite_data CreateSpriteFromBitmap(loaded_bitmap loadedBitmap, bool repeat) {
     sprite_data ret = {};
 
     if (loadedBitmap.Data) {
@@ -249,8 +249,8 @@ sprite_data CreateSpriteFromBitmap(loaded_bitmap loadedBitmap) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, ret.Sprite.TextureID);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat ? GL_REPEAT : GL_CLAMP_TO_EDGE);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -309,7 +309,7 @@ sprite_data CreateSpriteFromBitmap(loaded_bitmap loadedBitmap) {
     return ret;
 }
 
-sprite_data CreateSprite(char* texturePath) {
+sprite_data CreateSprite(char* texturePath, bool repeat) {
     sprite_data ret = {};
 
     //ret.TextureID = LoadTexture(texturePath);
@@ -327,8 +327,8 @@ sprite_data CreateSprite(char* texturePath) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, ret.Sprite.TextureID);
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat ? GL_REPEAT : GL_CLAMP_TO_EDGE);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -467,9 +467,9 @@ void RendererInit() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     OGLData.BrokenShader = LoadShader("shaders/BrokenShaderVert.vs", "shaders/BrokenShaderFrag.fs");
-    OGLData.BrokenSprite = CreateSprite("assets/images/AlphaTest.bmp");
-    OGLData.WhiteSprite = CreateSprite("assets/images/White.bmp");
-    OGLData.TopLeftUnitSprite = CreateSprite("assets/images/White_11.bmp");
+    OGLData.BrokenSprite = CreateSprite("assets/images/AlphaTest.bmp", true);
+    OGLData.WhiteSprite = CreateSprite("assets/images/White.bmp", true);
+    OGLData.TopLeftUnitSprite = CreateSprite("assets/images/White_11.bmp", true);
 
     OGLData.BasicShader = LoadShader("shaders/BasicVert.vs", "shaders/BasicFrag.fs");
     OGLData.BasicAlphaCutoffShader = LoadShader("shaders/BasicVert.vs", "shaders/BasicAlphaFrag.fs");

@@ -24,7 +24,6 @@ _____________________ 0.0.2: "Graphical update" _____________________
 00000034: + 0000-00-00 0.0.2 "Sprites"     Wall Sprites (at least up and down, but more will be needed in the future for 3d effect)
 00000038: + 0000-00-00 0.0.2 "Game"     Better buildings sprites (sprites for wall, tower, trap and future buildings (How do I want to have that arranged))
 00000053: + 0000-00-00 0.0.2 "OpenGL"     How do lines work in OGL
-00000063: + 0000-00-00 0.0.2 " xxx "     Shadows for towers and walls $ 
 
 _____________________ 0.0.3: "Editors" _____________________
 00000013: + 0000-00-00 0.0.3 "Editor"     Level editor (that lets you select deco sprites etc.)

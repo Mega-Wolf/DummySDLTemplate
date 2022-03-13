@@ -201,17 +201,17 @@ void Init() {
         //     blurred.Data[i].Blue = BackgroundSprite.Data[i].Blue;
         // }
 
-        BackgroundSpriteSprite = CreateSpriteFromBitmap(BackgroundSprite);
+        BackgroundSpriteSprite = CreateSpriteFromBitmap(BackgroundSprite, false);
 
-        Noises[0] = CreateSprite("assets/noise/T_Random_00.bmp");
-        Noises[1] = CreateSprite("assets/noise/T_Random_04.bmp");
-        Noises[2] = CreateSprite("assets/noise/T_Random_06.bmp");
-        Noises[3] = CreateSprite("assets/noise/T_Random_22.bmp");
-        Noises[4] = CreateSprite("assets/noise/T_Random_29.bmp");
-        Noises[5] = CreateSprite("assets/noise/T_Random_39.bmp");
-        Noises[6] = CreateSprite("assets/noise/T_Random_44.bmp");
-        Noises[7] = CreateSprite("assets/noise/T_Random_50.bmp");
-        Noises[8] = CreateSprite("assets/noise/T_Random_66.bmp");
+        Noises[0] = CreateSprite("assets/noise/T_Random_00.bmp", true);
+        Noises[1] = CreateSprite("assets/noise/T_Random_04.bmp", true);
+        Noises[2] = CreateSprite("assets/noise/T_Random_06.bmp", true);
+        Noises[3] = CreateSprite("assets/noise/T_Random_22.bmp", true);
+        Noises[4] = CreateSprite("assets/noise/T_Random_29.bmp", true);
+        Noises[5] = CreateSprite("assets/noise/T_Random_39.bmp", true);
+        Noises[6] = CreateSprite("assets/noise/T_Random_44.bmp", true);
+        Noises[7] = CreateSprite("assets/noise/T_Random_50.bmp", true);
+        Noises[8] = CreateSprite("assets/noise/T_Random_66.bmp", true);
     }
 }
 
@@ -1574,6 +1574,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, drawRect->Width, drawRect->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, OGLData.FrameBufferTextures[0], 0);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, OGLData.FrameBuffers[1]);
@@ -1581,6 +1583,8 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, drawRect->Width, drawRect->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, OGLData.FrameBufferTextures[1], 0);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1736,6 +1740,11 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 switch (Ground[y_i][x_i] & ~T_PATH) {
                     case T_TOWER: {
                         buildingBitmap = &Sprites.Tower;
+
+                        // NOTE(Tobi): Draw Shadow
+                        glDepthFunc(GL_LEQUAL);
+                        DrawScreenBitmapAlpha(&drawRectMain, x + Sprites.Tower.LoadedBitmap.Width / 2, y + Sprites.Tower.LoadedBitmap.Height / 2, *buildingBitmap, COL32_RGBA(0, 0, 0, 128), DEPTH_BUILDINGS_SHADOW);
+                        glDepthFunc(GL_LESS);
                     } break;
                     case T_GOAL: {
                         buildingBitmap = &Sprites.Goal;

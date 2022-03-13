@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 64,
+	"RunningNumber": 65,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -382,14 +382,6 @@
 			"Version": "0.0.1",
 			"Group": "OpenGL",
 			"Type": "+"
-		},
-		{
-			"ID": "00000063",
-			"Description": "Shadows for towers and walls $ ",
-			"Date": "0000-00-00",
-			"Version": "0.0.2",
-			"Group": " xxx ",
-			"Type": "+"
 		}
 	],
 	"Finished": [
@@ -542,6 +534,22 @@
 			"Description": "Provide normal information for the grass part of the background, so it kind of sits on top of the path; NOTE: I can only do that after the other stuff has been calculated, so I would have to implement the ping-pong stuff before (I ended up just hard coding the pingpong)",
 			"Date": "2022-03-13",
 			"Version": "0.0.1",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000063",
+			"Description": "Dummy shadows for towers and walls",
+			"Date": "2022-03-13",
+			"Version": "0.0.2",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000064",
+			"Description": "Support distinction between GL_REPEAT and GL_CLAMP_TO_EDGE",
+			"Date": "2022-03-13",
+			"Version": "0.0.2",
 			"Group": "OpenGL",
 			"Type": "+"
 		}
