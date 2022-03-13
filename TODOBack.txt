@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 59,
+	"RunningNumber": 64,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -297,7 +297,7 @@
 		},
 		{
 			"ID": "00000042",
-			"Description": "Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive",
+			"Description": "Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive $ ",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
 			"Group": " xxx ",
@@ -364,6 +364,30 @@
 			"Description": "Try out rendering the towers etc. with regular non-pixel perfect stuff; I think that will not really be needed unless maybe for the very small icons for the monsters and the health bar the rest can be in higher quality.",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		},
+		{
+			"ID": "00000061",
+			"Description": "Building menu for in-game $ ",
+			"Date": "0000-00-00",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000062",
+			"Description": "Shader for the wall, (maybe also with normal stuff), how will that be drawn? $ ",
+			"Date": "0000-00-00",
+			"Version": "0.0.1",
+			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000063",
+			"Description": "Shadows for towers and walls $ ",
+			"Date": "0000-00-00",
+			"Version": "0.0.2",
 			"Group": " xxx ",
 			"Type": "+"
 		}
@@ -504,6 +528,22 @@
 			"Version": "0.0.0",
 			"Group": "OpenGL",
 			"Type": "="
+		},
+		{
+			"ID": "00000059",
+			"Description": "Show the actual path as an overlay when in-game-editing buildings",
+			"Date": "2022-03-06",
+			"Version": "0.0.1",
+			"Group": "Game",
+			"Type": "+"
+		},
+		{
+			"ID": "00000060",
+			"Description": "Provide normal information for the grass part of the background, so it kind of sits on top of the path; NOTE: I can only do that after the other stuff has been calculated, so I would have to implement the ping-pong stuff before (I ended up just hard coding the pingpong)",
+			"Date": "2022-03-13",
+			"Version": "0.0.1",
+			"Group": "OpenGL",
+			"Type": "+"
 		}
 	]
 }

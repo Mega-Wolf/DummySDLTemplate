@@ -26,17 +26,10 @@ void main() {
     // } else
 
     if (actualPath > 0.05 && pathValue > 0.7) {
-        //FragColor = Color * 
-        //FragColor = vec4(0, 1, 0, 1);
-        FragColor = vec4(0.5, 0.5, 0.5, 1) * texture(texture2, TexCoord * 4);
+        FragColor = vec4(1, 1, 1, 1);
     } else if (actualPath > 0.9) {
-        //FragColor = vec4(0, 1, 0, 1);
-        FragColor = vec4(0.6, 0.6, 0.6, 1) * texture(texture2, TexCoord * 4);
+        FragColor = vec4(1, 1, 1, 1);
     } else {
-        //FragColor = vec4(actualPath, 0, 0, 1);
-        //FragColor = vec4(1,1,1,1);
-        FragColor = vec4(0.2, 0.6, 0.3, 1) * texture(texture2, TexCoord * 16);
+        FragColor = vec4(0, 0, 0, 1);
     }
-
-    //FragColor = vec4(0, 0.5, 0, 1) * texture(texture2, TexCoord * 5);
 }

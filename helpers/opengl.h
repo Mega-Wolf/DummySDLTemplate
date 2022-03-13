@@ -14,6 +14,11 @@
 #define RENDER_LAYER_COUNT 10
 #define RENDER_LAYER_MAX_SIZE 4096 // TODO(Tobi): How many objects can be on one layer; obviously change that please
 
+void GLCHK() {
+    int errorCode = glGetError();
+    Assert(!errorCode, "Error: %d - %x", errorCode, errorCode);
+}
+
 struct debug_shader_info {
     char* VertexPath;
     char* FragmentPath;
@@ -65,7 +70,10 @@ struct ogl_data {
     uint32 DiscShader;
     uint32 CircleShader;
 
-    uint32 BackgroundShader; // TESTING
+    uint32 BackgroundShader1;
+    uint32 BackgroundShader2;
+    uint32 GaussianBlurShader;
+    uint32 BumpToNormalShader;
 
     uint32 DummyVAO;
     uint32 BlockIDMatrices;
@@ -85,6 +93,9 @@ struct ogl_data {
     int LayerSizes[RENDER_LAYER_COUNT];
     render_object LayerData[RENDER_LAYER_COUNT][RENDER_LAYER_MAX_SIZE];
     draw_rect LayerDrawRects[RENDER_LAYER_COUNT];
+
+    uint32 FrameBuffers[2]; // NOTE(Tobi): I just use two ful screen FBOs for now
+    uint32 FrameBufferTextures[2]; // TODO(Tobi): Apparently I should rather create them again and again
 };
 
 ogl_data OGLData;
@@ -129,9 +140,14 @@ int LoadShader(char* vertexShaderPath, char* fragmentShaderPath) {
     DebugShaderInfos[DebugShaderInfosCount].FragmentPath = fragmentShaderPath;
     ++DebugShaderInfosCount;
 
+    GLCHK();
+
     glAttachShader(programID, vertexShader);
     glAttachShader(programID, fragmentShader);
     glLinkProgram(programID);
+
+    GLCHK();
+
     // check for linking errors
 
     uint32 returnID = programID;
@@ -149,15 +165,17 @@ int LoadShader(char* vertexShaderPath, char* fragmentShaderPath) {
             glUseProgram(programID);
 
             // TODO(Tobi): What does this even mean (same for original place)
-            glUniform1i(glGetUniformLocation(programID, "texture1"), 0);
+            //glUniform1i(glGetUniformLocation(programID, "texture1"), 0);
             glUniformBlockBinding(programID, glGetUniformBlockIndex(programID, "Matrices"), 0);
         }
     }
+    GLCHK();
 
     // TODO(Tobi): Does this change anything
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
+    GLCHK();
     return returnID;
 }
 
@@ -384,39 +402,63 @@ sprite_data CreateSprite(char* texturePath) {
 // NOTE(Tobi): These are only supposed to be used while testing or in teh editor etc.
 
 void ShaderResolveAndSetBool(int shaderID, char* varName, bool value) {
+    GLCHK();
+
     int location = glGetUniformLocation(shaderID, varName);
     //Assert(location >= 0, "Location is %d", location);
     glUniform1i(location, (int) value);
+
+    GLCHK();
 }
 
 void ShaderResolveAndSetInt(int shaderID, char* varName, int value) {
+    GLCHK();
+
     int location = glGetUniformLocation(shaderID, varName);
     Assert(location >= 0, "Location is %d", location);
     glUniform1i(location, value);
+
+    GLCHK();
 }
 
 void ShaderResolveAndSetFloat(int shaderID, char* varName, float value) {
+    GLCHK();
+
     int location = glGetUniformLocation(shaderID, varName);
     Assert(location >= 0, "Location is %d", location);
     glUniform1f(location, value);
+
+    GLCHK();
 }
 
 void ShaderResolveAndSetVec3(int shaderID, char* varName, hmm_vec3* value) {
+    GLCHK();
+
     int location = glGetUniformLocation(shaderID, varName);
     Assert(location >= 0, "Location is %d", location);
     glUniform3fv(location, 1, value->Elements);
+
+    GLCHK();
 }
 
 void ShaderResolveAndSetVec4(int shaderID, char* varName, hmm_vec4* value) {
+    GLCHK();
+
     int location = glGetUniformLocation(shaderID, varName);
     Assert(location >= 0, "Location is %d", location);
     glUniform4fv(location, 1, value->Elements);
+
+    GLCHK();
 }
 
 void ShaderResolveAndSetMat4(int shaderID, char* varName, hmm_mat4* value) {
+    GLCHK();
+    
     int location = glGetUniformLocation(shaderID, varName);
     Assert(location >= 0, "Location is %d", location);
     glUniformMatrix4fv(location, 1, false, (float*) value);
+
+    GLCHK();
 }
 
 void RendererInit() {
@@ -436,7 +478,12 @@ void RendererInit() {
     OGLData.DiscShader = LoadShader("shaders/BasicVert.vs", "shaders/DiscFrag.fs");
     OGLData.CircleShader = LoadShader("shaders/BasicVert.vs", "shaders/CircleFrag.fs");
 
-    OGLData.BackgroundShader = LoadShader("shaders/BasicVert.vs", "shaders/BackgroundFrag.fs");
+    OGLData.BackgroundShader1 = LoadShader("shaders/BasicVert.vs", "shaders/BackgroundFragPart1.fs");
+    OGLData.BackgroundShader2 = LoadShader("shaders/BasicVert.vs", "shaders/BackgroundFragPart2.fs");
+    OGLData.GaussianBlurShader = LoadShader("shaders/BasicVert.vs", "shaders/GaussBlur.fs");
+    OGLData.BumpToNormalShader = LoadShader("shaders/BasicVert.vs", "shaders/BumpToNormal.fs");
+
+    GLCHK();
 
     glGenBuffers(1, &OGLData.BlockIDMatrices);
     glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices);
@@ -495,9 +542,13 @@ void RendererInit() {
 
 
     // // Due to several reasons, I feel that the whole rendering thing is different in edit/debug mode and in run mode
+
+    GLCHK();
 }
 
 void RendererStartFrame() {
+    GLCHK();
+
     glDisable(GL_SCISSOR_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_SCISSOR_TEST);
@@ -539,6 +590,8 @@ void RendererStartFrame() {
     glEnable(GL_SCISSOR_TEST);
 
     glEnable(GL_DEPTH_TEST);
+
+    GLCHK();
 }
 
 void RendererSetDrawRect(draw_rect* drawRect) {
@@ -681,6 +734,15 @@ void RendererScreenSprite(hmm_mat4 modelMatrix, sprite* spriteData, uint32 shade
     RendererPushObject(&ro);
 }
 
+void RendererScreenSpriteAlpha(hmm_mat4 modelMatrix, sprite* spriteData, uint32 shaderID, color4f col) {
+    render_object ro = {};
+    ro.ModelMatrix = modelMatrix;
+    ro.Sprite = *spriteData;
+    ro.ShaderID = shaderID;
+    ro.Color = col;
+    RendererPushAlphaObject(&ro);
+}
+
 void RendererScreenRect(hmm_mat4 modelMatrix, color4f col) {
     render_object ro = {};
     ro.ModelMatrix = modelMatrix;
@@ -715,4 +777,61 @@ void RendererScreenCircle(hmm_mat4 modelMatrix, color4f col) {
     ro.ShaderID = OGLData.CircleShader;
     ro.Color = col;
     RendererPushObject(&ro);
+}
+
+// TODO(Tobi): Sprite datas is an array, but I only care about the VAO of the first one, maybe I should change it then
+// NOTE(Tobi): VAO basically is the mesh of the quad/tri etc.; it's just that I decide to make them the same size
+void RendererDrawAny(hmm_mat4 modelMatrix, sprite_data* spriteDatas, int spriteCount, uint32 shaderID, color4f colFloat) {
+    Assert(spriteCount >= 1 && spriteCount <= 32, "Sprite count is an invalid number (%d)", spriteCount);
+
+    char* textureNames[32] = {
+        "texture1",
+        "texture2",
+        "texture3",
+        "texture4",
+        "texture5",
+        "texture6",
+        "texture7",
+        "texture8",
+        "texture9",
+        "texture10",
+        "texture11",
+        "texture12",
+        "texture13",
+        "texture14",
+        "texture15",
+        "texture16",
+        "texture17",
+        "texture18",
+        "texture19",
+        "texture20",
+        "texture21",
+        "texture22",
+        "texture23",
+        "texture24",
+        "texture25",
+        "texture26",
+        "texture27",
+        "texture28",
+        "texture29",
+        "texture30",
+        "texture31",
+        "texture32",
+    };
+
+
+    glUseProgram(shaderID);
+    inc0 (sprite_i,   spriteCount) {
+        glActiveTexture(GL_TEXTURE0 + sprite_i);
+        glBindTexture(GL_TEXTURE_2D, spriteDatas[sprite_i].Sprite.TextureID);
+
+        ShaderResolveAndSetInt(shaderID, textureNames[sprite_i], sprite_i);
+    }
+
+    // TODO(Tobi): Resolve the stuff once; don't know where to save that though
+    ShaderResolveAndSetMat4(shaderID, "Model", &modelMatrix);
+    ShaderResolveAndSetVec4(shaderID, "Color", (hmm_vec4*) &colFloat);
+    
+    glBindVertexArray(spriteDatas[0].Sprite.VAO);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }

@@ -83,10 +83,31 @@ void DrawScreenBitmap(draw_rect* drawRect, int x, int y, sprite_data spriteData,
     RendererScreenSprite(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z), &spriteData.Sprite, OGLData.BasicAlphaCutoffShader, colFloat);
 }
 
+void DrawScreenBitmapAlpha(draw_rect* drawRect, int x, int y, sprite_data spriteData, color32 col, int z) {
+    x += Camera.X;
+    y += Camera.Y;
+
+    color4f colFloat = color32_to_color4f(col);
+
+    // TODO(Tobi): In the future, I will have to provide the shader on my own
+    RendererSetDrawRect(drawRect);
+    RendererScreenSpriteAlpha(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z), &spriteData.Sprite, OGLData.BasicShader, colFloat);
+}
+
 
 void DrawBackgroundSprite(draw_rect* drawRect, sprite_data spriteData, sprite_data spriteData2, int z) {
     RendererSetDrawRect(drawRect);
-    RendererScreenSprite2(HMM_Translate((float) (drawRect->StartX + Camera.X), (float) (drawRect->StartY + Camera.Y), (float) z), &spriteData.Sprite, &spriteData2.Sprite, OGLData.BackgroundShader);
+    RendererScreenSprite2(HMM_Translate((float) (drawRect->StartX + Camera.X), (float) (drawRect->StartY + Camera.Y), (float) z), &spriteData.Sprite, &spriteData2.Sprite, OGLData.BackgroundShader1);
+}
+
+void DrawAny(draw_rect* drawRect, int x, int y, int z, sprite_data* spriteDatas, int spriteCount, uint32 shaderID, color32 col) {
+    x += Camera.X;
+    y += Camera.Y;
+
+    color4f colFloat = color32_to_color4f(col);
+
+    RendererSetDrawRect(drawRect);
+    RendererDrawAny(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z), spriteDatas, spriteCount, shaderID, colFloat);
 }
 
 /*
@@ -157,6 +178,11 @@ void DrawWorldRectangle(draw_rect* drawRect, float x, float y, float width, floa
 void DrawWorldBitmap(draw_rect* drawRect, float x, float y, sprite_data spriteData, color32 col, int z) {
     // TODO(Tobi): Not cast to int for non-pixel-perfectness? 
     DrawScreenBitmap(drawRect, RoundFloatToInt(HEXAGON_A * x) - spriteData.LoadedBitmap.Width / 2, RoundFloatToInt(HEXAGON_A * y) - spriteData.LoadedBitmap.Height / 2, spriteData, col, z);
+}
+
+void DrawWorldBitmapAlpha(draw_rect* drawRect, float x, float y, sprite_data spriteData, color32 col, int z) {
+    // TODO(Tobi): Not cast to int for non-pixel-perfectness? 
+    DrawScreenBitmapAlpha(drawRect, RoundFloatToInt(HEXAGON_A * x) - spriteData.LoadedBitmap.Width / 2, RoundFloatToInt(HEXAGON_A * y) - spriteData.LoadedBitmap.Height / 2, spriteData, col, z);
 }
 
 void DrawWorldDisc(draw_rect* drawRect, float x, float y, float radius, color32 col, int z) {

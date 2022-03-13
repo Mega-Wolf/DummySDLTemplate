@@ -492,6 +492,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
                 IsLevelEditorActive = !IsLevelEditorActive;
 
+
+                // TODO(Tobi): Actually separate the level editor; otherwise I can't build during the game
+                #if 0
                 /// Save level data
                 if (!IsLevelEditorActive && LevelEditorChangedSomething) {
                     LevelEditorChangedSomething = false;
@@ -504,6 +507,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     CollectStartPositions();
                     InitDistanceArray();
                 }
+                #endif
             }
         }
 
@@ -1546,6 +1550,178 @@ void Update(color32* array, int width, int height, inputs* ins) {
         }
         #endif
 
+        // TODO(Tobi): Remove the noise texture switching and make those parameters
+        static int NoiseIndex = 0;
+        if (IS_KEY_PRESSED(F8)) {
+            NoiseIndex = (NoiseIndex + 1) % ArrayCount(Noises);
+        }
+
+        // TODO(Tobi): This thing does not render walls
+        RendererSetDrawRect(&drawRectMain);
+
+        /// Background path stuff
+        {
+            draw_rect* drawRect = &drawRectMain;
+
+            static bool inited = false;
+            if (!inited) {
+                inited = true;
+                //glViewport(0, 0, drawRect->Width, drawRect->Height);
+                glGenFramebuffers(2, OGLData.FrameBuffers);
+                glBindFramebuffer(GL_FRAMEBUFFER, OGLData.FrameBuffers[0]);
+                glGenTextures(2, OGLData.FrameBufferTextures);
+                glBindTexture(GL_TEXTURE_2D, OGLData.FrameBufferTextures[0]);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, drawRect->Width, drawRect->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, OGLData.FrameBufferTextures[0], 0);
+
+                glBindFramebuffer(GL_FRAMEBUFFER, OGLData.FrameBuffers[1]);
+                glBindTexture(GL_TEXTURE_2D, OGLData.FrameBufferTextures[1]);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, drawRect->Width, drawRect->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, OGLData.FrameBufferTextures[1], 0);
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                //glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+            }
+
+            draw_rect drawRectInternal = {};
+            drawRectInternal.Height = drawRect->Height;
+            drawRectInternal.Width = drawRect->Width;
+            drawRect = &drawRectInternal;
+
+            uint32 shaderID = OGLData.BackgroundShader1;
+            sprite_data spriteDatas[2] = {
+                BackgroundSpriteSprite,
+                Noises[NoiseIndex],
+            };
+            int z = DEPTH_BACKGROUND;
+            hmm_mat4 modelMatrix = HMM_Translate((float) (drawRect->StartX + Camera.X), (float) (drawRect->StartY + Camera.Y), (float) z);
+            color4f col = {1.0f, 1.0f, 1.0f, 1.0f};
+
+            /// Change to modified viewport stuff
+            {
+                glViewport(0, 0, drawRect->Width, drawRect->Height);
+
+                // NOTE(Tobi): ViewMatrix would be
+                hmm_mat4 viewRotation = HMM_Mat4d(1.0f); //HMM_RotateRadians(HMM_PI32 / 4, HMM_Vec3(0, 0, 1));
+                //hmm_mat4 viewTranslation = HMM_Translate(level->Camera.X, level->Camera.Y, -10);
+                hmm_mat4 viewTranslation = HMM_Translate(0, 0, -10);
+                hmm_mat4 viewScale = HMM_Mat4d(1.0f); //HMM_Scale(1, 1, 1);
+                hmm_mat4 view = viewTranslation * viewRotation * viewScale; 
+                // platform.WindowData->UserdefinedData.OGLContext->ViewMatrix = view;
+                // Since I don't do any of these; I ignore that (TODO(Tobi): What about screenshake; that could be needed at one point)
+
+                hmm_mat4 projection = HMM_Orthographic(0, (float) drawRect->Width, (float) drawRect->Height, 0, 0.1f, 100.0f);
+                hmm_mat4 projectionViewMatrix = projection * view;
+
+                glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices); // NOTE(Tobi): Is this necessary when doing the next thing?
+                glBindBufferRange(GL_UNIFORM_BUFFER, 0, OGLData.BlockIDMatrices, 0, sizeof(hmm_mat4));
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(hmm_mat4), &projectionViewMatrix);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Do I have to do that?
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, OGLData.FrameBuffers[0]);
+            DrawAny(drawRect, 0, 0, z, spriteDatas, 2, shaderID, WHITE);
+
+            // glBindFramebuffer(GL_FRAMEBUFFER, OGLData.FrameBuffers[1]);
+            // sprite_data sdInternal = spriteDatas[0]; // TODO(Tobi): Scaling issues
+            // sdInternal.Sprite.TextureID = OGLData.FrameBufferTextures[0];
+            // DrawAny(drawRect, 0, 0, z, &sdInternal, 1, OGLData.GaussianBlurShader, BLACK);
+
+            // glBindFramebuffer(GL_FRAMEBUFFER, OGLData.FrameBuffers[0]);
+            // sdInternal.Sprite.TextureID = OGLData.FrameBufferTextures[1];
+            // DrawAny(drawRect, 0, 0, z, &sdInternal, 1, OGLData.GaussianBlurShader, WHITE);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, OGLData.FrameBuffers[1]);
+            sprite_data sdInternal = spriteDatas[0]; // TODO(Tobi): Scaling issues
+            sdInternal.Sprite.TextureID = OGLData.FrameBufferTextures[0];
+            DrawAny(drawRect, 0, 0, z, &sdInternal, 1, OGLData.BumpToNormalShader, WHITE);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, OGLData.FrameBuffers[0]);
+            sdInternal = spriteDatas[0]; // TODO(Tobi): Scaling issues
+            sdInternal.Sprite.TextureID = OGLData.FrameBufferTextures[1];
+            sprite_data spriteDatasPart2[2] = {
+                sdInternal,
+                Noises[NoiseIndex],
+            };
+            DrawAny(drawRect, 0, 0, z, spriteDatasPart2, 2, OGLData.BackgroundShader2, WHITE);
+                        
+            /// Change stuff back to before; wow; that's almost like glPush and glPop
+            {
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+                // NOTE(Tobi): ViewMatrix would be
+                hmm_mat4 viewRotation = HMM_Mat4d(1.0f); //HMM_RotateRadians(HMM_PI32 / 4, HMM_Vec3(0, 0, 1));
+                //hmm_mat4 viewTranslation = HMM_Translate(level->Camera.X, level->Camera.Y, -10);
+                hmm_mat4 viewTranslation = HMM_Translate(0, 0, -10);
+                hmm_mat4 viewScale = HMM_Mat4d(1.0f); //HMM_Scale(1, 1, 1);
+                hmm_mat4 view = viewTranslation * viewRotation * viewScale; 
+                // platform.WindowData->UserdefinedData.OGLContext->ViewMatrix = view;
+                // Since I don't do any of these; I ignore that (TODO(Tobi): What about screenshake; that could be needed at one point)
+
+
+                // NOTE(Tobi): This probably is almost always the same calculation
+                //hmm_mat4 projection = HMM_Orthographic(0, OGLData.ActiveContext->ViewportWidth, 0, OGLData.ActiveContext->ViewportHeight, 0.1f, 100.0f);
+                hmm_mat4 projection = HMM_Orthographic(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0.1f, 100.0f);
+                hmm_mat4 projectionViewMatrix = projection * view;
+
+                glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices); // NOTE(Tobi): Is this necessary when doing the next thing?
+                glBindBufferRange(GL_UNIFORM_BUFFER, 0, OGLData.BlockIDMatrices, 0, sizeof(hmm_mat4));
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(hmm_mat4), &projectionViewMatrix);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Do I have to do that?
+            }
+
+            drawRect = &drawRectMain;
+
+
+            //sprite_data sdInternal = spriteDatas[0];
+            sdInternal.Sprite.TextureID = OGLData.FrameBufferTextures[0];
+            //DrawScreenBitmap(drawRect, 0, 0, sdInternal, WHITE, z);
+            DrawAny(drawRect, 0, 0, z, &sdInternal, 1, OGLData.BasicShader, WHITE);
+
+        }
+
+        /// Render The exact path when in in-game-build-mode
+        if (Menu.TowerBuildMode || Menu.TrapBuildMode || Menu.WallBuildMode) {
+            // TODO(Tobi): Not sure if I like the gl stuff here
+            // TODO(Tobi): When exactly do I render that, shall towers really be behind that
+            glDisable(GL_DEPTH_TEST);
+            RendererSetDrawRect(&drawRectMain);
+            inc0 (y_i,   TILES_Y) {
+                int evenLineOffset = 1 - (y_i % 2);
+                inc0 (x_i,   TILES_X) {
+                    bool triangleIsDown = (x_i + y_i) % 2;
+                    if (Ground[y_i][x_i] & (T_PATH | T_GOAL)) {
+                        if (triangleIsDown) {
+                            DrawScreenBitmapAlpha(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteDown, COL32_RGBA(128, 128, 255, 150), DEPTH_BACKGROUND);
+                        } else {
+                            DrawScreenBitmapAlpha(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteUp, COL32_RGBA(128, 128, 255, 150), DEPTH_BACKGROUND);
+                        }
+                    }
+                }
+            }
+            glEnable(GL_DEPTH_TEST);
+        }
+
+        /// Render Walls
+        inc0 (y_i,   TILES_Y) {
+            int evenLineOffset = 1 - (y_i % 2);
+            inc0 (x_i,   TILES_X) {
+                bool triangleIsDown = (x_i + y_i) % 2;
+                if (Ground[y_i][x_i] & T_WALL) {
+                    if (triangleIsDown) {
+                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteDown, DARK_GREY, DEPTH_BUILDINGS);
+                    } else {
+                        DrawScreenBitmap(&drawRectMain, x_i * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, y_i * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteUp, DARK_GREY, DEPTH_BUILDINGS);
+                    }
+                }
+            }
+        }
+
         /// Render buildings
         inc0 (y_i,   TILES_Y) {
             int oddLineOffset = y_i % 2;
@@ -1644,9 +1820,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
 
         /// Render Mana Bar
         {
+            // TODO(Tobi): These will be combined to one mana bar shader
             float manaPercentage = Mana / 1000.0f;
-            DrawScreenRectangle(&drawRectManaBar, 0, 0, 5 * HALF_HEXAGON_PIXEL_WIDTH, drawRectManaBar.Height, COL32_RGB(64, 32,   0), DEPTH_BUILDINGS);
             DrawScreenRectangle(&drawRectManaBar, 0, RoundFloat32ToInt32((1.0f - manaPercentage) * drawRectManaBar.Height), 5 * HALF_HEXAGON_PIXEL_WIDTH, RoundFloat32ToInt32(manaPercentage * drawRectManaBar.Height), ORANGE, DEPTH_BUILDINGS);
+            DrawScreenRectangle(&drawRectManaBar, 0, 0, 5 * HALF_HEXAGON_PIXEL_WIDTH, RoundFloat32ToInt32(drawRectManaBar.Height * (1.0f - manaPercentage)), COL32_RGB(64, 32,   0), DEPTH_BUILDINGS);
 
             char dummy[128];
             snprintf(dummy, ArrayCount(dummy), "%d", (int) Mana);
@@ -1963,28 +2140,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
-        // Render hex highlight
-        if (Menu.TowerBuildMode || Menu.TrapBuildMode) {
-            vec2i tilePos = TranslateToTopLeftPositionWithoutAnythig(mouseTilePos);
-            if (tilePos != TRANSLATE_NOTHING_FOUND) {
-                vec2f actualPos = TriToActualPos(tilePos);
-                
-                vec2f topLeftPos     = actualPos + vec2f {  0.0f, -2 / 3.0f * HEXAGON_H };
-                vec2f topRightPos    = actualPos + vec2f {  1.0f, -2 / 3.0f * HEXAGON_H };
-                vec2f rightPos       = actualPos + vec2f {  1.5f, +1 / 3.0f * HEXAGON_H };
-                vec2f bottomLeftPos  = actualPos + vec2f {  0.0f, +4 / 3.0f * HEXAGON_H };
-                vec2f bottomRightPos = actualPos + vec2f {  1.0f, +4 / 3.0f * HEXAGON_H };
-                vec2f leftPos        = actualPos + vec2f { -0.5f, +1 / 3.0f * HEXAGON_H };
-
-                DrawWorldLineThick(&drawRectMain, topLeftPos, topRightPos, 3, WHITE);
-                DrawWorldLineThick(&drawRectMain, topRightPos, rightPos, 3, WHITE);
-                DrawWorldLineThick(&drawRectMain, rightPos, bottomRightPos, 3, WHITE);
-                DrawWorldLineThick(&drawRectMain, bottomRightPos, bottomLeftPos, 3, WHITE);
-                DrawWorldLineThick(&drawRectMain, bottomLeftPos, leftPos, 3, WHITE);
-                DrawWorldLineThick(&drawRectMain, leftPos, topLeftPos, 3, WHITE);
-            }
-        }
-
         /// Draw testing lines
         #if 0
             #define SQRT_3 1.73205080757f
@@ -2024,19 +2179,42 @@ void Update(color32* array, int width, int height, inputs* ins) {
             //DrawScreenBitmap(&drawRectMain, 100 + HALF_HEXAGON_PIXEL_WIDTH, 100, Sprites.PathDown[TRI_DOWN_LEFT + TRI_DOWN_TOP], WHITE);
         #endif
 
-        inc0 (y_i,   20) {
-            DrawWorldBitmap(&drawRectMain, 4.5f, HEXAGON_H * (2 * y_i), Sprites.Tower, WHITE, DEPTH_DEBUGGING);
+        // Alpha stuff starts here
+        // ##########################################################################################
+
+        /// Render hex highlight
+        if (Menu.TowerBuildMode || Menu.TrapBuildMode) {
+            vec2i tilePos = TranslateToTopLeftPositionWithoutAnythig(mouseTilePos);
+            if (tilePos != TRANSLATE_NOTHING_FOUND) {
+                vec2f actualPos = TriToActualPos(tilePos);
+                actualPos.X += 0.5f;
+                actualPos.Y += 1/3.0f * HEXAGON_H;
+                
+                // vec2f topLeftPos     = actualPos + vec2f {  0.0f, -2 / 3.0f * HEXAGON_H };
+                // vec2f topRightPos    = actualPos + vec2f {  1.0f, -2 / 3.0f * HEXAGON_H };
+                // vec2f rightPos       = actualPos + vec2f {  1.5f, +1 / 3.0f * HEXAGON_H };
+                // vec2f bottomLeftPos  = actualPos + vec2f {  0.0f, +4 / 3.0f * HEXAGON_H };
+                // vec2f bottomRightPos = actualPos + vec2f {  1.0f, +4 / 3.0f * HEXAGON_H };
+                // vec2f leftPos        = actualPos + vec2f { -0.5f, +1 / 3.0f * HEXAGON_H };
+
+                // DrawWorldLineThick(&drawRectMain, topLeftPos, topRightPos, 3, WHITE);
+                // DrawWorldLineThick(&drawRectMain, topRightPos, rightPos, 3, WHITE);
+                // DrawWorldLineThick(&drawRectMain, rightPos, bottomRightPos, 3, WHITE);
+                // DrawWorldLineThick(&drawRectMain, bottomRightPos, bottomLeftPos, 3, WHITE);
+                // DrawWorldLineThick(&drawRectMain, bottomLeftPos, leftPos, 3, WHITE);
+                // DrawWorldLineThick(&drawRectMain, leftPos, topLeftPos, 3, WHITE);
+
+                sprite_data* sd;
+                if (Menu.TowerBuildMode) {
+                    sd = &Sprites.Tower;
+                } else {
+                    sd = &Sprites.Trap;
+                }
+
+                DrawWorldBitmapAlpha(&drawRectMain, actualPos.X, actualPos.Y, *sd, COL32_RGBA(255, 255, 255, 200), DEPTH_HUD);
+            }
         }
 
-        // TODO(Tobi): Remove the noise texture switching and make those parameters
-        static int NoiseIndex = 0;
-        if (IS_KEY_PRESSED(F8)) {
-            NoiseIndex = (NoiseIndex + 1) % ArrayCount(Noises);
-        }
-
-        // TODO(Tobi): This thing does not render walls
-        RendererSetDrawRect(&drawRectMain);
-        DrawBackgroundSprite(&drawRectMain, BackgroundSpriteSprite, Noises[NoiseIndex], DEPTH_BACKGROUND);
 
         if (AutomaticShaderRecompilation) {
             TextRenderScreen(&drawRectAll, &DummyFontInfo, 0, 0, "SHADER RECOMPILE: ON", WHITE, DEPTH_DEBUGGING);
