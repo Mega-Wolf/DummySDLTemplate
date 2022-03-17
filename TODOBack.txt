@@ -1,5 +1,5 @@
 {
-	"RunningNumber": 65,
+	"RunningNumber": 70,
 	"Versions": [
 		{
 			"Version": "0.0.1",
@@ -233,7 +233,7 @@
 		},
 		{
 			"ID": "00000034",
-			"Description": "Wall Sprites (at least up and down, but more will be needed in the future for 3d effect)",
+			"Description": "Wall Sprites (at least up and down, but more will be needed in the future for 3d effect) (for now, basically just a bit of pixel noise)",
 			"Date": "0000-00-00",
 			"Version": "0.0.2",
 			"Group": "Sprites",
@@ -297,7 +297,7 @@
 		},
 		{
 			"ID": "00000042",
-			"Description": "Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive $ ",
+			"Description": "Popups over the buildings and buyable dimaonds to show me their cost + grey out if too expensive (this is again highlighting/selection stuff; I don't know if I want to change that a bit in general)",
 			"Date": "0000-00-00",
 			"Version": "0.0.0",
 			"Group": " xxx ",
@@ -368,19 +368,51 @@
 			"Type": "+"
 		},
 		{
-			"ID": "00000061",
-			"Description": "Building menu for in-game $ ",
-			"Date": "0000-00-00",
-			"Version": "0.0.1",
-			"Group": "Game",
-			"Type": "+"
-		},
-		{
 			"ID": "00000062",
-			"Description": "Shader for the wall, (maybe also with normal stuff), how will that be drawn? $ ",
+			"Description": "Shader for the wall, (maybe also with normal stuff), how will that be drawn? (will be delayed since the other normal stuff looked awful as well)",
 			"Date": "0000-00-00",
 			"Version": "0.0.1",
 			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000065",
+			"Description": "Better Shadow for the Towers",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		},
+		{
+			"ID": "00000066",
+			"Description": "I should get a monster highlight even when not clicking on it",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		},
+		{
+			"ID": "00000067",
+			"Description": "Clicking monsters is stupidly difficult",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		},
+		{
+			"ID": "00000068",
+			"Description": "Show wall grid when putting down walls (maybe even for the other buildings); this requires GL_LINES though",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
+			"Type": "+"
+		},
+		{
+			"ID": "00000069",
+			"Description": "The selection stuff is quite wonky (also, the deselection)",
+			"Date": "0000-00-00",
+			"Version": "0.0.0",
+			"Group": " xxx ",
 			"Type": "+"
 		}
 	],
@@ -551,6 +583,14 @@
 			"Date": "2022-03-13",
 			"Version": "0.0.2",
 			"Group": "OpenGL",
+			"Type": "+"
+		},
+		{
+			"ID": "00000061",
+			"Description": "Building menu for in-game",
+			"Date": "2022-03-17",
+			"Version": "0.0.1",
+			"Group": "Game",
 			"Type": "+"
 		}
 	]

@@ -472,13 +472,18 @@ void Update(color32* array, int width, int height, inputs* ins) {
     vec2i menuDiamondsMousePosition = TranslateMousePosition(&drawRectMenuDiamonds, ins);
 
     draw_rect drawRectMenuBuild = drawRectRightMenu;
-    drawRectMenuBuild.StartY = height - 10 * HALF_HEXAGON_PIXEL_HEIGHT;
+    drawRectMenuBuild.StartY = drawRectMenuDiamonds.StartY + drawRectMenuDiamonds.Height;
     drawRectMenuBuild.Height = 10 * HALF_HEXAGON_PIXEL_HEIGHT;
     vec2i menuBuildMousePosition = TranslateMousePosition(&drawRectMenuBuild, ins);
 
     draw_rect drawRectManaBar = drawRectRightMenu;
-    drawRectManaBar.StartY = drawRectMenuDiamonds.StartY + drawRectMenuDiamonds.Height;
-    drawRectManaBar.Height = drawRectMenuBuild.StartY - drawRectManaBar.StartY;
+    drawRectManaBar.StartY = drawRectMenuBuild.StartY + drawRectMenuBuild.Height;
+    drawRectManaBar.Height = 150;
+
+    draw_rect drawRectBuildingMenu = drawRectRightMenu;
+    drawRectBuildingMenu.StartY = drawRectManaBar.StartY + drawRectManaBar.Height;
+    drawRectBuildingMenu.Height = 6 * HALF_HEXAGON_PIXEL_HEIGHT;
+    vec2i menuBuildingMousePosition = TranslateMousePosition(&drawRectBuildingMenu, ins);
 
     vec2i mouseTilePos = MouseToTilePos(mainMousePosition);
 
@@ -999,6 +1004,51 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
+        /// Building Menu Logic
+        if (IS_MOUSE_PRESSED(Left)) {
+            vec2i menuTilePos = MouseToTilePos(menuBuildingMousePosition, true);
+            #define BM_TOWER  1
+            #define BM_TRAP   2
+            #define BM_WALL   3
+            #define BM_OTHER1 -1
+            #define BM_OTHER2 -1
+            #define BM_OTHER3 -1
+
+            int buildMenuTriangleMapping[6][9] = {
+                {        -1,        -1,        -1,  BM_TOWER,  BM_TOWER,  BM_TOWER,        -1,        -1,        -1 },
+                {   BM_WALL,   BM_WALL,   BM_WALL,  BM_TOWER,  BM_TOWER,  BM_TOWER, BM_OTHER2, BM_OTHER2, BM_OTHER2 },
+                {   BM_WALL,   BM_WALL,   BM_WALL,        -1,        -1,        -1, BM_OTHER2, BM_OTHER2, BM_OTHER2 },
+                { BM_OTHER1, BM_OTHER1, BM_OTHER1,        -1,        -1,        -1, BM_OTHER3, BM_OTHER3, BM_OTHER3 },
+                { BM_OTHER1, BM_OTHER1, BM_OTHER1,   BM_TRAP,   BM_TRAP,   BM_TRAP, BM_OTHER3, BM_OTHER3, BM_OTHER3 },
+                {        -1,        -1,        -1,   BM_TRAP,   BM_TRAP,   BM_TRAP,        -1,        -1,        -1 },
+            };
+
+            if (BoxContainsInEx(0, 0, 9, 6, menuTilePos.X, menuTilePos.Y)) {
+                int selected = buildMenuTriangleMapping[menuTilePos.Y][menuTilePos.X];
+                switch (selected) {
+                    case BM_TOWER: {
+                        Menu.TowerBuildMode = !Menu.TowerBuildMode;
+                        Menu.TrapBuildMode = false;
+                        Menu.WallBuildMode = false;
+                    } break;
+                    case BM_TRAP: {
+                        Menu.TrapBuildMode = !Menu.TrapBuildMode;
+                        Menu.TowerBuildMode = false;
+                        Menu.WallBuildMode = false;
+                    } break;
+                    case BM_WALL: {
+                        Menu.WallBuildMode = !Menu.WallBuildMode;
+                        Menu.TowerBuildMode = false;
+                        Menu.TrapBuildMode = false;
+                    } break;
+                    default: {
+                        // Do nothing
+                    }
+                }
+            }
+
+        }
+
         /// Click on Monster
         if (IS_MOUSE_PRESSED(Left)){
             SelectedMonster = {};
@@ -1320,7 +1370,7 @@ void Update(color32* array, int width, int height, inputs* ins) {
                         } break;
                     }
                 }
-            } 
+            }
 
             /// Create projectile if target monster
             if (target) {
@@ -1825,6 +1875,15 @@ void Update(color32* array, int width, int height, inputs* ins) {
             int textWidth = TextGetRenderSize(&DummyFontInfo, dummy);
             DrawScreenDisc(&drawRectMenuBuild, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT, 20, DARK_GREY, DEPTH_BUILDINGS);
             TextRenderScreen(&drawRectMenuBuild, &DummyFontInfo, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2 + (HEXAGON_PIXEL_WIDTH - textWidth) / 2, 5 * HALF_HEXAGON_PIXEL_HEIGHT - DummyFontInfo.FontSize / 2, dummy, WHITE, DEPTH_DIAMONDS);
+
+            // Buildings in the build menu
+            DrawScreenBitmap(&drawRectBuildingMenu, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 0 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Tower, WHITE, DEPTH_BUILDINGS);
+            DrawScreenBitmap(&drawRectBuildingMenu, HALF_HEXAGON_PIXEL_WIDTH + HALF_HEXAGON_PIXEL_WIDTH / 2, 4 * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.Trap, WHITE, DEPTH_BUILDINGS);
+
+            DrawScreenBitmap(&drawRectBuildingMenu, HALF_HEXAGON_PIXEL_WIDTH / 2, 1 * HALF_HEXAGON_PIXEL_HEIGHT + HALF_HEXAGON_PIXEL_HEIGHT / 2, Sprites.WhiteUp, DARK_GREY, DEPTH_DIAMONDS);
+            DrawScreenDisc(&drawRectBuildingMenu,  HALF_HEXAGON_PIXEL_WIDTH / 2 + HALF_HEXAGON_PIXEL_HEIGHT / 2 , 1 * HALF_HEXAGON_PIXEL_HEIGHT + HALF_HEXAGON_PIXEL_HEIGHT / 2 + HALF_HEXAGON_PIXEL_WIDTH / 2, HALF_HEXAGON_PIXEL_HEIGHT, LIGHT_GREY, DEPTH_DIAMONDS);
+
+            DrawScreenRectangle(&drawRectBuildingMenu, 0, 0 * HALF_HEXAGON_PIXEL_HEIGHT, 5 * HALF_HEXAGON_PIXEL_WIDTH, 10 * HALF_HEXAGON_PIXEL_HEIGHT, COL32_RGB(120, 130, 30), DEPTH_BACKGROUND);
         }
 
         /// Render Mana Bar
@@ -2057,7 +2116,6 @@ void Update(color32* array, int width, int height, inputs* ins) {
                     ++lines;
                 }
 
-                // TODO(Tobi): Alpha stuff is not supported at the moment
                 DrawWorldRectangleAlpha(&drawRectAll, monsterContextMenuLeft, monsterContextMenuTop, 4.5f, lines * DummyFontInfo.FontSize / (float) HEXAGON_A, COL32_RGBA(0, 0, 0, 160), DEPTH_HUD);
 
                 char dummy[32];
@@ -2213,10 +2271,10 @@ void Update(color32* array, int width, int height, inputs* ins) {
                 // DrawWorldLineThick(&drawRectMain, bottomLeftPos, leftPos, 3, WHITE);
                 // DrawWorldLineThick(&drawRectMain, leftPos, topLeftPos, 3, WHITE);
 
-                sprite_data* sd;
+                sprite_data* sd = nullptr;
                 if (Menu.TowerBuildMode) {
                     sd = &Sprites.Tower;
-                } else {
+                } else if (Menu.TrapBuildMode){
                     sd = &Sprites.Trap;
                 }
 
@@ -2224,6 +2282,15 @@ void Update(color32* array, int width, int height, inputs* ins) {
             }
         }
 
+        if (Menu.WallBuildMode) {
+            int evenLineOffset = 1 - (mouseTilePos.Y % 2);
+            bool triangleIsDown = (mouseTilePos.X + mouseTilePos.Y) % 2;
+            if (triangleIsDown) {
+                DrawScreenBitmap(&drawRectMain, mouseTilePos.X * HALF_HEXAGON_PIXEL_WIDTH / 2, mouseTilePos.Y * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteDown, COL32_RGBA(64, 64, 64, 128), DEPTH_BUILDINGS);
+            } else {
+                DrawScreenBitmap(&drawRectMain, mouseTilePos.X * HALF_HEXAGON_PIXEL_WIDTH / 2 - evenLineOffset, mouseTilePos.Y * HALF_HEXAGON_PIXEL_HEIGHT, Sprites.WhiteUp, COL32_RGBA(64, 64, 64, 128), DEPTH_BUILDINGS);
+            }
+        }
 
         if (AutomaticShaderRecompilation) {
             TextRenderScreen(&drawRectAll, &DummyFontInfo, 0, 0, "SHADER RECOMPILE: ON", WHITE, DEPTH_DEBUGGING);
