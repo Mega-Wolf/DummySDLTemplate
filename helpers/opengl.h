@@ -11,12 +11,14 @@
 
 #include "profiler.h"
 
+#include <time.h>
+
 #define RENDER_LAYER_COUNT 10
 #define RENDER_LAYER_MAX_SIZE 4096 // TODO(Tobi): How many objects can be on one layer; obviously change that please
 
 void GLCHK() {
     int errorCode = glGetError();
-    Assert(!errorCode, "Error: %d - %x", errorCode, errorCode);
+    //Assert(!errorCode, "Error: %d - %x", errorCode, errorCode);
 }
 
 struct debug_shader_info {
@@ -75,8 +77,11 @@ struct ogl_data {
     uint32 GaussianBlurShader;
     uint32 BumpToNormalShader;
 
+    uint32 ManaBarShader;
+
     uint32 DummyVAO;
     uint32 BlockIDMatrices;
+    uint32 UniformTime;
 
     sprite_data BrokenSprite;
     sprite_data WhiteSprite;
@@ -96,6 +101,8 @@ struct ogl_data {
 
     uint32 FrameBuffers[2]; // NOTE(Tobi): I just use two ful screen FBOs for now
     uint32 FrameBufferTextures[2]; // TODO(Tobi): Apparently I should rather create them again and again
+
+    float RunningTime;
 };
 
 ogl_data OGLData;
@@ -167,6 +174,10 @@ int LoadShader(char* vertexShaderPath, char* fragmentShaderPath) {
             // TODO(Tobi): What does this even mean (same for original place)
             //glUniform1i(glGetUniformLocation(programID, "texture1"), 0);
             glUniformBlockBinding(programID, glGetUniformBlockIndex(programID, "Matrices"), 0);
+            int timeIndex = glGetUniformBlockIndex(programID, "Time");
+            if (timeIndex != -1) {
+                glUniformBlockBinding(programID, timeIndex, 1);
+            }
         }
     }
     GLCHK();
@@ -206,6 +217,10 @@ void RecompileAllShaders() {
                 glUseProgram(dsi.ProgramID);
                 glUniform1i(glGetUniformLocation(dsi.ProgramID, "texture1"), 0);
                 glUniformBlockBinding(dsi.ProgramID, glGetUniformBlockIndex(dsi.ProgramID, "Matrices"), 0);
+                int timeIndex = glGetUniformBlockIndex(dsi.ProgramID, "Time");
+                if (timeIndex != -1) {
+                    glUniformBlockBinding(dsi.ProgramID, timeIndex, 1);
+                }
             }
         }
 
@@ -466,6 +481,17 @@ void RendererInit() {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glGenBuffers(1, &OGLData.UniformTime);
+    glBindBuffer(GL_UNIFORM_BUFFER, OGLData.UniformTime);
+    glBufferData(GL_UNIFORM_BUFFER, 1 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+    glGenBuffers(1, &OGLData.BlockIDMatrices);
+    glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices);
+    glBufferData(GL_UNIFORM_BUFFER, 1 * sizeof(hmm_mat4), NULL, GL_DYNAMIC_DRAW);
+    //glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Necessary?
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, OGLData.BlockIDMatrices, 0, 1 * sizeof(hmm_mat4));
+
+    GLCHK();
+
     OGLData.BrokenShader = LoadShader("shaders/BrokenShaderVert.vs", "shaders/BrokenShaderFrag.fs");
     OGLData.BrokenSprite = CreateSprite("assets/images/AlphaTest.bmp", true);
     OGLData.WhiteSprite = CreateSprite("assets/images/White.bmp", true);
@@ -483,13 +509,9 @@ void RendererInit() {
     OGLData.GaussianBlurShader = LoadShader("shaders/BasicVert.vs", "shaders/GaussBlur.fs");
     OGLData.BumpToNormalShader = LoadShader("shaders/BasicVert.vs", "shaders/BumpToNormal.fs");
 
-    GLCHK();
+    OGLData.ManaBarShader = LoadShader("shaders/BasicVert.vs", "shaders/ManaBar.fs");
 
-    glGenBuffers(1, &OGLData.BlockIDMatrices);
-    glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices);
-    glBufferData(GL_UNIFORM_BUFFER, 1 * sizeof(hmm_mat4), NULL, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Necessary?
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, OGLData.BlockIDMatrices, 0, 1 * sizeof(hmm_mat4));
+    GLCHK();
 
     float vertices[] = {
         // positions             // texture coords
@@ -581,10 +603,26 @@ void RendererStartFrame() {
         hmm_mat4 projection = HMM_Orthographic(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0.1f, 100.0f);
         hmm_mat4 projectionViewMatrix = projection * view;
 
+        GLCHK();
+
         glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices); // NOTE(Tobi): Is this necessary when doing the next thing?
         glBindBufferRange(GL_UNIFORM_BUFFER, 0, OGLData.BlockIDMatrices, 0, sizeof(hmm_mat4));
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(hmm_mat4), &projectionViewMatrix);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Do I have to do that?
+        //glBindBuffer(GL_UNIFORM_BUFFER, 0); // NOTE(Tobi): Do I have to do that?
+
+        GLCHK();
+
+        // TODO(Tobi): Does this even need to be a variable since I calculate it everytime anyway?
+        // TODO(Tobi): I don't want to use clock() I think
+        // OGLData.RunningTime = clock()/(float) CLOCKS_PER_SEC;
+
+        // glBindBuffer(GL_UNIFORM_BUFFER, OGLData.UniformTime);
+        // glBindBufferRange(GL_UNIFORM_BUFFER, 0, OGLData.UniformTime, 0, sizeof(float));
+        // glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float), &OGLData.RunningTime);
+
+        //glBindBuffer(GL_UNIFORM_BUFFER, OGLData.BlockIDMatrices);
+
+        GLCHK();
     }
 
     glEnable(GL_SCISSOR_TEST);
@@ -833,5 +871,93 @@ void RendererDrawAny(hmm_mat4 modelMatrix, sprite_data* spriteDatas, int spriteC
     ShaderResolveAndSetVec4(shaderID, "Color", (hmm_vec4*) &colFloat);
     
     glBindVertexArray(spriteDatas[0].Sprite.VAO);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+void RendererDrawAnyDebugSize(hmm_mat4 modelMatrix, sprite_data* spriteDatas, int spriteCount, uint32 shaderID, color4f colFloat, float width, float height) {
+    Assert(spriteCount >= 1 && spriteCount <= 32, "Sprite count is an invalid number (%d)", spriteCount);
+
+    char* textureNames[32] = {
+        "texture1",
+        "texture2",
+        "texture3",
+        "texture4",
+        "texture5",
+        "texture6",
+        "texture7",
+        "texture8",
+        "texture9",
+        "texture10",
+        "texture11",
+        "texture12",
+        "texture13",
+        "texture14",
+        "texture15",
+        "texture16",
+        "texture17",
+        "texture18",
+        "texture19",
+        "texture20",
+        "texture21",
+        "texture22",
+        "texture23",
+        "texture24",
+        "texture25",
+        "texture26",
+        "texture27",
+        "texture28",
+        "texture29",
+        "texture30",
+        "texture31",
+        "texture32",
+    };
+
+
+    glUseProgram(shaderID);
+    inc0 (sprite_i,   spriteCount) {
+        glActiveTexture(GL_TEXTURE0 + sprite_i);
+        glBindTexture(GL_TEXTURE_2D, spriteDatas[sprite_i].Sprite.TextureID);
+
+        ShaderResolveAndSetInt(shaderID, textureNames[sprite_i], sprite_i);
+    }
+
+    // TODO(Tobi): Resolve the stuff once; don't know where to save that though
+    ShaderResolveAndSetMat4(shaderID, "Model", &modelMatrix);
+    ShaderResolveAndSetVec4(shaderID, "Color", (hmm_vec4*) &colFloat);
+    
+    uint32 vao;
+    {
+        float left = 0;
+        float right = width;
+        float top = 0;
+        float bottom = height;
+
+        float vertices[] = {
+            // positions             // texture coords
+            right,    top, 0.0f,      1.0f, 1.0f, // top right
+            right, bottom, 0.0f,      1.0f, 0.0f, // bottom right
+            left, bottom, 0.0f,      0.0f, 0.0f, // bottom left
+            left,    top, 0.0f,      0.0f, 1.0f  // top left 
+        };
+
+
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+
+        uint32 vbo;
+        glGenBuffers(1, &vbo);
+
+        //glBindVertexArray(vao);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (0 * sizeof(float)));
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+    }
+    glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }

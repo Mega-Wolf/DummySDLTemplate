@@ -1890,8 +1890,9 @@ void Update(color32* array, int width, int height, inputs* ins) {
         {
             // TODO(Tobi): These will be combined to one mana bar shader
             float manaPercentage = Mana / 1000.0f;
-            DrawScreenRectangle(&drawRectManaBar, 0, RoundFloat32ToInt32((1.0f - manaPercentage) * drawRectManaBar.Height), 5 * HALF_HEXAGON_PIXEL_WIDTH, RoundFloat32ToInt32(manaPercentage * drawRectManaBar.Height), ORANGE, DEPTH_BUILDINGS);
-            DrawScreenRectangle(&drawRectManaBar, 0, 0, 5 * HALF_HEXAGON_PIXEL_WIDTH, RoundFloat32ToInt32(drawRectManaBar.Height * (1.0f - manaPercentage)), COL32_RGB(64, 32,   0), DEPTH_BUILDINGS);
+            //DrawScreenRectangle(&drawRectManaBar, 0, RoundFloat32ToInt32((1.0f - manaPercentage) * drawRectManaBar.Height), 5 * HALF_HEXAGON_PIXEL_WIDTH, RoundFloat32ToInt32(manaPercentage * drawRectManaBar.Height), ORANGE, DEPTH_BUILDINGS);
+            DrawAnyDebugSize(&drawRectManaBar, 0, 0, DEPTH_BUILDINGS, &Noises[NoiseIndex], 1, OGLData.ManaBarShader, COL32_RGB(64, 32, 0), 5 * HALF_HEXAGON_PIXEL_WIDTH, (float) drawRectManaBar.Height);
+            //DrawScreenRectangle(&drawRectManaBar, 0, 0, 5 * HALF_HEXAGON_PIXEL_WIDTH, drawRectManaBar.Height, COL32_RGB(64, 32,   0), DEPTH_BUILDINGS);
 
             char dummy[128];
             snprintf(dummy, ArrayCount(dummy), "%d", (int) Mana);

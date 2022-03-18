@@ -110,6 +110,16 @@ void DrawAny(draw_rect* drawRect, int x, int y, int z, sprite_data* spriteDatas,
     RendererDrawAny(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z), spriteDatas, spriteCount, shaderID, colFloat);
 }
 
+void DrawAnyDebugSize(draw_rect* drawRect, int x, int y, int z, sprite_data* spriteDatas, int spriteCount, uint32 shaderID, color32 col, float width, float height) {
+    x += Camera.X;
+    y += Camera.Y;
+
+    color4f colFloat = color32_to_color4f(col);
+
+    RendererSetDrawRect(drawRect);
+    RendererDrawAnyDebugSize(HMM_Translate((float) (x + drawRect->StartX), (float) (y + drawRect->StartY), (float) z), spriteDatas, spriteCount, shaderID, colFloat, width, height);
+}
+
 /*
 void DrawScreenBMPText(draw_rect* drawRect, int x, int y, int bmpX, int bmpY, int bmpWidth, int bmpHeight, color32 color, sprite_data* sprite) {
     x += Camera.X;
